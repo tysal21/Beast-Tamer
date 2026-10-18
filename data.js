@@ -702,6 +702,31 @@ const TOTEM_LAYER_BONUSES = [
 const TOTEM_TITLES = ['Primordial', 'Ancient', 'Elder', 'Mythic', 'Eternal'];
 
 /** Features that future updates attach to Seals (shown as "coming soon" until built) */
+/**
+ * Seal 2: Trophy Weapons. A permanent weapon (never reset by Ascension), forged from Apex Fangs.
+ * Apex Fangs drop from every Apex boss you tame: Apex tier k drops k Fangs.
+ */
+const TROPHY_CONFIG = {
+  unlockSeal: 2,
+  costBase: 10,        // Fangs for the first forge
+  costGrowth: 2.0,     // each forge costs this many times the last
+  powerPerLevel: 0.04, // +4% Combat Power per forge level
+  clickPerLevel: 0.05, // +5% base click Meat per forge level
+  fangsPerTier: 1
+};
+
+const TROPHY_WEAPONS = [
+  { name: 'Wyrmfang Shiv', icon: 'fa-khanda' },
+  { name: 'Dreadclaw Gauntlet', icon: 'fa-hand-back-fist' },
+  { name: 'Savage Tusk Maul', icon: 'fa-gavel' },
+  { name: 'Feral Spine Bow', icon: 'fa-bullseye' },
+  { name: 'Rabid Venom Lance', icon: 'fa-syringe' },
+  { name: 'Bloodmad Reaver', icon: 'fa-skull' },
+  { name: 'Abyssal Ravager', icon: 'fa-dragon' },
+  { name: 'Cataclysm Fang', icon: 'fa-meteor' },
+  { name: 'Worldender', icon: 'fa-crown' }
+];
+
 /** Apex Ladder: bosses past the Wyrm, reset each Ascension */
 const APEX_CONFIG = {
   firstMult: 3,        // Tier 5 minimum = Wyrm minimum x this
@@ -716,7 +741,7 @@ const APEX_CONFIG = {
 
 const TOTEM_UNLOCKS = [
   { seal: 1, name: "Hunter's Legacy skill tree", desc: 'Spend Totem Shards on a permanent skill tree.', icon: 'fa-sitemap', live: true },
-  { seal: 2, name: 'Trophy Weapons', desc: 'Forge weapons beyond the Glaive from boss parts.', icon: 'fa-hammer' },
+  { seal: 2, name: 'Trophy Weapons', desc: 'Forge a permanent Trophy Weapon from Apex Fangs.', icon: 'fa-hammer', live: true },
   { seal: 3, name: 'Packmaster automation', desc: 'Auto-buy generators, auto-tend the nest, auto trophy fights.', icon: 'fa-robot' },
   { seal: 4, name: 'Primordial Relics', desc: 'Guardians drop a new tier of relics.', icon: 'fa-gem' }
 ];

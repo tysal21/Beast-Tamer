@@ -987,6 +987,7 @@ function renderFrame(meatRate) {
   // Primal Totem live updates
   updateTotemLive();
   updateLegacyLive();
+  updateTrophyLive();
 
   // Phase 3: Bloodstones HUD, Altar tab badge & live Altar stats
   updateAscensionLiveElements();
@@ -2842,6 +2843,52 @@ function openSaveModal() {
     isResetting = true; // stop the page from saving over the import while it reloads
     localStorage.setItem(SAVE_STORAGE_KEY, JSON.stringify(data));
     window.location.reload();
+  });
+})();
+
+/**
+ * ================= SEAL 2: TROPHY WEAPON UI =================
+ */
+let trophySignature = '';
+function updateTrophyLive() {
+  const box = document.getElementById('trophy-box');
+  if (!box || !gameState.trophy) return;
+  const unlocked = isTrophyUnlocked();
+  box.classList.toggle('hidden', !unlocked);
+  if (!unlocked) return;
+  const t = gameState.trophy;
+  const lvl = getTrophyLevel();
+  const cost = getTrophyForgeCost();
+  const sig = t.fangs + '|' + lvl;
+  const btn = document.getElementById('btn-forge-trophy');
+  btn.disabled = cost === null || t.fangs < cost;
+  if (sig === trophySignature) return;
+  trophySignature = sig;
+  const cur = lvl > 0 ? TROPHY_WEAPONS[lvl - 1] : null;
+  const nxt = lvl < TROPHY_WEAPONS.length ? TROPHY_WEAPONS[lvl] : null;
+  document.getElementById('trophy-name').textContent = cur ? cur.name + ' (Lv ' + lvl + '/' + TROPHY_WEAPONS.length + ')' : 'Unforged';
+  document.getElementById('trophy-icon').innerHTML = '<i class="fa-solid ' + (cur ? cur.icon : 'fa-khanda') + '"></i>';
+  document.getElementById('trophy-bonus').textContent = lvl > 0
+    ? '+' + Math.round(lvl * TROPHY_CONFIG.powerPerLevel * 100) + '% Combat Power, +' + Math.round(lvl * TROPHY_CONFIG.clickPerLevel * 100) + '% base click Meat'
+    : 'Forge it to gain Combat Power and click Meat';
+  document.getElementById('trophy-fangs').textContent = formatNumber(t.fangs);
+  document.getElementById('trophy-next').textContent = nxt
+    ? 'Next: ' + nxt.name + ' (+' + Math.round(TROPHY_CONFIG.powerPerLevel * 100) + '% Combat Power, +' + Math.round(TROPHY_CONFIG.clickPerLevel * 100) + '% click Meat)'
+    : 'Fully forged: Worldender';
+  document.getElementById('trophy-cost').textContent = cost === null ? 'MAX' : formatNumber(cost);
+}
+(function initTrophy() {
+  const btn = document.getElementById('btn-forge-trophy');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    if (!forgeTrophyWeapon()) return;
+    const w = TROPHY_WEAPONS[getTrophyLevel() - 1];
+    sound.playWin();
+    showToast('Forged the ' + w.name + '!', 'success', true);
+    logCombatMessage('🗡️ <strong>TROPHY WEAPON FORGED:</strong> ' + w.name + '. Now +' + Math.round(getTrophyLevel() * TROPHY_CONFIG.powerPerLevel * 100) + '% Combat Power.', 'unlock');
+    trophySignature = '';
+    updateTrophyLive();
+    saveGameToStorage();
   });
 })();
 

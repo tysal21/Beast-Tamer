@@ -179,6 +179,9 @@ const gameState = {
   // Hunter's Legacy skill tree (opens at Seal 1, never reset by Ascension)
   legacy: defaultLegacyState(),
 
+  // Seal 2 Trophy Weapon (permanent) and its Apex Fangs
+  trophy: { fangs: 0, level: 0 },
+
   // Fight counter per boss / guardian (kept forever; taming tries reset each run)
   fightStats: {},
 
@@ -817,6 +820,7 @@ function getCombatPowerBreakdown() {
   add('Abyssal Fervor meal', getFishBuffMult('power'));
   add('Totem blessings and Seals', 1 + getTotemBonus('power'));
   add('Keen Instincts (Legacy)', getLegacyMult('keen_instincts'));
+  add('Trophy Weapon', getTrophyPowerMult());
 
   return {
     hunter, sparLevel: gameState.sparringLevel, sparMult, hunterTotal: getHunterPower(),
@@ -879,6 +883,38 @@ function getApexReward(k) {
   return Math.floor(getApexBaseMin(k) * APEX_CONFIG.rewardShare);
 }
 
+/** ---------- Seal 2 Trophy Weapon ---------- */
+function isTrophyUnlocked() {
+  return !!(gameState.totem && gameState.totem.sealsBroken >= TROPHY_CONFIG.unlockSeal);
+}
+
+function getTrophyLevel() {
+  return (gameState.trophy && gameState.trophy.level) || 0;
+}
+
+/** Fangs for the next forge, or null at max */
+function getTrophyForgeCost() {
+  const lvl = getTrophyLevel();
+  if (lvl >= TROPHY_WEAPONS.length) return null;
+  return Math.round(TROPHY_CONFIG.costBase * Math.pow(TROPHY_CONFIG.costGrowth, lvl));
+}
+
+function forgeTrophyWeapon() {
+  const cost = getTrophyForgeCost();
+  if (!isTrophyUnlocked() || cost === null || gameState.trophy.fangs < cost) return false;
+  gameState.trophy.fangs -= cost;
+  gameState.trophy.level += 1;
+  return true;
+}
+
+function getTrophyPowerMult() {
+  return 1 + getTrophyLevel() * TROPHY_CONFIG.powerPerLevel;
+}
+
+function getTrophyClickMult() {
+  return 1 + getTrophyLevel() * TROPHY_CONFIG.clickPerLevel;
+}
+
 /** Raw Beast Power from Apex tiers tamed this run */
 function getApexBeastPower() {
   let p = 0;
@@ -893,6 +929,11 @@ function getApexStoneMult() {
 
 function tameApexBoss(boss) {
   gameState.apexDepth = getApexDepth() + 1;
+  // Apex Fangs for the Trophy Weapon
+  if (!gameState.trophy) gameState.trophy = { fangs: 0, level: 0 };
+  const fangs = TROPHY_CONFIG.fangsPerTier * boss.apexTier;
+  gameState.trophy.fangs += fangs;
+  logCombatMessage('🦷 +' + fangs + ' Apex Fang' + (fangs === 1 ? '' : 's') + ' (' + formatNumber(gameState.trophy.fangs) + ' total).', 'default');
   if (gameState.apexDepth > (gameState.bestApexDepth || 0)) {
     // Deepest ever: a one-time Totem Shard reward
     gameState.bestApexDepth = gameState.apexDepth;
@@ -1355,7 +1396,7 @@ function getTotalBeastPower() {
 function getTotalCombatPower() {
   const base = getHunterPower() + getTotalBeastPower();
   // Fishing: Codex power bonus and Abyssal Fervor meal
-  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts'));
+  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts') * getTrophyPowerMult());
 }
 
 function getBaseMeatRate() {
@@ -1451,7 +1492,7 @@ function getClickYield() {
   }
 
   // Marrow Harvest (Hunter's Legacy) boosts the flat strike too
-  totalYield = Math.floor(totalYield * getLegacyMult('marrow_harvest'));
+  totalYield = Math.floor(totalYield * getLegacyMult('marrow_harvest') * getTrophyClickMult());
 
   totalYield += Math.floor(passiveRate * percentBonus);
 
@@ -1844,6 +1885,7 @@ function saveGameToStorage() {
       fishing: gameState.fishing,
       totem: gameState.totem,
       apexDepth: gameState.apexDepth || 0,
+      trophy: gameState.trophy,
       bestApexDepth: gameState.bestApexDepth || 0,
       legacy: gameState.legacy,
       fightStats: gameState.fightStats,
@@ -1939,6 +1981,7 @@ function loadGameFromStorage() {
       }
       if (data.fightStats && typeof data.fightStats === 'object') gameState.fightStats = data.fightStats;
       if (typeof data.apexDepth === 'number') gameState.apexDepth = data.apexDepth;
+      if (data.trophy && typeof data.trophy === 'object') gameState.trophy = { fangs: data.trophy.fangs || 0, level: data.trophy.level || 0 };
       if (typeof data.bestApexDepth === 'number') gameState.bestApexDepth = data.bestApexDepth;
       if (['x1', 'x10', 'next'].includes(data.genBuyMode)) gameState.genBuyMode = data.genBuyMode;
       // Saves that already tamed the Wyrm or Ascended get the Totem right away
