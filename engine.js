@@ -87,9 +87,12 @@ let isResetting = false;
 function formatNumber(num, forceDecimals = false) {
   if (!Number.isFinite(num)) return '0';
   const abs = Math.abs(num);
-  if (abs >= 1e12) return (num / 1e12).toFixed(2) + 'T';
-  if (abs >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-  if (abs >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+  // Short scale suffixes; past Decillion falls back to scientific notation
+  const SUFFIXES = [[1e33, 'Dc'], [1e30, 'No'], [1e27, 'Oc'], [1e24, 'Sp'], [1e21, 'Sx'], [1e18, 'Qi'], [1e15, 'Qa'], [1e12, 'T'], [1e9, 'B'], [1e6, 'M']];
+  if (abs >= 1e36) return num.toExponential(2).replace('e+', 'e');
+  for (const [size, suffix] of SUFFIXES) {
+    if (abs >= size) return (num / size).toFixed(2) + suffix;
+  }
   if (forceDecimals) return num.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   return Math.floor(num).toLocaleString();
 }
@@ -701,8 +704,8 @@ function getRelicEffectMultiplier(id) {
 }
 
 function getMaxStamina() {
-  const campBonus = gameState.campEnduranceLevel * 2;
-  let maxCap = Math.min(100, gameState.staminaMaxBase + campBonus);
+  const campBonus = gameState.campEnduranceLevel * CAMP_ENDURANCE_PER_RANK;
+  let maxCap = Math.min(CAMP_ENDURANCE_CAP, gameState.staminaMaxBase + campBonus);
   if (hasRelic('eldritch_crown')) {
     maxCap *= 2;
   }
@@ -750,8 +753,8 @@ function getSparringStaminaCost() {
 }
 
 function getStaminaRegenInterval(withAdrenalineOverride = null) {
-  let interval = gameState.staminaIntervalSec - (gameState.campRecoveryLevel * 0.75);
-  interval = Math.max(6.0, interval);
+  let interval = gameState.staminaIntervalSec - (gameState.campRecoveryLevel * CAMP_RECOVERY_PER_RANK);
+  interval = Math.max(CAMP_RECOVERY_FLOOR_SEC, interval);
 
   if (gameState.tamedBeasts['boar_hawk']) {
     const bLvl = getParentLevel('boar_hawk');
@@ -822,6 +825,31 @@ function getTrainingDisciplineCostMultiplier() {
 
 function getSparringCost() {
   return Math.floor(300 * Math.pow(1.28, gameState.sparringLevel));
+}
+
+/**
+ * Camp upgrades cap on their OWN ranks, so bonuses from relics, beasts, fishing or the Totem
+ * never lock them early. Endurance: base 30 + 2/rank up to 100 (rank 35). Recovery: 15s - 0.75s/rank down to 6s (rank 12).
+ */
+const CAMP_ENDURANCE_CAP = 100;
+const CAMP_ENDURANCE_PER_RANK = 2;
+const CAMP_RECOVERY_FLOOR_SEC = 6.0;
+const CAMP_RECOVERY_PER_RANK = 0.75;
+
+function getCampEnduranceMaxLevel() {
+  return Math.ceil((CAMP_ENDURANCE_CAP - gameState.staminaMaxBase) / CAMP_ENDURANCE_PER_RANK);
+}
+
+function isCampEnduranceMaxed() {
+  return gameState.campEnduranceLevel >= getCampEnduranceMaxLevel();
+}
+
+function getCampRecoveryMaxLevel() {
+  return Math.ceil((gameState.staminaIntervalSec - CAMP_RECOVERY_FLOOR_SEC) / CAMP_RECOVERY_PER_RANK);
+}
+
+function isCampRecoveryMaxed() {
+  return gameState.campRecoveryLevel >= getCampRecoveryMaxLevel();
 }
 
 function getCampEnduranceCost() {

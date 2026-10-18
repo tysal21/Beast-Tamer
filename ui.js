@@ -926,11 +926,11 @@ function renderFrame(meatRate) {
 
   // Camp Enhancements
   const endCost = getCampEnduranceCost();
-  const isEndMaxed = maxStamina >= 100;
-  elements.campEnduranceLvl.textContent = gameState.campEnduranceLevel;
+  const isEndMaxed = isCampEnduranceMaxed();
+  elements.campEnduranceLvl.textContent = gameState.campEnduranceLevel + '/' + getCampEnduranceMaxLevel();
   elements.campEnduranceBonus.textContent = '+' + (gameState.campEnduranceLevel * 2) + ' Max';
   if (isEndMaxed) {
-    elements.btnBuyEnduranceLabel.textContent = 'Max Capacity (100)';
+    elements.btnBuyEnduranceLabel.textContent = 'Maxed (+' + (gameState.campEnduranceLevel * CAMP_ENDURANCE_PER_RANK) + ' Max)';
     elements.btnBuyEnduranceCostWrap.classList.add('hidden');
     elements.btnBuyEndurance.disabled = true;
   } else {
@@ -941,11 +941,11 @@ function renderFrame(meatRate) {
   }
 
   const recCost = getCampRecoveryCost();
-  const isRecMaxed = regenInterval <= 6.0;
-  elements.campRecoveryLvl.textContent = gameState.campRecoveryLevel;
+  const isRecMaxed = isCampRecoveryMaxed();
+  elements.campRecoveryLvl.textContent = gameState.campRecoveryLevel + '/' + getCampRecoveryMaxLevel();
   elements.campRecoveryInterval.textContent = regenInterval.toFixed(1) + 's';
   if (isRecMaxed) {
-    elements.btnBuyRecoveryLabel.textContent = 'Fastest Floor (6.0s)';
+    elements.btnBuyRecoveryLabel.textContent = 'Maxed (-' + (gameState.campRecoveryLevel * CAMP_RECOVERY_PER_RANK).toFixed(2).replace(/\.?0+$/, '') + 's)';
     elements.btnBuyRecoveryCostWrap.classList.add('hidden');
     elements.btnBuyRecovery.disabled = true;
   } else {
@@ -1521,7 +1521,7 @@ elements.btnCraftWeapon.addEventListener('click', () => {
 
 elements.btnBuyEndurance.addEventListener('click', () => {
   const cost = getCampEnduranceCost();
-  if (gameState.meat >= cost && getMaxStamina() < 100) {
+  if (gameState.meat >= cost && !isCampEnduranceMaxed()) {
     sound.playBuy();
     gameState.meat -= cost;
     gameState.campEnduranceLevel += 1;
@@ -1531,7 +1531,7 @@ elements.btnBuyEndurance.addEventListener('click', () => {
 
 elements.btnBuyRecovery.addEventListener('click', () => {
   const cost = getCampRecoveryCost();
-  if (gameState.meat >= cost && getStaminaRegenInterval() > 6.0) {
+  if (gameState.meat >= cost && !isCampRecoveryMaxed()) {
     sound.playBuy();
     gameState.meat -= cost;
     gameState.campRecoveryLevel += 1;
