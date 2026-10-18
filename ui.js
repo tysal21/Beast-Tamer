@@ -495,6 +495,62 @@ window.nurtureParent = function(rawBeastId) {
 /**
  * Beast Forge Renderer
  */
+/**
+ * ================= FORGE: per-level numbers =================
+ * Shows what each Nursery / Hybrid level gives now and what the next level adds.
+ */
+function fmtPct(x) { return (Math.round(x * 10) / 10) + '%'; }
+function fmtSec(x) { return (Math.round(x * 100) / 100) + 's'; }
+
+/** Passive effect of a tamed parent at a given level */
+function getParentPassiveAt(id, lvl) {
+  switch (id) {
+    case 'viper_hound': return '+' + fmtPct(lvl * 10) + ' base click Meat';
+    case 'boar_hawk': return '-' + fmtSec(lvl * 0.25) + ' Stamina interval';
+    case 'grizzly_scorpion': return '-' + fmtSec(lvl * 2) + ' wound time';
+    case 'chimera_wyrm': return '+' + fmtPct(lvl * 10) + ' Meat/sec';
+  }
+  return '';
+}
+
+/** Passive effect of a hybrid at a given level */
+function getHybridPassiveAt(id, lvl) {
+  switch (id) {
+    case 'viperhawk': return '+' + fmtPct(lvl * 15) + ' base click Meat, +' + fmtPct(lvl * 5) + ' Stamina regen';
+    case 'venompincer': return '+' + fmtPct(lvl * 2) + ' crit chance, ' + (Math.round(5 * (1 + 0.15 * lvl) * 100) / 100) + 'x crit multi';
+    case 'tuskpion': return 'Sparring costs 3 Stamina, ' + fmtPct(Math.min(100, 20 + lvl * 10)) + ' Breakthrough chance';
+    case 'viperwyrm': return 'Clicks add ' + fmtPct(lvl) + ' of banked Meat (up to ' + (2 * lvl) + 'x the click)';
+    case 'gryphowyrm': return '+' + fmtPct(lvl * 15) + ' Meat/sec';
+    case 'scorpiodrake': return 'Sparring gives +5% per level (not 2%), +' + fmtPct(lvl * 25) + ' Meat/sec';
+  }
+  return '';
+}
+
+/** Combat Power gained if fn() is applied (fn must be undone by undo()) */
+function combatPowerDelta(apply, undo) {
+  const before = getTotalCombatPower();
+  apply();
+  const after = getTotalCombatPower();
+  undo();
+  return after - before;
+}
+
+function getBeastName(id) {
+  const b = BEAST_CATALOG.find(x => x.id === id);
+  return b ? b.name : id;
+}
+
+function forgeStatsHtml(nowPower, nextPower, combatGain, passiveNow, passiveNext, lvl, note) {
+  return '<div class="mt-1.5 grid grid-cols-1 gap-0.5 text-[11px] font-mono">' +
+    '<div class="text-slate-300">Beast Power: <span class="text-white font-bold">' + formatNumber(nowPower) + '</span>' +
+      ' <span class="text-slate-500">&rarr;</span> <span class="text-emerald-300 font-bold">' + formatNumber(nextPower) + '</span>' +
+      ' <span class="text-emerald-400">(+' + formatNumber(Math.max(0, combatGain)) + ' Combat Power)</span></div>' +
+    '<div class="text-slate-300">Lvl ' + lvl + ': <span class="text-emerald-300">' + passiveNow + '</span></div>' +
+    '<div class="text-slate-500">Lvl ' + (lvl + 1) + ': ' + passiveNext + '</div>' +
+    (note ? '<div class="text-sky-300">' + note + '</div>' : '') +
+  '</div>';
+}
+
 function renderForge() {
   if (!isForgeTabAvailable()) {
     elements.forgeLockedView.classList.remove('hidden');
@@ -540,6 +596,12 @@ function renderForge() {
         ? 'Breeding Ready (Lvl 5+)'
         : 'Need Lvl 5 (' + lvl + '/5)';
       const disabledAttr = canAfford ? '' : 'disabled';
+      const beastDef = BEAST_CATALOG.find(b => b.id === parent.id);
+      const rawAt = l => Math.floor((beastDef ? beastDef.rewardPower : 0) * (1 + (l - 1) * 0.15));
+      const bpMult = getBeastMasteryMultiplier() * getLegacyMult('beast_bond');
+      const cpGain = combatPowerDelta(() => { gameState.parentLevels[parent.id] = lvl + 1; }, () => { gameState.parentLevels[parent.id] = lvl; });
+      const parentStats = forgeStatsHtml(rawAt(lvl) * bpMult, rawAt(lvl + 1) * bpMult, cpGain,
+        getParentPassiveAt(parent.id, lvl), getParentPassiveAt(parent.id, lvl + 1), lvl, '');
 
       row.className = 'bg-primal-800/80 border border-primal-700 rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3';
       row.innerHTML =
@@ -553,7 +615,8 @@ function renderForge() {
               '<span class="text-xs bg-purple-950 text-purple-300 border border-purple-700/60 font-mono px-2 py-0.2 rounded-full font-bold">Lvl ' + lvl + '</span>' +
               '<span class="text-[10px] font-mono px-1.5 py-0.2 rounded ' + readyClass + '">' + readyLabel + '</span>' +
             '</div>' +
-            '<div class="text-[11px] text-emerald-400 font-mono mt-0.5">Passive: ' + parent.passive + '</div>' +
+            '<div class="text-[11px] text-slate-400 mt-0.5">' + parent.passive.split(' (')[0] + '</div>' +
+            parentStats +
           '</div>' +
         '</div>' +
         '<button data-beast-id="' + parent.id + '" data-parent-id="' + parent.id + '" class="nurture-btn btn-level-parent w-full sm:w-auto px-3.5 py-2 bg-gradient-to-r from-purple-800 to-purple-700 hover:from-purple-700 hover:to-purple-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg border border-purple-500/50 flex items-center justify-center gap-2 font-mono cursor-pointer" ' + disabledAttr + '>' +
@@ -702,8 +765,21 @@ function renderForge() {
     } else {
       actionHtml =
         '<div class="mt-3 pt-3 border-t border-primal-800 text-[11px] font-mono text-slate-500 text-center">' +
-          'Requires: ' + hybrid.parent1 + ' (Lvl ' + p1Lvl + '/5) &amp; ' + hybrid.parent2 + ' (Lvl ' + p2Lvl + '/5)' +
+          'Requires: ' + getBeastName(hybrid.parent1) + ' Lvl ' + p1Lvl + '/5' + (p1Tamed ? '' : ' (not tamed)') + ' &amp; ' + getBeastName(hybrid.parent2) + ' Lvl ' + p2Lvl + '/5' + (p2Tamed ? '' : ' (not tamed)') +
         '</div>';
+    }
+
+    let hybridStats = '';
+    if (isHatched) {
+      const awake = isHybridAwake(hybrid);
+      const rawAt = l => Math.floor(hybrid.basePower * (1 + (l - 1) * 0.20));
+      const share = awake ? 1 : (hasLegacyCapstone('pack_alpha') ? LEGACY_CONFIG.packAlphaShare : 0);
+      const bpMult = getBeastMasteryMultiplier() * getLegacyMult('beast_bond') * share;
+      const cpGain = combatPowerDelta(() => { gameState.hybrids[hybrid.id].level = hLvl + 1; }, () => { gameState.hybrids[hybrid.id].level = hLvl; });
+      const note = awake ? '' : 'Asleep: tame the ' + getBeastName(hybrid.parent1) + ' and ' + getBeastName(hybrid.parent2) + ' this run to wake it' +
+        (share > 0 ? ' (Pack Alpha: 25% power now, no passives)' : '');
+      hybridStats = forgeStatsHtml(rawAt(hLvl) * bpMult, rawAt(hLvl + 1) * bpMult, cpGain,
+        getHybridPassiveAt(hybrid.id, hLvl) + (awake ? '' : ' (asleep)'), getHybridPassiveAt(hybrid.id, hLvl + 1), hLvl, note);
     }
 
     const pwrBadgeClass = isHatched
@@ -719,12 +795,13 @@ function renderForge() {
             '</div>' +
             '<div>' +
               '<h4 class="font-bold text-slate-100 text-xs sm:text-sm">' + hybrid.name + '</h4>' +
-              '<div class="text-[10px] text-slate-400 font-mono">Treat: ' + hybrid.treatName + ' (' + hybrid.gestationSec + 's)</div>' +
+              '<div class="text-[10px] text-slate-400 font-mono">Treat: ' + hybrid.treatName + ' (' + getEffectiveGestationSec(hybrid) + 's)</div>' +
             '</div>' +
           '</div>' +
-          '<span class="text-[10px] font-mono px-2 py-0.5 rounded ' + pwrBadgeClass + '">+' + formatNumber(hybrid.basePower) + ' Pwr</span>' +
+          '<span class="text-[10px] font-mono px-2 py-0.5 rounded ' + pwrBadgeClass + '">' + (isHatched ? 'Lvl ' + hLvl : '+' + formatNumber(hybrid.basePower) + ' Pwr') + '</span>' +
         '</div>' +
         '<p class="text-[11px] text-slate-300 leading-relaxed mt-1">' + hybrid.desc + '</p>' +
+        hybridStats +
       '</div>' +
       actionHtml;
 
