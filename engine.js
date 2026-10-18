@@ -1093,7 +1093,8 @@ function isCampRecoveryMaxed() {
 }
 
 function getCampEnduranceCost() {
-  return Math.floor(5000 * Math.pow(2.40, gameState.campEnduranceLevel));
+  // Gentler growth so the last ranks (up to 100 max Stamina) are reachable: rank 35 costs ~2.4T instead of ~42Qa
+  return Math.floor(5000 * Math.pow(1.80, gameState.campEnduranceLevel));
 }
 
 function getCampRecoveryCost() {
