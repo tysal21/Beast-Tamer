@@ -179,6 +179,9 @@ const gameState = {
   // Hunter's Legacy skill tree (opens at Seal 1, never reset by Ascension)
   legacy: defaultLegacyState(),
 
+  // Fight counter per boss / guardian (kept forever; taming tries reset each run)
+  fightStats: {},
+
   lastWallTime: Date.now()
 };
 
@@ -755,6 +758,7 @@ function performAscension() {
   gameState.cooldownRemaining = 0;
 
   gameState.tamedBeasts = {};
+  BEAST_CATALOG.forEach(b => { if (gameState.fightStats && gameState.fightStats[b.id]) gameState.fightStats[b.id].tameTries = 0; });
   gameState.highestTierUnlocked = 1;
   gameState.selectedBeastIndex = 0;
   gameState.parentLevels = {
@@ -814,7 +818,7 @@ function getNextGeneratorMilestone(genId) {
   return {
     target: null,
     prevTarget: 100,
-    label: 'MAX OVERDRIVE (40x)',
+    label: 'MAX OVERDRIVE (' + GENERATOR_MILESTONES[GENERATOR_MILESTONES.length - 1].totalMult + 'x)',
     progressPct: 100
   };
 }
@@ -1052,9 +1056,14 @@ function isGeneratorUnlocked(gen) {
   return true;
 }
 
+const OVERDRIVE_COST_EASE = [1, 0.75, 0.5]; // share of normal price growth kept: below 25, 25-49, 50+
+
 function getGeneratorCost(gen) {
   const count = gameState.generators[gen.id] || 0;
-  return Math.floor(gen.baseCost * Math.pow(gen.costScale, count));
+  // Overdrive also eases price growth: past 25 owned each unit's price climbs more slowly, and slower still past 50
+  const g = gen.costScale - 1;
+  const n0 = Math.min(count, 25), n1 = Math.min(Math.max(count - 25, 0), 25), n2 = Math.max(count - 50, 0);
+  return Math.floor(gen.baseCost * Math.pow(gen.costScale, n0) * Math.pow(1 + g * OVERDRIVE_COST_EASE[1], n1) * Math.pow(1 + g * OVERDRIVE_COST_EASE[2], n2));
 }
 
 function getHunterPower() {
@@ -1424,6 +1433,25 @@ function rollRelicDrops(beast) {
 
   renderTrophyCabinet();
   saveGameToStorage();
+  return droppedAny;
+}
+
+/** Fight counter: trophy expeditions (tamed bosses), taming tries this run, and Seal guardian tries */
+function getFightStats(id) {
+  if (!gameState.fightStats) gameState.fightStats = {};
+  if (!gameState.fightStats[id]) gameState.fightStats[id] = { trophyFights: 0, trophyWins: 0, relics: 0, tameTries: 0 };
+  return gameState.fightStats[id];
+}
+
+function recordFight(beast, won, wasTrophy, gotRelic) {
+  const st = getFightStats(beast.id);
+  if (wasTrophy) {
+    st.trophyFights++;
+    if (won) st.trophyWins++;
+    if (gotRelic) st.relics++;
+  } else {
+    st.tameTries++;
+  }
 }
 
 function challengeCurrentBeast() {
@@ -1452,6 +1480,7 @@ function challengeCurrentBeast() {
     const winChance = calculateWinChance(beast);
     const roll = Math.random();
     const isAlreadyTamed = !!gameState.tamedBeasts[beast.id];
+    let gotRelic = false;
 
     if (roll <= winChance) {
       sound.playWin();
@@ -1508,7 +1537,7 @@ function challengeCurrentBeast() {
           `🏆 <strong>TROPHY EXPEDITION CONQUERED!</strong> Successfully defeated <strong>${beast.name}</strong>. Searching for relics...`,
           'win'
         );
-        rollRelicDrops(beast);
+        gotRelic = !!rollRelicDrops(beast);
       }
     } else {
       sound.playDefeat();
@@ -1525,6 +1554,8 @@ function challengeCurrentBeast() {
       );
       showToast(`Defeated! Hunter wounded (${Math.round(gameState.cooldownRemaining)}s recovery).`, 'danger');
     }
+
+    recordFight(beast, roll <= winChance, isAlreadyTamed, gotRelic);
 
     if (roll <= winChance && isTotemUnlocked()) {
       dealTotemDamage(getTotemDps() * TOTEM_CONFIG.bossWinSec);
@@ -1573,6 +1604,7 @@ function saveGameToStorage() {
       fishing: gameState.fishing,
       totem: gameState.totem,
       legacy: gameState.legacy,
+      fightStats: gameState.fightStats,
       lastSavedAt: Date.now()
     };
     localStorage.setItem('beast_tamer_savedata', JSON.stringify(data));
@@ -1653,6 +1685,7 @@ function loadGameFromStorage() {
         gameState.legacy.ranks = data.legacy.ranks || {};
         gameState.legacy.insight = data.legacy.insight || {};
       }
+      if (data.fightStats && typeof data.fightStats === 'object') gameState.fightStats = data.fightStats;
       // Saves that already tamed the Wyrm or Ascended get the Totem right away
       checkTotemUnlock();
 

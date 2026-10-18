@@ -1049,6 +1049,18 @@ function renderFrame(meatRate) {
 
   elements.encounterTierBadge.textContent = isGuardianFight ? 'Totem Seal ' + activeBeast.sealNumber : 'Tier ' + activeBeast.tier;
   elements.beastName.textContent = activeBeast.name;
+  const fsEl = document.getElementById('beast-fight-stats');
+  if (fsEl) {
+    const st = (gameState.fightStats && gameState.fightStats[activeBeast.id]) || { trophyFights: 0, trophyWins: 0, relics: 0, tameTries: 0 };
+    if (isGuardianFight) {
+      fsEl.textContent = 'Attempts on this Seal: ' + st.tameTries;
+    } else if (isAlreadyTamed) {
+      const pct = st.trophyFights > 0 ? Math.round(st.trophyWins / st.trophyFights * 100) : 0;
+      fsEl.textContent = 'Trophy expeditions: ' + st.trophyFights + ' fights \u00b7 ' + st.trophyWins + ' wins (' + pct + '%) \u00b7 ' + st.relics + ' relic' + (st.relics === 1 ? '' : 's') + ' found';
+    } else {
+      fsEl.textContent = 'Taming attempts this run: ' + st.tameTries;
+    }
+  }
   const ascGrow = getBossAscensionMult(activeBeast);
   elements.beastDesc.textContent = activeBeast.desc + (ascGrow > 1 ? ' Strengthened x' + (Math.round(ascGrow * 100) / 100) + ' by your Ascensions.' : '');
   elements.beastPowerMin.textContent = formatNumber(effMin);
@@ -1253,11 +1265,11 @@ function renderGeneratorsLadder() {
       const nextMilestone = GENERATOR_MILESTONES.find(m => count < m.count);
       const overdriveHtml = milestoneMult > 1
         ? '<span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/50 px-1.5 py-0.5 rounded-full" title="Milestone Overdrive: this generator\'s output is multiplied">' +
-            '<i class="fa-solid fa-bolt"></i>' + milestoneMult + 'x Overdrive' +
+            '<i class="fa-solid fa-bolt"></i>' + (Math.round(milestoneMult * 100) / 100) + 'x Overdrive' +
           '</span>'
         : '';
       const nextMilestoneHtml = nextMilestone
-        ? '<span class="text-[10px] text-slate-500">Next: ' + nextMilestone.totalMult + 'x at ' + nextMilestone.count + ' (' + count + '/' + nextMilestone.count + ')</span>'
+        ? '<span class="text-[10px] text-slate-500">Next: ' + (Math.round(milestoneMult * nextMilestone.mult * (hasLegacyCapstone('feast_of_plenty') ? LEGACY_CONFIG.feastMult : 1) * 100) / 100) + 'x at ' + nextMilestone.count + ' (' + count + '/' + nextMilestone.count + ')</span>'
         : '<span class="text-[10px] font-bold text-amber-400">MAX OVERDRIVE</span>';
       const disabledAttr = canAfford ? '' : 'disabled';
 

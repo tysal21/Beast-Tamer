@@ -4,9 +4,9 @@
  */
 const GENERATOR_MILESTONES = [
   { count: 10, mult: 2, totalMult: 2, label: '2x Output' },
-  { count: 25, mult: 2, totalMult: 4, label: '4x Output' },
-  { count: 50, mult: 2, totalMult: 8, label: '8x Output' },
-  { count: 100, mult: 5, totalMult: 40, label: '40x Output' }
+  { count: 25, mult: 3, totalMult: 6, label: '6x Output' },
+  { count: 50, mult: 4, totalMult: 24, label: '24x Output' },
+  { count: 100, mult: 10, totalMult: 240, label: '240x Output' }
 ];
 
 /**
