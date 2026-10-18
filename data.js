@@ -106,7 +106,7 @@ const RELIC_REGISTRY = {
     rarity: 'Common',
     dropRate: 0.35,
     desc: '+15% Meat production per second.',
-    icon: 'fa-flask-round-poison'
+    icon: 'fa-vial'
   },
   serpents_fang: {
     id: 'serpents_fang',
