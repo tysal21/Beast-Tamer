@@ -992,13 +992,17 @@ function getSparringStaminaCost() {
   return tuskpionLvl > 0 ? 3 : 4;
 }
 
+const BOAR_REGEN_PER_LEVEL = 0.04; // Boar-Hawk Keen Eye: regen speed per level
+const GRIZZLY_WOUND_PER_LEVEL = 0.05; // Grizzly-Scorpion Chitin Bulwark: wound shortening per level
+
 function getStaminaRegenInterval(withAdrenalineOverride = null) {
   let interval = gameState.staminaIntervalSec - (gameState.campRecoveryLevel * CAMP_RECOVERY_PER_RANK);
   interval = Math.max(CAMP_RECOVERY_FLOOR_SEC, interval);
 
   if (gameState.tamedBeasts['boar_hawk']) {
     const bLvl = getParentLevel('boar_hawk');
-    interval = Math.max(3.0, interval - (bLvl * 0.25));
+    // Keen Eye: +4% Stamina regen speed per level (always helps, no floor)
+    interval /= (1 + bLvl * BOAR_REGEN_PER_LEVEL);
   }
 
   if (hasRelic('eldritch_crown')) {
@@ -1027,7 +1031,8 @@ function getStaminaRegenInterval(withAdrenalineOverride = null) {
   interval /= getFishBuffMult('regen');
   interval /= (1 + getTotemBonus('regen'));
 
-  return Math.max(1.0, interval);
+  // Safety minimum only; normal play never gets near it
+  return Math.max(0.2, interval);
 }
 
 function getStaminaRegenRate(withAdrenalineOverride = null) {
@@ -1043,10 +1048,11 @@ function getWoundedDuration(beast = getSelectedFightTarget()) {
   let baseDur = (beast && beast.woundedSec) || gameState.cooldownDurationBase;
   if (gameState.tamedBeasts['grizzly_scorpion']) {
     const gLvl = getParentLevel('grizzly_scorpion');
-    baseDur = Math.max(5.0, baseDur - (gLvl * 2));
+    // Chitin Bulwark: wounds 5% shorter per level (shrinks forever, never hits a floor)
+    baseDur /= (1 + gLvl * GRIZZLY_WOUND_PER_LEVEL);
   }
   const mult = getRelicEffectMultiplier('chitin_carapace');
-  const relicDur = hasRelic('chitin_carapace') ? Math.max(3.0, baseDur / (1 + mult)) : baseDur;
+  const relicDur = hasRelic('chitin_carapace') ? baseDur / (1 + mult) : baseDur;
   return relicDur * (1 - Math.min(0.5, getFishCodexBonus('wound'))) * getLegacyReduction('thick_hide');
 }
 

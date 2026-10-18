@@ -258,7 +258,7 @@ const PARENT_DEFINITIONS = [
     tier: 2,
     nurseryBaseCost: 2000000,
     costScale: 1.4,
-    passive: 'Keen Eye (-0.25s stamina interval/lvl)',
+    passive: 'Keen Eye (+4% Stamina regen speed/lvl)',
     icon: 'fa-feather'
   },
   {
@@ -267,7 +267,7 @@ const PARENT_DEFINITIONS = [
     tier: 3,
     nurseryBaseCost: 32000000,
     costScale: 1.42,
-    passive: 'Chitin Bulwark (-2s wounded time/lvl)',
+    passive: 'Chitin Bulwark (wounds heal 5% faster/lvl)',
     icon: 'fa-shield-halved'
   },
   {

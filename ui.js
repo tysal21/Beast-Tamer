@@ -509,8 +509,8 @@ function fmtSec(x) { return (Math.round(x * 100) / 100) + 's'; }
 function getParentPassiveAt(id, lvl) {
   switch (id) {
     case 'viper_hound': return '+' + fmtPct(lvl * 10) + ' base click Meat';
-    case 'boar_hawk': return '-' + fmtSec(lvl * 0.25) + ' Stamina interval';
-    case 'grizzly_scorpion': return '-' + fmtSec(lvl * 2) + ' wound time';
+    case 'boar_hawk': return '+' + fmtPct(lvl * BOAR_REGEN_PER_LEVEL * 100) + ' Stamina regen speed';
+    case 'grizzly_scorpion': return 'Wounds heal ' + fmtPct(lvl * GRIZZLY_WOUND_PER_LEVEL * 100) + ' faster';
     case 'chimera_wyrm': return '+' + fmtPct(lvl * 10) + ' Meat/sec';
   }
   return '';
@@ -519,6 +519,7 @@ function getParentPassiveAt(id, lvl) {
 /** Passive effect of a hybrid at a given level */
 /** Explains when a parent's passive stops helping (Boar-Hawk 3s interval floor, Grizzly-Scorpion 5s wound floor) */
 function getParentFloorNote(id, lvl) {
+  return ''; // stamina and wound bonuses no longer have floors
   if (id === 'boar_hawk') {
     const base = Math.max(CAMP_RECOVERY_FLOOR_SEC, gameState.staminaIntervalSec - gameState.campRecoveryLevel * CAMP_RECOVERY_PER_RANK);
     const capLvl = Math.ceil((base - 3) / 0.25 - 1e-9);
