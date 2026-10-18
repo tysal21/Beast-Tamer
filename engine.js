@@ -1036,7 +1036,8 @@ function getWorldPowerMult() {
 }
 
 /** World 2 twist: blizzards on a fixed wall-clock cycle */
-function getBlizzardState(nowMs = Date.now()) {
+const PREVIEW_CLOCK = { offsetMs: 0 }; // preview/testing only: shifts the blizzard clock
+function getBlizzardState(nowMs = Date.now() + PREVIEW_CLOCK.offsetMs) {
   const w = getWorld();
   if (w.twist !== 'blizzard') return { active: false, secsLeft: 0, nextIn: 0 };
   const c = WORLD_CONFIG.blizzard;
@@ -1055,7 +1056,7 @@ function getTundra() {
   return gameState.tundra;
 }
 
-function getBlizzardCycle(nowMs = Date.now()) {
+function getBlizzardCycle(nowMs = Date.now() + PREVIEW_CLOCK.offsetMs) {
   return Math.floor(nowMs / 1000 / WORLD_CONFIG.blizzard.everySec);
 }
 
