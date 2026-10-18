@@ -992,13 +992,34 @@ function getSparringStaminaCost() {
   return tuskpionLvl > 0 ? 3 : 4;
 }
 
+const BOAR_REGEN_PER_LEVEL = 0.04; // Boar-Hawk Keen Eye: regen speed per level
+const GRIZZLY_WOUND_PER_LEVEL = 0.05; // Grizzly-Scorpion Chitin Bulwark: wound shortening per level
+
+/**
+ * Soft limits: the closer a time gets to its limit, the less each new bonus shaves off,
+ * so it can never actually reach the limit, but every upgrade still helps a little.
+ * (Far from the limit this changes almost nothing: 3s stays ~3.05s, 2s becomes ~2.14s.)
+ */
+const STAMINA_SOFT_MIN_SEC = 1.0; // regen can approach 1 Stamina per second, never faster
+const WOUND_SOFT_MIN_SEC = 3.0;   // a lost fight always wounds you for at least ~3s
+function softLimit(sec, min) {
+  return sec + min * Math.exp(-sec / min);
+}
+
+/** Nursery parents stop at this level */
+const NURSERY_MAX_LEVEL = 25;
+function isParentMaxed(beastId) {
+  return getParentLevel(beastId) >= NURSERY_MAX_LEVEL;
+}
+
 function getStaminaRegenInterval(withAdrenalineOverride = null) {
   let interval = gameState.staminaIntervalSec - (gameState.campRecoveryLevel * CAMP_RECOVERY_PER_RANK);
   interval = Math.max(CAMP_RECOVERY_FLOOR_SEC, interval);
 
   if (gameState.tamedBeasts['boar_hawk']) {
     const bLvl = getParentLevel('boar_hawk');
-    interval = Math.max(3.0, interval - (bLvl * 0.25));
+    // Keen Eye: +4% Stamina regen speed per level (always helps, no floor)
+    interval /= (1 + bLvl * BOAR_REGEN_PER_LEVEL);
   }
 
   if (hasRelic('eldritch_crown')) {
@@ -1027,7 +1048,7 @@ function getStaminaRegenInterval(withAdrenalineOverride = null) {
   interval /= getFishBuffMult('regen');
   interval /= (1 + getTotemBonus('regen'));
 
-  return Math.max(1.0, interval);
+  return softLimit(interval, STAMINA_SOFT_MIN_SEC);
 }
 
 function getStaminaRegenRate(withAdrenalineOverride = null) {
@@ -1043,11 +1064,12 @@ function getWoundedDuration(beast = getSelectedFightTarget()) {
   let baseDur = (beast && beast.woundedSec) || gameState.cooldownDurationBase;
   if (gameState.tamedBeasts['grizzly_scorpion']) {
     const gLvl = getParentLevel('grizzly_scorpion');
-    baseDur = Math.max(5.0, baseDur - (gLvl * 2));
+    // Chitin Bulwark: wounds 5% shorter per level (shrinks forever, never hits a floor)
+    baseDur /= (1 + gLvl * GRIZZLY_WOUND_PER_LEVEL);
   }
   const mult = getRelicEffectMultiplier('chitin_carapace');
-  const relicDur = hasRelic('chitin_carapace') ? Math.max(3.0, baseDur / (1 + mult)) : baseDur;
-  return relicDur * (1 - Math.min(0.5, getFishCodexBonus('wound'))) * getLegacyReduction('thick_hide');
+  const relicDur = hasRelic('chitin_carapace') ? baseDur / (1 + mult) : baseDur;
+  return softLimit(relicDur * (1 - Math.min(0.5, getFishCodexBonus('wound'))) * getLegacyReduction('thick_hide'), WOUND_SOFT_MIN_SEC);
 }
 
 function getBrutePowerPerLevel() {
@@ -1093,7 +1115,8 @@ function isCampRecoveryMaxed() {
 }
 
 function getCampEnduranceCost() {
-  return Math.floor(5000 * Math.pow(2.40, gameState.campEnduranceLevel));
+  // Gentler growth so the last ranks (up to 100 max Stamina) are reachable: rank 35 costs ~2.4T instead of ~42Qa
+  return Math.floor(5000 * Math.pow(1.80, gameState.campEnduranceLevel));
 }
 
 function getCampRecoveryCost() {
@@ -1744,6 +1767,14 @@ function loadGameFromStorage() {
       if (typeof data.ascensionCount === 'number' && Number.isFinite(data.ascensionCount)) gameState.ascensionCount = data.ascensionCount;
       if (data.ascensionPerks && typeof data.ascensionPerks === 'object') gameState.ascensionPerks = data.ascensionPerks;
       if (data.unlockedExpansions && typeof data.unlockedExpansions === 'object') gameState.unlockedExpansions = data.unlockedExpansions;
+      // Refund expansions that were bought before they had any content
+      ASCENSION_EXPANSIONS.forEach(exp => {
+        if (exp.comingSoon && gameState.unlockedExpansions && gameState.unlockedExpansions[exp.id]) {
+          delete gameState.unlockedExpansions[exp.id];
+          gameState.bloodstones += exp.cost;
+          gameState.pendingNotice = 'Refunded ' + exp.cost + ' Bloodstones for ' + exp.name + ' (not built yet).';
+        }
+      });
       if (data.fishing && typeof data.fishing === 'object') {
         const fresh = defaultFishingState();
         gameState.fishing = Object.assign(fresh, data.fishing);

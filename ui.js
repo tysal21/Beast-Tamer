@@ -272,6 +272,7 @@ function buyAscensionExpansion(expId) {
   if (!exp) return;
   if (!gameState.unlockedExpansions) gameState.unlockedExpansions = {};
   if (gameState.unlockedExpansions[exp.id]) return;
+  if (exp.comingSoon) return;
   if (gameState.ascensionCount < exp.reqAscensions) return;
   if (gameState.bloodstones < exp.cost) return;
 
@@ -337,6 +338,8 @@ function renderAscensionAltar() {
         footer = exp.id === 'primal_fishing'
           ? '<button class="btn-open-fishing w-full py-2 px-3 bg-cyan-800 hover:bg-cyan-700 text-white text-xs font-semibold rounded-lg font-mono flex items-center justify-center gap-1.5 cursor-pointer"><i class="fa-solid fa-fish-fins"></i><span>UNLOCKED · Open Fishing Dock</span></button>'
           : '<div class="text-center text-[11px] font-mono font-bold text-cyan-300 py-1.5 border border-cyan-700/50 rounded-lg bg-cyan-950/40">UNLOCKED · Content coming soon</div>';
+      } else if (exp.comingSoon) {
+        footer = '<div class="text-center text-[11px] font-mono text-slate-400 py-1.5 border border-dashed border-slate-700 rounded-lg"><i class="fa-solid fa-hourglass-half mr-1"></i>Coming in a future update</div>';
       } else if (!meetsReq) {
         footer = '<div class="text-center text-[11px] font-mono text-slate-400 py-1.5 border border-slate-700 rounded-lg">' +
           '<i class="fa-solid fa-lock mr-1"></i>Requires ' + exp.reqAscensions + ' Ascension' + (exp.reqAscensions === 1 ? '' : 's') +
@@ -447,6 +450,7 @@ window.nurtureParent = function(rawBeastId) {
   }
 
   const currentLvl = getParentLevel(beastId);
+  if (isParentMaxed(beastId)) { showToast('Already at the max Nursery level (' + NURSERY_MAX_LEVEL + ').', 'info'); return; }
   const cost = getParentLevelCost(beastId);
 
   if (gameState.meat < cost) {
@@ -506,8 +510,8 @@ function fmtSec(x) { return (Math.round(x * 100) / 100) + 's'; }
 function getParentPassiveAt(id, lvl) {
   switch (id) {
     case 'viper_hound': return '+' + fmtPct(lvl * 10) + ' base click Meat';
-    case 'boar_hawk': return '-' + fmtSec(lvl * 0.25) + ' Stamina interval';
-    case 'grizzly_scorpion': return '-' + fmtSec(lvl * 2) + ' wound time';
+    case 'boar_hawk': return '+' + fmtPct(lvl * BOAR_REGEN_PER_LEVEL * 100) + ' Stamina regen speed';
+    case 'grizzly_scorpion': return 'Wounds heal ' + fmtPct(lvl * GRIZZLY_WOUND_PER_LEVEL * 100) + ' faster';
     case 'chimera_wyrm': return '+' + fmtPct(lvl * 10) + ' Meat/sec';
   }
   return '';
@@ -516,6 +520,7 @@ function getParentPassiveAt(id, lvl) {
 /** Passive effect of a hybrid at a given level */
 /** Explains when a parent's passive stops helping (Boar-Hawk 3s interval floor, Grizzly-Scorpion 5s wound floor) */
 function getParentFloorNote(id, lvl) {
+  return ''; // stamina and wound bonuses no longer have floors
   if (id === 'boar_hawk') {
     const base = Math.max(CAMP_RECOVERY_FLOOR_SEC, gameState.staminaIntervalSec - gameState.campRecoveryLevel * CAMP_RECOVERY_PER_RANK);
     const capLvl = Math.ceil((base - 3) / 0.25 - 1e-9);
@@ -616,7 +621,11 @@ function renderForge() {
       const rawAt = l => Math.floor((beastDef ? beastDef.rewardPower : 0) * (1 + (l - 1) * 0.15));
       const bpMult = getBeastMasteryMultiplier() * getLegacyMult('beast_bond');
       const cpGain = combatPowerDelta(() => { gameState.parentLevels[parent.id] = lvl + 1; }, () => { gameState.parentLevels[parent.id] = lvl; });
-      const parentStats = forgeStatsHtml(rawAt(lvl) * bpMult, rawAt(lvl + 1) * bpMult, cpGain,
+      const pMaxed = isParentMaxed(parent.id);
+      const parentStats = pMaxed
+        ? '<div class="mt-1.5 text-[11px] font-mono"><div class="text-slate-300">Beast Power: <span class="text-white font-bold">' + formatNumber(rawAt(lvl) * bpMult) + '</span></div>' +
+          '<div class="text-emerald-300">Lvl ' + lvl + ': ' + getParentPassiveAt(parent.id, lvl) + '</div><div class="text-amber-300 font-bold">Max level reached</div></div>'
+        : forgeStatsHtml(rawAt(lvl) * bpMult, rawAt(lvl + 1) * bpMult, cpGain,
         getParentPassiveAt(parent.id, lvl), getParentPassiveAt(parent.id, lvl + 1), lvl, getParentFloorNote(parent.id, lvl));
 
       row.className = 'bg-primal-800/80 border border-primal-700 rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3';
@@ -628,19 +637,20 @@ function renderForge() {
           '<div>' +
             '<div class="flex items-center gap-2">' +
               '<span class="font-bold text-slate-100 text-sm">' + parent.name + '</span>' +
-              '<span class="text-xs bg-purple-950 text-purple-300 border border-purple-700/60 font-mono px-2 py-0.2 rounded-full font-bold">Lvl ' + lvl + '</span>' +
+              '<span class="text-xs bg-purple-950 text-purple-300 border border-purple-700/60 font-mono px-2 py-0.2 rounded-full font-bold">Lvl ' + lvl + '/' + NURSERY_MAX_LEVEL + '</span>' +
               '<span class="text-[10px] font-mono px-1.5 py-0.2 rounded ' + readyClass + '">' + readyLabel + '</span>' +
             '</div>' +
             '<div class="text-[11px] text-slate-400 mt-0.5">' + parent.passive.split(' (')[0] + '</div>' +
             parentStats +
           '</div>' +
         '</div>' +
+        (pMaxed ? '<div class="w-full sm:w-auto px-3.5 py-2 text-xs font-mono font-bold text-amber-300 border border-amber-600/60 bg-amber-950/40 rounded-lg text-center">MAX Lvl ' + NURSERY_MAX_LEVEL + '</div>' :
         '<button data-beast-id="' + parent.id + '" data-parent-id="' + parent.id + '" class="nurture-btn btn-level-parent w-full sm:w-auto px-3.5 py-2 bg-gradient-to-r from-purple-800 to-purple-700 hover:from-purple-700 hover:to-purple-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg border border-purple-500/50 flex items-center justify-center gap-2 font-mono cursor-pointer" ' + disabledAttr + '>' +
           '<span>Nurture (Lvl ' + (lvl + 1) + ')</span>' +
           '<span class="text-amber-300 flex items-center gap-1 font-bold">' +
             '<i class="fa-solid fa-drumstick-bite text-[11px]"></i> ' + formatNumber(cost) +
           '</span>' +
-        '</button>';
+        '</button>');
     } else {
       row.className = 'bg-primal-800/40 border border-dashed border-primal-700/60 rounded-xl p-3 flex items-center justify-between opacity-50 grayscale';
       row.innerHTML =
@@ -2812,6 +2822,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   gameState.lastWallTime = Date.now();
   logCombatMessage('Camp initialized. Ready for primal hunts and trophy expeditions.', 'default');
+  if (gameState.pendingNotice) { logCombatMessage('💎 ' + gameState.pendingNotice, 'relic'); showToast(gameState.pendingNotice, 'success', true); delete gameState.pendingNotice; saveGameToStorage(); }
 
   if (lastSavedAt) {
     const offlineSec = Math.max(0, (Date.now() - lastSavedAt) / 1000);
