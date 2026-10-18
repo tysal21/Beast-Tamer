@@ -1199,6 +1199,7 @@ function renderFrame(meatRate) {
     };
     elements.beastPortraitImg.src = activeBeast.image;
   }
+  elements.beastPortraitImg.style.filter = activeBeast.imageFilter || '';
 
   if (isApexFight) {
     elements.beastStatusRibbon.textContent = 'APEX LADDER';
@@ -2890,6 +2891,331 @@ function updateTrophyLive() {
     updateTrophyLive();
     saveGameToStorage();
   });
+})();
+
+/**
+ * ================= BATTLE ARENA: fight presentation, results and reveals =================
+ * The engine rolls the fight the moment you click; the arena only acts out that result.
+ */
+const arena = {
+  overlay: document.getElementById('arena-overlay'),
+  card: document.getElementById('arena-card'),
+  stage: document.getElementById('arena-stage'),
+  tier: document.getElementById('arena-tier'),
+  title: document.getElementById('arena-title'),
+  skip: document.getElementById('arena-skip'),
+  hunter: document.getElementById('arena-hunter'),
+  beast: document.getElementById('arena-beast'),
+  hunterHp: document.getElementById('arena-hunter-hp'),
+  beastHp: document.getElementById('arena-beast-hp'),
+  hunterPower: document.getElementById('arena-hunter-power'),
+  beastPower: document.getElementById('arena-beast-power'),
+  beastImg: document.getElementById('arena-beast-img'),
+  beastName: document.getElementById('arena-beast-name'),
+  dialWin: document.getElementById('arena-dial-win'),
+  needle: document.getElementById('arena-needle'),
+  odds: document.getElementById('arena-odds'),
+  callout: document.getElementById('arena-callout'),
+  result: document.getElementById('arena-result'),
+  resultArt: document.getElementById('arena-result-art'),
+  banner: document.getElementById('arena-result-banner'),
+  sub: document.getElementById('arena-result-sub'),
+  roll: document.getElementById('arena-result-roll'),
+  rewards: document.getElementById('arena-result-rewards'),
+  cont: document.getElementById('arena-continue'),
+  timers: [],
+  raf: null,
+  autoClose: null,
+  active: false
+};
+
+const FIGHT_ANIM_MS = { full: 5200, quick: 1300, skip: 0 };
+
+function getFightAnimMode() {
+  return ['full', 'quick', 'skip'].includes(gameState.fightAnim) ? gameState.fightAnim : 'full';
+}
+
+/** A dial value v (0..1) as a point on the half circle; 0 = far left */
+function dialPoint(v, r) {
+  const a = Math.PI * (1 - v);
+  return { x: 60 + r * Math.cos(a), y: 60 - r * Math.sin(a) };
+}
+
+function setDial(winChance) {
+  const p = dialPoint(Math.max(0.0001, Math.min(0.9999, winChance)), 50);
+  arena.dialWin.setAttribute('d', 'M10 60 A50 50 0 0 1 ' + p.x.toFixed(2) + ' ' + p.y.toFixed(2));
+}
+
+function setNeedle(v) {
+  const p = dialPoint(Math.max(0, Math.min(1, v)), 44);
+  arena.needle.setAttribute('x2', p.x.toFixed(2));
+  arena.needle.setAttribute('y2', p.y.toFixed(2));
+}
+
+function applyBeastImage(img, beast) {
+  img.onerror = () => { img.onerror = null; if (beast.fallbackImage) img.src = beast.fallbackImage; };
+  img.src = beast.image;
+  img.alt = beast.name;
+  img.style.filter = beast.imageFilter || '';
+}
+
+function clearArenaTimers() {
+  arena.timers.forEach(t => clearTimeout(t));
+  arena.timers = [];
+  if (arena.raf) cancelAnimationFrame(arena.raf);
+  arena.raf = null;
+  if (arena.autoClose) clearTimeout(arena.autoClose);
+  arena.autoClose = null;
+}
+
+function pulse(el, cls) {
+  el.classList.remove(cls);
+  void el.offsetWidth;
+  el.classList.add(cls);
+}
+
+function showCallout(text, color) {
+  arena.callout.textContent = text;
+  arena.callout.className = 'h-7 text-center font-cinzel font-bold text-lg callout-pop ' + (color || 'text-amber-300');
+}
+
+/**
+ * Build a fight script: a list of blows that ends with the right winner.
+ * Close rolls stay close to the end; long-shot wins come back from the brink.
+ */
+function buildFightScript(win, winChance, roll, blows) {
+  const margin = Math.abs(roll - winChance);
+  const close = margin < 0.08;
+  const longShot = win && winChance < 0.3;
+  let hp = { hunter: 100, beast: 100 };
+  const script = [];
+  for (let i = 0; i < blows; i++) {
+    const last = i === blows - 1;
+    const late = i >= blows - 2;
+    let attacker;
+    if (last) attacker = win ? 'hunter' : 'beast';
+    else if (longShot && i < blows / 2) attacker = 'beast';
+    else if (longShot) attacker = 'hunter';
+    else attacker = Math.random() < (win ? 0.55 : 0.45) ? 'hunter' : 'beast';
+    const target = attacker === 'hunter' ? 'beast' : 'hunter';
+    let dmg;
+    if (last) dmg = hp[target];
+    else {
+      const floor = close || late ? 12 : 5;
+      const room = Math.max(0, hp[target] - floor);
+      const share = longShot && attacker === 'beast' ? 0.45 : (close ? 0.3 : 0.38);
+      dmg = Math.min(room, Math.round((0.6 + Math.random() * 0.8) * share * hp[target]));
+    }
+    hp[target] = Math.max(0, hp[target] - dmg);
+    script.push({ attacker, target, hpAfter: hp[target], big: dmg >= 30 || last });
+  }
+  return script;
+}
+
+/** Called by the engine when a fight starts. Returns how long to wait before resolving it (ms). */
+function fightPresenterStart(beast, winChance, roll) {
+  const mode = getFightAnimMode();
+  const ms = FIGHT_ANIM_MS[mode];
+  if (!arena.overlay || ms <= 0) return 0;
+  clearArenaTimers();
+  arena.active = true;
+  const win = roll <= winChance;
+  const isApex = !!beast.isApex, isGuardian = !!beast.isGuardian;
+  arena.tier.textContent = isGuardian ? 'Totem Seal ' + beast.sealNumber : (isApex ? 'Apex Tier ' : 'Tier ') + beast.tier;
+  arena.title.textContent = beast.name;
+  arena.beastName.textContent = beast.name;
+  applyBeastImage(arena.beastImg, beast);
+  const b = getEffectiveBossBracket(beast);
+  arena.hunterPower.textContent = 'Power ' + formatNumber(getCombatPowerVs(beast));
+  arena.beastPower.textContent = 'Power ' + formatNumber(b.min) + ' - ' + formatNumber(b.max);
+  arena.hunterHp.style.width = '100%';
+  arena.beastHp.style.width = '100%';
+  setDial(winChance);
+  arena.odds.textContent = 'Odds ' + (winChance * 100).toFixed(1) + '%';
+  setNeedle(0.5);
+  arena.stage.classList.remove('hidden');
+  arena.callout.textContent = '';
+  arena.result.classList.add('hidden');
+  arena.skip.classList.remove('hidden');
+  arena.overlay.classList.remove('hidden');
+
+  // Blows
+  const blows = mode === 'full' ? 7 : 2;
+  const script = buildFightScript(win, winChance, roll, blows);
+  const start = 350, span = ms - 700;
+  script.forEach((s, i) => {
+    arena.timers.push(setTimeout(() => {
+      const atk = s.attacker === 'hunter' ? arena.hunter : arena.beast;
+      const def = s.target === 'hunter' ? arena.hunter : arena.beast;
+      atk.style.setProperty('--lunge', s.attacker === 'hunter' ? '22px' : '-22px');
+      pulse(atk.querySelector('.arena-fighter'), 'arena-lunge');
+      pulse(def.querySelector('.arena-fighter'), 'arena-hit');
+      (s.target === 'hunter' ? arena.hunterHp : arena.beastHp).style.width = s.hpAfter + '%';
+      if (s.big) pulse(arena.card, 'arena-shake');
+      sound.playTone(s.attacker === 'hunter' ? 300 : 150, s.big ? 'sawtooth' : 'square', 0.12, s.big ? 0.12 : 0.07);
+    }, start + span * (i + 1) / (blows + 0.5)));
+  });
+
+  // Needle: wanders, then creeps toward the real roll, lingering near the edge on close calls
+  const t0 = performance.now();
+  const close = Math.abs(roll - winChance) < 0.08;
+  const wobble = Math.random() * 6.28;
+  const step = (now) => {
+    const t = Math.min(1, (now - t0) / ms);
+    let v;
+    if (t < 0.55) v = 0.5 + 0.42 * Math.sin(t * 14 + wobble) * (1 - t);
+    else {
+      const k = (t - 0.55) / 0.45;
+      const from = 0.5 + 0.42 * Math.sin(0.55 * 14 + wobble) * 0.45;
+      const edge = close ? winChance + (roll > winChance ? 0.01 : -0.01) : roll;
+      v = k < 0.75 ? from + (edge - from) * (k / 0.75) : edge + (roll - edge) * ((k - 0.75) / 0.25);
+    }
+    setNeedle(v);
+    if (t < 1 && arena.active) arena.raf = requestAnimationFrame(step);
+  };
+  arena.raf = requestAnimationFrame(step);
+  if (close && mode === 'full') arena.timers.push(setTimeout(() => showCallout('It could go either way...', 'text-orange-300'), ms * 0.6));
+  return ms;
+}
+
+function rewardChip(icon, text, color) {
+  return '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono border ' + (color || 'border-amber-600/50 bg-amber-950/40 text-amber-200') + '"><i class="fa-solid ' + icon + '"></i>' + text + '</span>';
+}
+
+function confettiBurst() {
+  const colors = ['#f59e0b', '#22c55e', '#e879f9', '#38bdf8', '#f43f5e'];
+  for (let i = 0; i < 40; i++) {
+    const d = document.createElement('div');
+    d.className = 'confetti-bit';
+    d.style.left = Math.random() * 100 + '%';
+    d.style.background = colors[i % colors.length];
+    d.style.animationDelay = (Math.random() * 0.4) + 's';
+    arena.card.appendChild(d);
+    setTimeout(() => d.remove(), 2400);
+  }
+}
+
+/** Called by the engine after a fight resolves, with what changed */
+function fightPresenterEnd(s) {
+  if (!arena.overlay) return;
+  const beast = s.beast, win = s.win;
+  const relicId = s.after.relics.find(id => !s.before.relics.includes(id));
+  const relic = relicId ? RELIC_REGISTRY[relicId] : null;
+  const firstTame = win && !beast.isApex && !beast.isGuardian && !s.before.tamed.includes(beast.id);
+  const sealBroken = win && beast.isGuardian;
+  const apexWin = win && beast.isApex;
+  const newBest = s.after.bestApex > s.before.bestApex;
+  const bigMoment = firstTame || sealBroken || newBest || !!relic || (win && s.winChance < 0.25);
+  const mode = getFightAnimMode();
+  if (!arena.active && !(bigMoment && mode === 'skip')) return; // nothing to show
+  if (!arena.active) {
+    // Skip mode: still celebrate the big moments
+    arena.active = true;
+    arena.tier.textContent = beast.isGuardian ? 'Totem Seal ' + beast.sealNumber : (beast.isApex ? 'Apex Tier ' : 'Tier ') + beast.tier;
+    arena.title.textContent = beast.name;
+    arena.overlay.classList.remove('hidden');
+  }
+  clearArenaTimers();
+  setNeedle(s.roll);
+  arena.skip.classList.add('hidden');
+  arena.stage.classList.add('hidden');
+  arena.callout.textContent = '';
+
+  // Art: the beast (or the relic) front and center
+  if (relic) {
+    arena.resultArt.innerHTML = '<div class="w-28 h-28 sm:w-36 sm:h-36 mx-auto rounded-2xl bg-amber-950/80 border-2 border-amber-400 flex items-center justify-center text-amber-300 text-6xl reveal-pop reveal-glow"><i class="fa-solid ' + relic.icon + '"></i></div>';
+  } else {
+    arena.resultArt.innerHTML = '<div class="monster-portrait-frame mx-auto !w-44 !h-44 sm:!w-64 sm:!h-64 reveal-pop ' + (win ? 'reveal-glow' : 'opacity-60 grayscale') + '"><img class="monster-portrait-img" alt=""></div>';
+    applyBeastImage(arena.resultArt.querySelector('img'), beast);
+  }
+
+  // Banner + subtitle
+  let banner, color, sub;
+  if (!win) { banner = 'DEFEATED'; color = 'text-red-500'; sub = 'The ' + beast.name + ' drove you off. Wounded for ' + Math.round(s.after.wound) + 's.'; }
+  else if (sealBroken) { banner = 'SEAL ' + beast.sealNumber + ' BROKEN!'; color = 'text-rose-300'; sub = 'The ' + beast.name + ' falls and the Totem opens deeper.'; }
+  else if (apexWin) { banner = 'APEX TAMED!'; color = 'text-fuchsia-300'; sub = beast.name + ' joins your pack.'; }
+  else if (firstTame) { banner = 'TAMED!'; color = 'text-emerald-300'; sub = beast.name + ' bonds with you.'; }
+  else if (relic) { banner = (relic.rarity === 'Legendary' ? 'LEGENDARY ' : '') + 'RELIC FOUND!'; color = 'text-amber-300'; sub = relic.name + ': ' + relic.desc; }
+  else { banner = 'TROPHY WON'; color = 'text-amber-300'; sub = 'No relic this time. Refight to roll again.'; }
+  arena.banner.textContent = banner;
+  arena.banner.className = 'font-cinzel font-bold text-3xl sm:text-4xl callout-pop ' + color;
+  arena.sub.textContent = sub;
+
+  // The honest roll, plus near-miss / long-shot flavor
+  const need = (s.winChance * 100).toFixed(1), got = (s.roll * 100).toFixed(1);
+  let rollTxt = 'Rolled ' + got + ' · needed ' + need + ' or less';
+  if (!win && s.roll - s.winChance < 0.05) rollTxt += ' · SO CLOSE!';
+  if (win && s.winChance < 0.25) rollTxt += ' · LONG SHOT!';
+  arena.roll.textContent = rollTxt;
+
+  // Rewards
+  const chips = [];
+  if (firstTame) {
+    chips.push(rewardChip('fa-paw', '+' + formatNumber(beast.rewardPower) + ' Beast Power', 'border-emerald-600/50 bg-emerald-950/40 text-emerald-200'));
+    if (s.after.highestTier > s.before.highestTier) {
+      const nb = BEAST_CATALOG.find(b => b.tier === s.after.highestTier);
+      if (nb) chips.push(rewardChip('fa-unlock', 'Tier ' + nb.tier + ' unlocked: ' + nb.name));
+    }
+    if (beast.id === 'chimera_wyrm') chips.push(rewardChip('fa-crown', 'Apex Ladder and Ascension open', 'border-fuchsia-600/50 bg-fuchsia-950/40 text-fuchsia-200'));
+  }
+  if (apexWin) {
+    chips.push(rewardChip('fa-paw', '+' + formatNumber(beast.rewardPower) + ' Beast Power', 'border-emerald-600/50 bg-emerald-950/40 text-emerald-200'));
+    chips.push(rewardChip('fa-gem', 'Bloodstones x' + getApexStoneMult().toFixed(2), 'border-rose-600/50 bg-rose-950/40 text-rose-200'));
+    if (s.after.fangs > s.before.fangs) chips.push(rewardChip('fa-tooth', '+' + (s.after.fangs - s.before.fangs) + ' Apex Fangs', 'border-fuchsia-600/50 bg-fuchsia-950/40 text-fuchsia-200'));
+    if (newBest) chips.push(rewardChip('fa-medal', 'New deepest Apex!'));
+  }
+  if (sealBroken) {
+    chips.push(rewardChip('fa-gem', '+' + formatNumber(s.after.stones - s.before.stones) + ' Bloodstones', 'border-rose-600/50 bg-rose-950/40 text-rose-200'));
+    chips.push(rewardChip('fa-hand-fist', '+' + Math.round(TOTEM_CONFIG.sealPowerBonus * 100) + '% Combat Power'));
+  }
+  if (s.after.shards > s.before.shards) chips.push(rewardChip('fa-shapes', '+' + formatNumber(s.after.shards - s.before.shards) + ' Totem Shards'));
+  if (relic && (firstTame || apexWin || sealBroken)) chips.push(rewardChip('fa-trophy', relic.name));
+  arena.rewards.innerHTML = chips.join('');
+  arena.result.classList.remove('hidden');
+
+  if (win) { sound.playWin(); if (bigMoment) confettiBurst(); } else sound.playDefeat();
+  // Quick fights close themselves unless it's a moment worth savoring
+  if (mode !== 'full' && !bigMoment) arena.autoClose = setTimeout(closeArena, 1600);
+}
+
+function closeArena() {
+  clearArenaTimers();
+  arena.active = false;
+  if (arena.overlay) arena.overlay.classList.add('hidden');
+}
+
+(function initArena() {
+  if (!arena.overlay) return;
+  arena.skip.addEventListener('click', () => {
+    clearArenaTimers();
+    finishPendingFightNow();
+  });
+  arena.cont.addEventListener('click', closeArena);
+  arena.overlay.addEventListener('click', e => { if (e.target === arena.overlay && !arena.result.classList.contains('hidden')) closeArena(); });
+  document.addEventListener('keydown', e => {
+    if (!arena.active) return;
+    if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+      if (!arena.result.classList.contains('hidden')) { e.preventDefault(); closeArena(); }
+      else if (e.key === 'Escape') { clearArenaTimers(); finishPendingFightNow(); }
+    }
+  });
+  const speed = document.getElementById('fight-anim-select');
+  if (speed) {
+    speed.value = getFightAnimMode();
+    speed.addEventListener('change', () => { gameState.fightAnim = speed.value; saveGameToStorage(); });
+  }
+  // Click the Hunt portrait to see the beast up close
+  const box = document.getElementById('beast-avatar-box');
+  const lb = document.getElementById('portrait-lightbox');
+  if (box && lb) {
+    box.addEventListener('click', () => {
+      const beast = getSelectedFightTarget();
+      applyBeastImage(document.getElementById('lightbox-img'), beast);
+      document.getElementById('lightbox-name').textContent = beast.name;
+      lb.classList.remove('hidden');
+    });
+    lb.addEventListener('click', () => lb.classList.add('hidden'));
+  }
 })();
 
 setInterval(saveGameToStorage, 10000);

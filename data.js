@@ -700,6 +700,9 @@ const TOTEM_LAYER_BONUSES = [
 
 /** Guardian / depth titles, one per lap of four Seals. After the last: Eternal II, III, ... */
 const TOTEM_TITLES = ['Primordial', 'Ancient', 'Elder', 'Mythic', 'Eternal'];
+// Color treatments so titled bosses look different from the originals until they get their own art
+const TOTEM_TITLE_FILTERS = ['sepia(0.5) hue-rotate(-15deg) saturate(1.3)', 'grayscale(0.4) contrast(1.2) brightness(1.1)', 'hue-rotate(160deg) saturate(1.3)', 'hue-rotate(260deg) saturate(1.6) brightness(1.1)', 'invert(0.15) hue-rotate(40deg) saturate(2) contrast(1.2)'];
+const APEX_TITLE_FILTERS = ['brightness(0.85) saturate(1.6) hue-rotate(-20deg)', 'hue-rotate(35deg) saturate(1.4)', 'hue-rotate(90deg) saturate(1.3)', 'hue-rotate(140deg) saturate(1.6)', 'hue-rotate(-45deg) saturate(2.2) contrast(1.25)', 'hue-rotate(200deg) brightness(0.8) saturate(1.4)', 'hue-rotate(275deg) saturate(1.8) contrast(1.15)', 'grayscale(0.6) contrast(1.5) brightness(1.15)'];
 
 /** Features that future updates attach to Seals (shown as "coming soon" until built) */
 /**

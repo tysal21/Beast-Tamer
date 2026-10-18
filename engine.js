@@ -522,6 +522,7 @@ function getTotemGuardian() {
     baseId: base.id,
     tier: base.tier,
     name: getTotemTitle(k) + ' ' + base.name,
+    imageFilter: TOTEM_TITLE_FILTERS[Math.min(Math.floor((k - 1) / 4), TOTEM_TITLE_FILTERS.length - 1)],
     image: base.image,
     fallbackImage: base.fallbackImage,
     minPower: min,
@@ -872,6 +873,7 @@ function getApexBoss() {
     maxPower: min * APEX_CONFIG.maxMult,
     rewardPower: getApexReward(k),
     accentColor: base.accentColor,
+    imageFilter: APEX_TITLE_FILTERS[Math.min(lap, APEX_TITLE_FILTERS.length - 1)],
     desc: 'Apex Tier ' + (4 + k) + '. Every Apex you tame this run adds Beast Power and raises your Ascension Bloodstones. The ladder resets when you Ascend.',
     relics: [],
     staminaCost: APEX_CONFIG.stamina,
@@ -1751,10 +1753,17 @@ function challengeCurrentBeast() {
   gameState.isBattling = true;
   sound.playTone(260, 'square', 0.2, 0.1);
 
-  setTimeout(() => {
+  // The fight is decided now; the arena (if any) just acts it out before we resolve it
+  const winChance = calculateWinChance(beast);
+  const roll = Math.random();
+  const before = getFightSnapshot();
+  const delay = (typeof fightPresenterStart === 'function') ? fightPresenterStart(beast, winChance, roll) : 1500;
+  let resolved = false;
+  const resolveFight = () => {
+    if (resolved) return;
+    resolved = true;
+    pendingFight = null;
     gameState.isBattling = false;
-    const winChance = calculateWinChance(beast);
-    const roll = Math.random();
     const isAlreadyTamed = !!gameState.tamedBeasts[beast.id];
     let gotRelic = false;
 
@@ -1843,7 +1852,34 @@ function challengeCurrentBeast() {
     }
 
     saveGameToStorage();
-  }, 1500);
+    if (typeof fightPresenterEnd === 'function') {
+      fightPresenterEnd({ beast, win: roll <= winChance, roll, winChance, before, after: Object.assign(getFightSnapshot(), { wound: gameState.cooldownRemaining || 0 }) });
+    }
+  };
+  const timer = setTimeout(resolveFight, delay);
+  if (!resolved) pendingFight = { timer, resolve: resolveFight };
+}
+
+let pendingFight = null;
+
+/** Skip button: resolve the fight that is playing right now */
+function finishPendingFightNow() {
+  if (!pendingFight) return;
+  clearTimeout(pendingFight.timer);
+  pendingFight.resolve();
+}
+
+/** What a fight can change, so the results screen can show it */
+function getFightSnapshot() {
+  return {
+    tamed: Object.keys(gameState.tamedBeasts),
+    relics: Object.keys(gameState.ownedRelics),
+    highestTier: gameState.highestTierUnlocked,
+    bestApex: gameState.bestApexDepth || 0,
+    fangs: gameState.trophy ? gameState.trophy.fangs : 0,
+    shards: gameState.totem ? gameState.totem.shards : 0,
+    stones: gameState.bloodstones
+  };
 }
 
 /**
@@ -1889,6 +1925,7 @@ function saveGameToStorage() {
       bestApexDepth: gameState.bestApexDepth || 0,
       legacy: gameState.legacy,
       fightStats: gameState.fightStats,
+      fightAnim: gameState.fightAnim || 'full',
       genBuyMode: gameState.genBuyMode,
       lastSavedAt: Date.now()
     };
@@ -1980,6 +2017,7 @@ function loadGameFromStorage() {
         gameState.legacy.insight = data.legacy.insight || {};
       }
       if (data.fightStats && typeof data.fightStats === 'object') gameState.fightStats = data.fightStats;
+      if (['full', 'quick', 'skip'].includes(data.fightAnim)) gameState.fightAnim = data.fightAnim;
       if (typeof data.apexDepth === 'number') gameState.apexDepth = data.apexDepth;
       if (data.trophy && typeof data.trophy === 'object') gameState.trophy = { fangs: data.trophy.fangs || 0, level: data.trophy.level || 0 };
       if (typeof data.bestApexDepth === 'number') gameState.bestApexDepth = data.bestApexDepth;

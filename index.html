@@ -515,6 +515,12 @@
                   <span class="text-amber-300 font-bold" id="btn-chance-pill">Odds: 0.0%</span>
                 </div>
               </button>
+              <div class="flex items-center justify-end gap-2 mt-1.5 text-[11px] text-slate-400">
+                <label for="fight-anim-select"><i class="fa-solid fa-film mr-1"></i>Fight animation</label>
+                <select id="fight-anim-select" class="bg-primal-900 border border-primal-700 rounded px-1.5 py-0.5 text-slate-200 font-mono">
+                  <option value="full">Full</option><option value="quick">Quick</option><option value="skip">Skip (big moments only)</option>
+                </select>
+              </div>
 
               <!-- Cooldown indicator -->
               <div id="cooldown-container" class="hidden mt-2">
@@ -1175,6 +1181,67 @@
           <span id="save-import-msg" class="text-[11px] font-mono"></span>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ================= BATTLE ARENA (fight presentation + reveals) ================= -->
+  <div id="arena-overlay" class="hidden fixed inset-0 z-[60] bg-black/85 backdrop-blur-sm flex items-center justify-center p-3">
+    <div id="arena-card" class="relative w-full max-w-3xl bg-gradient-to-b from-primal-850 to-primal-900 border border-amber-700/50 rounded-2xl shadow-2xl overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-2.5 border-b border-primal-700/70">
+        <div class="min-w-0">
+          <div id="arena-tier" class="text-[10px] font-mono uppercase tracking-wider text-amber-400">Tier 1</div>
+          <div id="arena-title" class="font-cinzel font-bold text-white text-lg truncate">Viper-Hound</div>
+        </div>
+        <button id="arena-skip" class="shrink-0 px-3 py-1.5 text-xs font-mono rounded-lg border border-primal-600 text-slate-300 hover:text-white hover:border-amber-500 cursor-pointer">Skip <i class="fa-solid fa-forward ml-1"></i></button>
+      </div>
+
+      <!-- Fight stage -->
+      <div id="arena-stage" class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-6 px-3 sm:px-8 py-5">
+        <div id="arena-hunter" class="flex flex-col items-center gap-2">
+          <div class="arena-fighter w-24 h-24 sm:w-40 sm:h-40 rounded-2xl bg-gradient-to-b from-amber-900/50 to-primal-900 border-2 border-amber-600/60 flex items-center justify-center text-amber-300 text-5xl sm:text-7xl"><i class="fa-solid fa-user-shield"></i></div>
+          <div class="text-xs font-bold text-slate-200">You</div>
+          <div class="w-full h-3 rounded-full bg-primal-900 border border-primal-700 overflow-hidden"><div id="arena-hunter-hp" class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-[width] duration-200" style="width:100%"></div></div>
+          <div id="arena-hunter-power" class="text-[10px] font-mono text-slate-400">Power 0</div>
+        </div>
+
+        <div class="flex flex-col items-center gap-1">
+          <svg id="arena-dial" viewBox="0 0 120 70" class="w-24 sm:w-36">
+            <path d="M10 60 A50 50 0 0 1 110 60" fill="none" stroke="#3b2525" stroke-width="10" stroke-linecap="round"/>
+            <path id="arena-dial-win" d="M10 60 A50 50 0 0 1 10 60" fill="none" stroke="#22c55e" stroke-width="10" stroke-linecap="round"/>
+            <line id="arena-needle" x1="60" y1="60" x2="60" y2="16" stroke="#fde68a" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="60" cy="60" r="5" fill="#fde68a"/>
+          </svg>
+          <div id="arena-odds" class="text-xs font-mono font-bold text-amber-300">Odds 0%</div>
+          <div class="text-[9px] uppercase tracking-wider text-slate-500">green = win</div>
+        </div>
+
+        <div id="arena-beast" class="flex flex-col items-center gap-2">
+          <div class="arena-fighter monster-portrait-frame !w-24 !h-24 sm:!w-40 sm:!h-40"><img id="arena-beast-img" class="monster-portrait-img" alt=""></div>
+          <div id="arena-beast-name" class="text-xs font-bold text-slate-200 text-center">Beast</div>
+          <div class="w-full h-3 rounded-full bg-primal-900 border border-primal-700 overflow-hidden"><div id="arena-beast-hp" class="h-full bg-gradient-to-r from-rose-700 to-red-500 transition-[width] duration-200" style="width:100%"></div></div>
+          <div id="arena-beast-power" class="text-[10px] font-mono text-slate-400">Power 0</div>
+        </div>
+      </div>
+      <div id="arena-callout" class="h-7 text-center font-cinzel font-bold text-amber-300 text-lg"></div>
+
+      <!-- Result / reveal -->
+      <div id="arena-result" class="hidden px-4 sm:px-8 pb-6 pt-2 text-center space-y-3">
+        <div id="arena-result-art" class="mx-auto"></div>
+        <div id="arena-result-banner" class="font-cinzel font-bold text-3xl sm:text-4xl">TAMED!</div>
+        <div id="arena-result-sub" class="text-sm text-slate-300"></div>
+        <div id="arena-result-roll" class="text-xs font-mono text-slate-400"></div>
+        <div id="arena-result-rewards" class="flex flex-wrap justify-center gap-2"></div>
+        <button id="arena-continue" class="mt-1 px-6 py-2.5 rounded-xl font-cinzel font-bold text-sm text-white bg-gradient-to-r from-amber-700 to-orange-700 hover:brightness-110 border border-amber-400/50 cursor-pointer">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Portrait lightbox -->
+  <div id="portrait-lightbox" class="hidden fixed inset-0 z-[60] bg-black/85 flex items-center justify-center p-4 cursor-pointer">
+    <div class="text-center space-y-2">
+      <div class="monster-portrait-frame !w-[min(80vw,420px)] !h-[min(80vw,420px)] mx-auto"><img id="lightbox-img" class="monster-portrait-img" alt=""></div>
+      <div id="lightbox-name" class="font-cinzel font-bold text-white text-xl"></div>
+      <div class="text-xs text-slate-400">Click anywhere to close</div>
     </div>
   </div>
 
