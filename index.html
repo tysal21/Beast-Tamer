@@ -907,7 +907,7 @@
           </div>
           <div class="flex flex-wrap gap-2 text-xs font-mono">
             <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">Caught: <span id="fish-total-caught" class="text-cyan-300 font-bold">0</span></div>
-            <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">Codex: <span id="fish-codex-count" class="text-amber-300 font-bold">0/10</span></div>
+            <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">Codex: <span id="fish-codex-count" class="text-amber-300 font-bold">0/12</span></div>
             <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">Basket: <span id="fish-basket-count" class="text-emerald-300 font-bold">0/40</span></div>
           </div>
         </div>
@@ -981,7 +981,7 @@
 
           <div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl space-y-3">
             <h3 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2"><i class="fa-solid fa-fire-burner text-orange-400"></i> Cookpot</h3>
-            <p class="text-[11px] text-slate-400">Recipes use any fish of the listed rarity. Cooking a meal again extends it (max 60 min).</p>
+            <p class="text-[11px] text-slate-400">Recipes use any fish of the listed rarity. The pot holds <strong class="text-orange-300">one meal at a time</strong>: cooking a different dish replaces the current one; cooking the same dish again extends it (max 60 min).</p>
             <div id="fish-recipes" class="space-y-2"></div>
           </div>
         </div>
@@ -992,11 +992,11 @@
         <div class="flex items-center justify-between pb-3 border-b border-primal-700/60 mb-4">
           <div>
             <h3 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2"><i class="fa-solid fa-book-open text-amber-400"></i> Fish Codex</h3>
-            <p class="text-xs text-slate-400">Catch each species once to unlock its permanent bonus. The number on each card is how many are in your basket.</p>
+            <p class="text-xs text-slate-400">Each species' permanent bonus grows with mastery: first catch gives 25%, Silver 60%, Gold the full bonus. Legendary and Mythic fish are extremely rare. The number on each card is how many are in your basket.</p>
           </div>
           <div id="fish-codex-totals" class="text-[11px] font-mono text-slate-400 text-right"></div>
         </div>
-        <div id="fish-codex-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3"></div>
+        <div id="fish-codex-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3"></div>
       </div>
     </div>
 

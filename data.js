@@ -555,7 +555,7 @@ const FISHING_CONFIG = {
   biteDelayMinSec: 1.5,
   biteDelayMaxSec: 5.0,
   // Relative odds of each rarity when casting by hand (Idle Lines only catch common & uncommon)
-  rarityWeights: { common: 60, uncommon: 28, rare: 10, legendary: 2 },
+  rarityWeights: { common: 60, uncommon: 28, rare: 10, legendary: 0.5, mythic: 0.05 },
   /**
    * Skill check after a bite: a marker sweeps back and forth; click while it's inside the catch zone.
    *  zone      = catch zone width (fraction of the bar)
@@ -568,8 +568,18 @@ const FISHING_CONFIG = {
     common:    { zone: 0.30, sweepSec: 1.6,  misses: 2, drift: 0,    erratic: false },
     uncommon:  { zone: 0.22, sweepSec: 1.2,  misses: 1, drift: 0,    erratic: false },
     rare:      { zone: 0.14, sweepSec: 0.9,  misses: 1, drift: 0.12, erratic: false },
-    legendary: { zone: 0.08, sweepSec: 0.85, misses: 0, drift: 0.18, erratic: true }
+    legendary: { zone: 0.08, sweepSec: 0.85, misses: 0, drift: 0.18, erratic: true },
+    mythic:    { zone: 0.06, sweepSec: 0.7,  misses: 0, drift: 0.25, erratic: true }
   },
+  // Codex mastery: catches needed for each star [first catch, silver, gold] and the share of the full bonus each star gives
+  mastery: {
+    common:    [1, 100, 500],
+    uncommon:  [1, 50, 250],
+    rare:      [1, 20, 100],
+    legendary: [1, 5, 15],
+    mythic:    [1, 2, 3]
+  },
+  masteryShare: [0.25, 0.6, 1],
   // Gold sliver in the middle of the zone: hitting it lands 2 fish. Set enabled: false to remove it.
   perfect: { enabled: true, size: 0.25, bonusFish: 1 },
   rod: {
@@ -577,7 +587,7 @@ const FISHING_CONFIG = {
     baseCost: 5000000,
     costScale: 4,
     zoneBonusPerLevel: 0.06,     // +6% wider catch zone per level
-    rareWeightPerLevel: 0.15     // +15% rare & legendary odds per level
+    rareWeightPerLevel: 0.15     // +15% rare, legendary & mythic odds per level
   },
   lines: {
     maxLines: 3,
@@ -592,7 +602,8 @@ const FISH_RARITY_STYLE = {
   common:    { label: 'Common',    text: 'text-slate-300',  ring: 'border-slate-300',  badge: 'bg-slate-700/60 text-slate-200 border-slate-500/50' },
   uncommon:  { label: 'Uncommon',  text: 'text-emerald-300', ring: 'border-emerald-400', badge: 'bg-emerald-900/50 text-emerald-300 border-emerald-600/50' },
   rare:      { label: 'Rare',      text: 'text-sky-300',    ring: 'border-sky-400',    badge: 'bg-sky-900/50 text-sky-300 border-sky-600/50' },
-  legendary: { label: 'Legendary', text: 'text-amber-300',  ring: 'border-amber-400',  badge: 'bg-amber-900/50 text-amber-300 border-amber-500/60' }
+  legendary: { label: 'Legendary', text: 'text-amber-300',  ring: 'border-amber-400',  badge: 'bg-amber-900/50 text-amber-300 border-amber-500/60' },
+  mythic:    { label: 'Mythic',    text: 'text-fuchsia-300', ring: 'border-fuchsia-400', badge: 'bg-fuchsia-900/50 text-fuchsia-200 border-fuchsia-500/60' }
 };
 
 /**
@@ -602,32 +613,36 @@ const FISH_RARITY_STYLE = {
  */
 const FISH_CATALOG = [
   { id: 'mudgill_carp', name: 'Mudgill Carp', rarity: 'common', icon: 'fa-fish',
-    desc: 'Bottom-feeder fattened on cave silt.', codex: { type: 'meat', value: 0.03 }, codexLabel: '+3% Meat/sec' },
+    desc: 'Bottom-feeder fattened on cave silt.', codex: { type: 'totem', value: 0.10 }, codexLabel: '+10% Totem damage' },
   { id: 'cave_minnow', name: 'Blind Cave Minnow', rarity: 'common', icon: 'fa-fish',
     desc: 'Eyeless swarmers that glitter in torchlight.', codex: { type: 'click', value: 0.05 }, codexLabel: '+5% Click Meat' },
   { id: 'bonefin_perch', name: 'Bonefin Perch', rarity: 'common', icon: 'fa-fish',
     desc: 'Its fins are sharpened bone. Handle carefully.', codex: { type: 'maxStamina', value: 2 }, codexLabel: '+2 Max Stamina' },
   { id: 'ember_eel', name: 'Ember Eel', rarity: 'uncommon', icon: 'fa-worm',
-    desc: 'Warm to the touch, even out of the water.', codex: { type: 'meat', value: 0.05 }, codexLabel: '+5% Meat/sec' },
+    desc: 'Warm to the touch, even out of the water.', codex: { type: 'click', value: 0.05 }, codexLabel: '+5% Click Meat' },
   { id: 'glowscale_trout', name: 'Glowscale Trout', rarity: 'uncommon', icon: 'fa-fish-fins',
     desc: 'Bioluminescent scales light the deep river.', codex: { type: 'regen', value: 0.05 }, codexLabel: '+5% Stamina Regen' },
   { id: 'ironjaw_pike', name: 'Ironjaw Pike', rarity: 'uncommon', icon: 'fa-fish-fins',
     desc: 'Bites through snare wire without slowing down.', codex: { type: 'power', value: 0.03 }, codexLabel: '+3% Combat Power' },
   { id: 'abyssal_angler', name: 'Abyssal Angler', rarity: 'rare', icon: 'fa-lightbulb',
-    desc: 'Lures prey with a lantern grown from its skull.', codex: { type: 'meat', value: 0.10 }, codexLabel: '+10% Meat/sec' },
+    desc: 'Lures prey with a lantern grown from its skull.', codex: { type: 'relic', value: 0.10 }, codexLabel: '+10% Relic drop chance' },
   { id: 'kelp_wraith', name: 'Kelp Wraith', rarity: 'rare', icon: 'fa-ghost',
     desc: 'Half fish, half drifting weed. Its slime knits wounds.', codex: { type: 'wound', value: 0.15 }, codexLabel: '-15% Wounded time' },
   { id: 'leviathan_fry', name: 'Leviathan Fry', rarity: 'legendary', icon: 'fa-dragon',
     desc: 'A newborn sea-titan. Already the size of a boar.', codex: { type: 'power', value: 0.08 }, codexLabel: '+8% Combat Power' },
   { id: 'primordial_coelacanth', name: 'Primordial Coelacanth', rarity: 'legendary', icon: 'fa-shield-halved',
-    desc: 'Older than the beasts above. It remembers the first hunt.', codex: { type: 'meat', value: 0.15 }, codexLabel: '+15% Meat/sec' }
+    desc: 'Older than the beasts above. It remembers the first hunt.', codex: { type: 'stones', value: 0.05 }, codexLabel: '+5% Bloodstones' },
+  { id: 'worldcoil_eel', name: 'Worldcoil Eel', rarity: 'mythic', icon: 'fa-infinity',
+    desc: 'Said to circle the roots of the world. Few have seen its tail.', codex: { type: 'totem', value: 0.10 }, codexLabel: '+10% Totem damage' },
+  { id: 'eclipse_koi', name: 'Eclipse Koi', rarity: 'mythic', icon: 'fa-moon',
+    desc: 'Its scales swallow the torchlight. It surfaces once in a hunter\'s lifetime.', codex: { type: 'stones', value: 0.05 }, codexLabel: '+5% Bloodstones' }
 ];
 
 /** Timed meal buffs from the Cookpot */
 const FISH_BUFFS = {
-  meat:  { label: 'Smoked Feast',   effect: '+50% Meat/sec',       icon: 'fa-drumstick-bite', mult: 1.5 },
-  regen: { label: 'Kelp Vigor',     effect: '+50% Stamina Regen',  icon: 'fa-bolt',           mult: 1.5 },
-  power: { label: 'Abyssal Fervor', effect: '+25% Combat Power',   icon: 'fa-hand-fist',      mult: 1.25 }
+  meat:  { label: 'Smoked Feast',   effect: '+30% Meat/sec',       icon: 'fa-drumstick-bite', mult: 1.3 },
+  regen: { label: 'Kelp Vigor',     effect: '+30% Stamina Regen',  icon: 'fa-bolt',           mult: 1.3 },
+  power: { label: 'Abyssal Fervor', effect: '+15% Combat Power',   icon: 'fa-hand-fist',      mult: 1.15 }
 };
 
 /** Recipes take any fish of the listed rarities (the most plentiful species are used first) */

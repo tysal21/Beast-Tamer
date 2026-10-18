@@ -206,7 +206,9 @@ function defaultFishingState() {
     basket: {},
     codex: {},
     buffs: { meat: 0, regen: 0, power: 0 },
-    totalCaught: 0
+    totalCaught: 0,
+    catches: {}, // how many of each species you've ever caught (Codex mastery)
+    meal: null   // the one meal in the cookpot
   };
 }
 
@@ -214,13 +216,33 @@ function isFishingUnlocked() {
   return !!(gameState.unlockedExpansions && gameState.unlockedExpansions.primal_fishing);
 }
 
-/** Sum of permanent Codex bonuses of one type (only species you've caught count) */
+/** Catches of a species that count for mastery (old saves: a caught species counts as 1) */
+function getFishCatchCount(fish) {
+  const f = gameState.fishing;
+  if (!f) return 0;
+  return Math.max((f.catches && f.catches[fish.id]) || 0, f.codex && f.codex[fish.id] ? 1 : 0);
+}
+
+/** Mastery stars: 0 = not caught, 1 = first catch, 2 = silver, 3 = gold */
+function getFishStars(fish) {
+  const n = getFishCatchCount(fish);
+  const t = FISHING_CONFIG.mastery[fish.rarity] || [1, 25, 100];
+  return n >= t[2] ? 3 : n >= t[1] ? 2 : n >= t[0] ? 1 : 0;
+}
+
+/** Share of a species' full Codex bonus you have right now */
+function getFishMasteryShare(fish) {
+  const s = getFishStars(fish);
+  return s > 0 ? FISHING_CONFIG.masteryShare[s - 1] : 0;
+}
+
+/** Sum of permanent Codex bonuses of one type, scaled by each species' mastery stars */
 function getFishCodexBonus(type) {
   const f = gameState.fishing;
   if (!f || !f.codex) return 0;
   let total = 0;
   for (const fish of FISH_CATALOG) {
-    if (f.codex[fish.id] && fish.codex.type === type) total += fish.codex.value;
+    if (fish.codex.type === type) total += fish.codex.value * getFishMasteryShare(fish);
   }
   return total;
 }
@@ -269,11 +291,11 @@ function getSkillCheckFor(fish) {
 }
 
 /** Pick a random species. allowedRarities limits the pool (Idle Lines can't catch rare fish). */
-function rollFish(allowedRarities = ['common', 'uncommon', 'rare', 'legendary']) {
+function rollFish(allowedRarities = Object.keys(FISHING_CONFIG.rarityWeights)) {
   const rodBoost = 1 + gameState.fishing.rodLevel * FISHING_CONFIG.rod.rareWeightPerLevel;
   const weights = allowedRarities.map(r => {
     const w = FISHING_CONFIG.rarityWeights[r];
-    return (r === 'rare' || r === 'legendary') ? w * rodBoost : w;
+    return (r === 'rare' || r === 'legendary' || r === 'mythic') ? w * rodBoost : w;
   });
   const total = weights.reduce((a, b) => a + b, 0);
   let roll = Math.random() * total;
@@ -289,15 +311,30 @@ function rollFish(allowedRarities = ['common', 'uncommon', 'rare', 'legendary'])
 /** Register a catch. The Codex entry unlocks even if the basket is full (the fish is released). */
 function landFish(fish) {
   const f = gameState.fishing;
+  if (!f.catches) f.catches = {};
+  const starsBefore = getFishStars(fish);
   const isNewCodex = !f.codex[fish.id];
   if (isNewCodex) f.codex[fish.id] = true;
+  f.catches[fish.id] = getFishCatchCount(fish) + (isNewCodex ? 0 : 1);
   f.totalCaught = (f.totalCaught || 0) + 1;
+  const starsAfter = getFishStars(fish);
   let stored = false;
-  if (getFishBasketCount() < FISHING_CONFIG.basketCap) {
+  if (fish.rarity === 'mythic') {
+    // Mythics are trophies: they go straight into the Codex, not the basket
+  } else if (getFishBasketCount() < FISHING_CONFIG.basketCap) {
     f.basket[fish.id] = (f.basket[fish.id] || 0) + 1;
     stored = true;
+  } else if (fish.rarity !== 'common') {
+    // Basket full: a rarer fish pushes out the most plentiful common one instead of being thrown away
+    const common = FISH_CATALOG.filter(x => x.rarity === 'common' && (f.basket[x.id] || 0) > 0).sort((a, b) => f.basket[b.id] - f.basket[a.id])[0];
+    if (common) {
+      f.basket[common.id] -= 1;
+      if (f.basket[common.id] <= 0) delete f.basket[common.id];
+      f.basket[fish.id] = (f.basket[fish.id] || 0) + 1;
+      stored = true;
+    }
   }
-  return { stored, isNewCodex };
+  return { stored, isNewCodex, starUp: !isNewCodex && starsAfter > starsBefore ? starsAfter : 0 };
 }
 
 function canCookRecipe(recipe) {
@@ -322,6 +359,11 @@ function cookRecipe(recipe) {
       if (basket[species.id] <= 0) delete basket[species.id];
       need--;
     }
+  }
+  // One meal at a time: a different dish replaces the current one; the same dish extends it
+  if (gameState.fishing.meal !== recipe.id) {
+    for (const b in gameState.fishing.buffs) gameState.fishing.buffs[b] = 0;
+    gameState.fishing.meal = recipe.id;
   }
   recipe.buffs.forEach(b => {
     // Smokehouse (Hunter's Legacy) stretches both the meal and the stacking cap
@@ -496,7 +538,7 @@ function getTotemBonus(type) {
 /** Passive Totem damage per second */
 function getTotemDps() {
   if (!isTotemUnlocked()) return 0;
-  return getTotalCombatPower() * TOTEM_CONFIG.passivePct * getLegacyMult('totem_breaker');
+  return getTotalCombatPower() * TOTEM_CONFIG.passivePct * getLegacyMult('totem_breaker') * (1 + getFishCodexBonus('totem'));
 }
 
 function breakTotemLayer(quiet) {
@@ -694,7 +736,7 @@ function getCombatPowerVs(beast) {
 
 /** Totem damage from one Forage click */
 function getTotemClickDamage() {
-  return getTotalCombatPower() * TOTEM_CONFIG.clickPct * getLegacyMult('totem_breaker');
+  return getTotalCombatPower() * TOTEM_CONFIG.clickPct * getLegacyMult('totem_breaker') * (1 + getFishCodexBonus('totem'));
 }
 
 /**
@@ -797,7 +839,7 @@ function calculatePendingBloodstones() {
   const powerFactor = 1 + 1.6 * Math.log10(1 + (getTotalCombatPower() / 100000));
   const soulLvl = getAscensionPerkLevel('primordial_soul');
   const soulMult = 1 + (soulLvl * 0.20);
-  return Math.max(10, Math.floor(10 * meatFactor * powerFactor * soulMult));
+  return Math.max(10, Math.floor(10 * meatFactor * powerFactor * soulMult * (1 + getFishCodexBonus('stones'))));
 }
 
 function performAscension() {
@@ -1492,7 +1534,7 @@ function rollRelicDrops(beast) {
   let droppedAny = false;
 
   const resonanceLvl = getAscensionPerkLevel('trophy_resonance');
-  const dropMult = 1 + (resonanceLvl * 0.25);
+  const dropMult = (1 + (resonanceLvl * 0.25)) * (1 + getFishCodexBonus('relic'));
 
   // One roll per expedition, so at most ONE relic can drop per win.
   // Each unowned relic keeps its own drop chance; the rarest is checked first.
@@ -1781,6 +1823,7 @@ function loadGameFromStorage() {
         gameState.fishing.buffs = Object.assign(defaultFishingState().buffs, data.fishing.buffs || {});
         gameState.fishing.basket = data.fishing.basket || {};
         gameState.fishing.codex = data.fishing.codex || {};
+        gameState.fishing.catches = data.fishing.catches || {};
       }
       if (data.totem && typeof data.totem === 'object') {
         gameState.totem = Object.assign(defaultTotemState(), data.totem);
