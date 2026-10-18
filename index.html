@@ -43,7 +43,7 @@
   </script>
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=20261018d">
+  <link rel="stylesheet" href="style.css?v=20261019a">
 </head>
 
 <body class="bg-primal-900 text-slate-200 font-sans min-h-screen selection:bg-primal-accent selection:text-white flex flex-col justify-between">
@@ -187,6 +187,11 @@
             <span>Hunter's Legacy</span>
             <span id="tab-legacy-badge" class="text-[9px] bg-amber-950 text-amber-300 border border-amber-700 px-1.5 py-0.2 rounded font-mono">0</span>
           </button>
+          <button id="tab-btn-world" class="nav-tab-btn hidden px-3.5 py-2 rounded-lg border border-transparent text-slate-300 hover:text-sky-300 flex items-center gap-2 whitespace-nowrap cursor-pointer">
+            <i class="fa-solid fa-earth-americas text-sky-400"></i>
+            <span>World</span>
+            <span id="tab-world-badge" class="text-[9px] bg-sky-950 text-sky-300 border border-sky-700 px-1.5 py-0.2 rounded font-mono">W1</span>
+          </button>
           <button id="tab-btn-ascend" class="nav-tab-btn disabled px-3.5 py-2 rounded-lg border border-transparent text-slate-400 flex items-center gap-2 whitespace-nowrap">
             <i class="fa-solid fa-skull-crossbones text-rose-500"></i>
             <span>Ascension Altar</span>
@@ -198,6 +203,7 @@
   </header>
 
   <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex-1">
+    <div id="blizzard-banner" class="hidden mb-4 px-4 py-2.5 rounded-xl border border-sky-400/60 bg-sky-950/70 text-sky-100 text-sm text-center shadow-lg"></div>
 
     <!-- ================= TAB 1: CAMP & ECONOMY ================= -->
     <div id="panel-camp" class="tab-panel grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -352,7 +358,7 @@
                     </span>
                   </div>
                   <div class="text-xs text-slate-400 mt-0.5">
-                    Reduces recovery interval by <span class="text-blue-300 font-mono font-semibold">-0.75s</span> per rank, 12 ranks (15s down to 6s). Boar-Hawk, relics, hybrids, fish and the Totem then make it faster still.
+                    Reduces recovery interval by <span class="text-blue-300 font-mono font-semibold">-0.75s</span> per rank, 12 ranks (15s down to 6s). <span data-beast-name="1">Boar-Hawk</span>, relics, hybrids, fish and the Totem then make it faster still.
                   </div>
                   <div class="text-[11px] text-slate-500 font-mono mt-0.5">
                     Current Interval: <span id="camp-recovery-interval" class="text-blue-400 font-mono">15.0s</span>
@@ -717,10 +723,10 @@
         </div>
         <h2 class="font-cinzel text-2xl font-bold text-purple-300 tracking-wide mb-2">The Primeval Beast Forge</h2>
         <p class="text-sm text-slate-400 max-w-md mx-auto mb-3">
-          The ancient alchemical forge remains sealed behind primal runes. Tame the Tier 2 <strong class="text-amber-400">Boar-Hawk</strong> to uncover its excavation site.
+          The ancient alchemical forge remains sealed behind primal runes. Tame the Tier 2 <strong class="text-amber-400" data-beast-name="1">Boar-Hawk</strong> to uncover its excavation site.
         </p>
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/60 border border-purple-700/60 text-xs font-mono text-purple-300">
-          <i class="fa-solid fa-lock text-xs"></i> Prerequisite: Defeat &amp; Tame Boar-Hawk
+          <i class="fa-solid fa-lock text-xs"></i> Prerequisite: Defeat &amp; Tame <span data-beast-name="1">Boar-Hawk</span>
         </div>
       </div>
 
@@ -731,7 +737,7 @@
         </div>
         <h2 class="font-cinzel text-2xl font-bold text-amber-300 tracking-wide mb-2">Excavate Ancient Forge Chamber</h2>
         <p class="text-sm text-slate-300 max-w-lg mx-auto mb-4">
-          With the Boar-Hawk subdued, your hunters have located the subterranean breeding vats. Clear the primeval debris and restore the forge fires.
+          With the <span data-beast-name="1">Boar-Hawk</span> subdued, your hunters have located the subterranean breeding vats. Clear the primeval debris and restore the forge fires.
         </p>
         <button id="btn-unlock-forge" class="px-6 py-3 bg-gradient-to-r from-amber-600 via-purple-700 to-amber-600 hover:brightness-110 active:scale-95 text-white text-sm font-cinzel font-bold rounded-xl transition-all border border-amber-400/50 shadow-lg cursor-pointer flex items-center justify-center gap-2 mx-auto">
           <i class="fa-solid fa-fire-flame-curved text-amber-300"></i>
@@ -906,6 +912,11 @@
       </div>
     </div>
 
+    <!-- ================= TAB: WORLD ================= -->
+    <div id="panel-world" class="tab-panel hidden max-w-6xl mx-auto w-full">
+      <div id="world-content" class="space-y-6"></div>
+    </div>
+
     <!-- ================= TAB: HUNTER'S LEGACY (Seal 1) ================= -->
     <div id="panel-legacy" class="tab-panel hidden max-w-6xl mx-auto w-full space-y-6">
       <div class="bg-gradient-to-br from-amber-950/40 via-primal-850 to-primal-900 border border-amber-700/50 rounded-2xl p-5 sm:p-6 shadow-xl">
@@ -1057,7 +1068,7 @@
                 Current Run Meat: <span id="ascend-run-meat" class="text-amber-300 font-bold">0</span>
               </div>
               <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">
-                Chimera-Wyrm Status: <span id="ascend-wyrm-status" class="text-red-400 font-bold">Untamed</span>
+                <span data-beast-name="3">Chimera-Wyrm</span> Status: <span id="ascend-wyrm-status" class="text-red-400 font-bold">Untamed</span>
               </div>
               <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">
                 Total Ascensions: <span id="ascend-total-count" class="text-rose-400 font-bold">0</span>
@@ -1072,7 +1083,7 @@
               <span>+<span id="ascend-pending-stones">0</span></span>
             </div>
             <div id="ascend-req-note" class="text-[11px] text-amber-400 font-mono">
-              Requires taming Tier 4 Chimera-Wyrm on this run
+              Requires taming Tier 4 <span data-beast-name="3">Chimera-Wyrm</span> on this run
             </div>
             <button id="btn-trigger-ascend" class="w-full py-3 px-4 bg-gradient-to-r from-rose-700 via-amber-600 to-rose-700 hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white font-cinzel font-bold text-sm rounded-xl border border-rose-400/50 shadow-lg cursor-pointer transition-all">
               PERFORM ASCENSION RITUAL
@@ -1277,8 +1288,8 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
   <!-- Modular Scripts: Data -> Engine -> UI -->
-  <script src="data.js?v=20261018d"></script>
-  <script src="engine.js?v=20261018d"></script>
-  <script src="ui.js?v=20261018d"></script>
+  <script src="data.js?v=20261019a"></script>
+  <script src="engine.js?v=20261019a"></script>
+  <script src="ui.js?v=20261019a"></script>
 </body>
 </html>

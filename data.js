@@ -732,6 +732,7 @@ const TROPHY_WEAPONS = [
 
 /** Apex Ladder: bosses past the Wyrm, reset each Ascension */
 const APEX_CONFIG = {
+  powerPerTier: 0.12,  // each Apex tamed this run: +12% Combat Power (added up, so the ladder can never run away)
   firstMult: 3,        // Tier 5 minimum = Wyrm minimum x this
   growth: 1.5,         // each Apex tier's minimum = previous x this
   maxMult: 5,          // bracket max = min x this
@@ -792,11 +793,76 @@ const LEGACY_NODES = [
 const LEGACY_PACKMASTER_PREVIEW = [
   { id: 'autoBuy', name: 'Auto-Buy', icon: 'fa-cart-shopping', desc: 'Buys generators for you, using your x1 / x10 / Next setting. Never spends more than half your Meat on one purchase.', unlock: 'seal3' },
   { id: 'autoTend', name: 'Auto-Tend Nest', icon: 'fa-egg', desc: 'Tends the incubating egg with Stamina that would otherwise go to waste (only when your Stamina bar is full).', unlock: 'seal3' },
-  { id: 'autoTrophy', name: 'Auto-Trophy', icon: 'fa-trophy', desc: 'Repeats boss wins for relics', unlock: 'world2' },
-  { id: 'autoStrike', name: 'Auto-Strike', icon: 'fa-bolt', desc: 'Spends spare Stamina on the Totem', unlock: 'world2' }
+  { id: 'autoTrophy', name: 'Auto-Trophy', icon: 'fa-trophy', desc: 'Re-fights the boss you have selected for relics, once your Stamina is full (tamed bosses at 90%+ odds only, no arena). Uses Pack Orders.', unlock: 'world2' },
+  { id: 'autoStrike', name: 'Auto-Strike', icon: 'fa-bolt', desc: 'Strikes the Totem with Stamina that would otherwise go to waste (only when your Stamina bar is full). Uses Pack Orders.', unlock: 'world2' }
 ];
 
 const PACKMASTER_CONFIG = {
   unlockSeal: 3,
-  maxSpendShare: 0.5 // Auto-Buy never spends more than this share of your Meat on one purchase
+  maxSpendShare: 0.5, // Auto-Buy never spends more than this share of your Meat on one purchase
+  maxOrders: 30       // Auto-Trophy / Auto-Strike act at most this many times, then wait for you to check in
 };
+
+/**
+ * ================= WORLDS =================
+ * Each world reskins the same four bosses and six generators (same ids, so saves and systems keep working),
+ * makes the bosses harder, and adds its own twist. Clearing a world (Apex Tier 12, then its Titan) opens the Rift.
+ * Placeholder art: the current images with a color filter until world art is made.
+ */
+const WORLD_CONFIG = {
+  titanAfterApexTier: 12,     // reach this Apex tier once (in any run) to awaken the world's Titan for good
+  titanApexEquivalent: 13,    // the Titan's power: this Apex tier's base bracket...
+  titanExtraMult: 8.5,        // ...times this (or the world's own titan.mult). It does NOT grow with Ascensions: you grow into it over many runs
+  bonusMeatPerWorld: 3,       // World Bonus: Meat/s x3 per world opened (stacks)
+  bonusPowerPerWorld: 0.5,    // World Bonus: +50% Combat Power per world opened
+  blizzard: {
+    everySec: 1200, lastSec: 180, meatMult: 0.5,
+    // Stoke the Hearth: clicks and Stamina warm the camp; full Warmth ends the blizzard early
+    warmthNeeded: 300, warmthPerClick: 1, stokeStamina: 5, stokeWarmth: 40, thawBonusSec: 300,
+    // Frozen Caches: one per blizzard that passes, thaw on their own or chip with Stamina
+    maxCaches: 3, cacheThawSec: 900, chipStamina: 5, chipSec: 120,
+    meatSec: 300, jackpotMeatSec: 1800, jackpotChance: 0.05, shardsPerLayer: 3
+  }
+};
+
+const WORLDS = [
+  {
+    id: 'wilds', name: 'Primal Wilds', icon: 'fa-tree', color: 'emerald',
+    blurb: 'Where it all began: jungle chimeras and primeval swamps.',
+    hardness: 1, filter: '', twist: null,
+    titan: { name: 'Primeval Behemoth', baseIndex: 3, filter: 'saturate(1.8) contrast(1.3) brightness(0.9) drop-shadow(0 0 12px #f59e0b)',
+             desc: 'The first Titan, woken by your climb up the Apex Ladder. Beat it to tear open the Rift.' }
+  },
+  {
+    id: 'tundra', name: 'Frozen Tundra', icon: 'fa-snowflake', color: 'sky',
+    blurb: 'Ice fields under an endless aurora. Blizzards roll in and freeze your camp.',
+    hardness: 6, filter: 'hue-rotate(185deg) saturate(0.7) brightness(1.15)', twist: 'blizzard',
+    beasts: [
+      { name: 'Frostfang Hound', desc: 'A pale hunting beast whose bite leaves frostbite.' },
+      { name: 'Rime Talon', desc: 'A tusked sky-brute coated in jagged ice.' },
+      { name: 'Glacier Scorpion', desc: 'Its carapace is a living glacier; its sting freezes blood.' },
+      { name: 'Aurora Wyrm', desc: 'A serpent of shifting northern light, ruler of the ice.' }
+    ],
+    gens: [
+      { name: 'Ice Snares', desc: 'Frozen wire loops buried in the snow.' },
+      { name: 'Frost Wolf Pack', desc: 'Half-tamed white wolves driving prey toward camp.' },
+      { name: 'Avalanche Traps', desc: 'Loosened snowfields that bury whole herds.' },
+      { name: 'Musk Ice Pits', desc: 'Scent-baited crevasses in the glacier.' },
+      { name: 'Frozen Dens', desc: 'Captured ice caves full of sleeping beasts.' },
+      { name: 'Glacier Harpoons', desc: 'Harpoon rigs that pin mammoths to the ice.' }
+    ],
+    titan: { name: 'Glacial Colossus', baseIndex: 2, mult: 3.5, filter: 'hue-rotate(185deg) saturate(0.6) brightness(1.3) drop-shadow(0 0 12px #7dd3fc)',
+             desc: 'A mountain of living ice. Beat it to open the way onward.' }
+  },
+  {
+    id: 'volcano', name: 'Ashen Volcano', icon: 'fa-volcano', color: 'orange', comingSoon: true,
+    blurb: 'Lava flats, salamander drakes and obsidian golems. Coming in a future update.',
+    hardness: 40, filter: 'hue-rotate(-25deg) saturate(1.8) contrast(1.15)', twist: null
+  },
+  {
+    id: 'abyss', name: 'Sunken Abyss', icon: 'fa-water', color: 'indigo', comingSoon: true,
+    blurb: 'Drowned ruins, krakens and a leviathan king. Coming in a future update.',
+    hardness: 250, filter: 'hue-rotate(210deg) brightness(0.8) saturate(1.4)', twist: null
+  }
+];
+
