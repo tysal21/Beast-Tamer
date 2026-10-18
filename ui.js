@@ -191,6 +191,10 @@ function switchTab(tabId) {
     showToast('The Primal Totem rises after you tame the Chimera-Wyrm.', 'warning');
     return;
   }
+  if (tabId === 'legacy' && !isLegacyUnlocked()) {
+    showToast("Hunter's Legacy opens when you break Seal 1 on the Primal Totem.", 'warning');
+    return;
+  }
   if (tabId === 'fish' && !isFishingUnlocked()) {
     showToast('The Fishing Dock is a Realm Expansion. Unlock it at the Ascension Altar!', 'warning');
     return;
@@ -205,6 +209,7 @@ function switchTab(tabId) {
     { id: 'relics', btn: elements.tabBtnRelics, panel: elements.panelRelics },
     { id: 'fish', btn: elements.tabBtnFish, panel: elements.panelFish },
     { id: 'totem', btn: elements.tabBtnTotem, panel: elements.panelTotem },
+    { id: 'legacy', btn: document.getElementById('tab-btn-legacy'), panel: document.getElementById('panel-legacy') },
     { id: 'ascend', btn: elements.tabBtnAscend, panel: elements.panelAscend }
   ];
 
@@ -230,6 +235,9 @@ function switchTab(tabId) {
   }
   if (tabId === 'totem') {
     renderTotemStatic();
+  }
+  if (tabId === 'legacy') {
+    renderLegacyPanel();
   }
 }
 
@@ -872,6 +880,7 @@ function renderFrame(meatRate) {
 
   // Primal Totem live updates
   updateTotemLive();
+  updateLegacyLive();
 
   // Phase 3: Bloodstones HUD, Altar tab badge & live Altar stats
   updateAscensionLiveElements();
@@ -1488,7 +1497,7 @@ elements.btnForage.addEventListener('click', (e) => {
 
   addMeat(earned);
   sound.playClick();
-  if (isTotemUnlocked()) dealTotemDamage(getTotalCombatPower() * TOTEM_CONFIG.clickPct);
+  if (isTotemUnlocked()) dealTotemDamage(getTotemClickDamage());
 
   if (gameState.incubator) {
     gameState.incubator.remaining = Math.max(0, gameState.incubator.remaining - 1);
@@ -2213,7 +2222,7 @@ function renderTotemStatic() {
     return '<div class="p-3 rounded-lg border flex items-center gap-3 ' + (reached ? 'bg-amber-950/30 border-amber-600/50' : 'bg-primal-800/70 border-primal-700') + '">' +
       '<div class="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center ' + (reached ? 'bg-amber-900/60 text-amber-300' : 'bg-primal-900 text-slate-500') + '"><i class="fa-solid ' + (reached ? u.icon : 'fa-lock') + '"></i></div>' +
       '<div class="min-w-0"><div class="text-xs font-bold ' + (reached ? 'text-amber-200' : 'text-slate-300') + '">Seal ' + u.seal + ': ' + u.name + '</div>' +
-      '<div class="text-[11px] text-slate-400">' + u.desc + ' <span class="font-mono ' + (reached ? 'text-amber-300' : 'text-slate-500') + '">' + (reached ? 'Revealed, coming soon' : 'Coming soon') + '</span></div></div>' +
+      '<div class="text-[11px] text-slate-400">' + u.desc + ' <span class="font-mono ' + (reached ? 'text-amber-300' : 'text-slate-500') + '">' + (reached ? (u.live ? 'Open now' : 'Revealed, coming soon') : (u.live ? 'Opens here' : 'Coming soon')) + '</span></div></div>' +
     '</div>';
   }).join('');
 
@@ -2319,6 +2328,200 @@ setInterval(() => {
   }
 }, 1000);
 
+/**
+ * ================= HUNTER'S LEGACY UI =================
+ */
+const legacyEls = {
+  tabBtn: document.getElementById('tab-btn-legacy'),
+  tabBadge: document.getElementById('tab-legacy-badge'),
+  panel: document.getElementById('panel-legacy'),
+  shards: document.getElementById('legacy-shards'),
+  spent: document.getElementById('legacy-spent'),
+  respecBtn: document.getElementById('btn-legacy-respec'),
+  respecNote: document.getElementById('legacy-respec-note'),
+  tree: document.getElementById('legacy-tree')
+};
+let legacySignature = '';
+let legacyRespecArmedUntil = 0;
+
+const LEGACY_COLORS = {
+  amber: { text: 'text-amber-300', border: 'border-amber-600/60', bg: 'bg-amber-950/30', btn: 'from-amber-700 to-orange-700' },
+  emerald: { text: 'text-emerald-300', border: 'border-emerald-600/60', bg: 'bg-emerald-950/30', btn: 'from-emerald-700 to-teal-700' },
+  rose: { text: 'text-rose-300', border: 'border-rose-600/60', bg: 'bg-rose-950/30', btn: 'from-rose-700 to-red-700' },
+  slate: { text: 'text-slate-400', border: 'border-slate-700', bg: 'bg-primal-900/60', btn: 'from-slate-700 to-slate-800' }
+};
+
+/** What a node is giving right now, e.g. "Now: +30% Meat/s" */
+function getLegacyNodeNowText(node) {
+  const r = getLegacyRank(node.id);
+  if (node.id === 'battle_insight') {
+    if (r < 1) return '';
+    const parts = [];
+    const ins = (gameState.legacy && gameState.legacy.insight) || {};
+    for (const id in ins) {
+      const beast = BEAST_CATALOG.find(b => b.id === id);
+      const g = getTotemGuardian();
+      const name = beast ? beast.name : (g && g.id === id ? g.name : 'Seal guardian');
+      parts.push(name + ' +' + Math.round(Math.min(LEGACY_CONFIG.insightMaxStacks, ins[id]) * LEGACY_CONFIG.insightPerLoss * 100) + '%');
+    }
+    return parts.length ? 'Now: ' + parts.join(', ') : 'No losses banked yet';
+  }
+  if (node.capstone) return r >= 1 ? 'Active' : '';
+  if (r < 1) return '';
+  const pct = Math.round(r * node.perRank * 100);
+  switch (node.id) {
+    case 'cleavers_edge': return 'Now: +' + pct + '% Meat/s';
+    case 'marrow_harvest': return 'Now: +' + pct + '% click Meat';
+    case 'smokehouse': return 'Now: meals +' + pct + '% longer';
+    case 'beast_bond': return 'Now: +' + pct + '% Beast Power';
+    case 'nurturing_hands': return 'Now: nursery -' + pct + '%';
+    case 'hybrid_training': return 'Now: enhance -' + pct + '%';
+    case 'keen_instincts': return 'Now: +' + pct + '% Combat Power';
+    case 'totem_breaker': return 'Now: +' + pct + '% Totem damage';
+    case 'thick_hide': return 'Now: wounds -' + pct + '%';
+  }
+  return '';
+}
+
+function renderLegacyNode(node, c) {
+  const rank = getLegacyRank(node.id);
+  const open = isLegacyNodeOpen(node);
+  const cost = getLegacyNodeCost(node);
+  const maxed = cost === null;
+  const afford = canBuyLegacyRank(node);
+  const now = getLegacyNodeNowText(node);
+  const needs = node.requires.filter(id => getLegacyRank(id) < 1).map(id => getLegacyNode(id).name);
+  const box = node.capstone
+    ? (open ? c.border + ' ' + c.bg + ' border-2' : 'border-primal-700 bg-primal-900/50 border-2')
+    : (open ? 'border-primal-600 bg-primal-800/80' : 'border-primal-700 bg-primal-900/50');
+  let btn;
+  if (maxed) {
+    btn = '<div class="w-full text-center py-1.5 rounded-lg text-[11px] font-mono font-bold ' + c.text + ' border ' + c.border + '">MAXED</div>';
+  } else if (!open) {
+    btn = '<div class="w-full text-center py-1.5 rounded-lg text-[11px] text-slate-500 border border-primal-700"><i class="fa-solid fa-lock mr-1"></i>Needs ' + needs.join(', ') + ' rank 1</div>';
+  } else {
+    btn = '<button data-legacy-node="' + node.id + '" class="w-full py-1.5 rounded-lg text-xs font-bold text-white border border-white/10 bg-gradient-to-r ' + c.btn + ' hover:brightness-110 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"' + (afford ? '' : ' disabled') + '>' +
+      (rank === 0 ? 'Learn' : 'Rank up') + ' &middot; ' + formatNumber(cost) + ' Shards</button>';
+  }
+  return '<div class="p-3 rounded-xl border ' + box + ' space-y-2">' +
+    '<div class="flex items-start gap-2.5">' +
+      '<div class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center bg-primal-900 ' + (open ? c.text : 'text-slate-600') + '"><i class="fa-solid ' + node.icon + '"></i></div>' +
+      '<div class="min-w-0 flex-1">' +
+        '<div class="flex items-baseline justify-between gap-2"><span class="text-sm font-bold ' + (open ? 'text-white' : 'text-slate-400') + '">' + node.name + '</span>' +
+        '<span class="text-[10px] font-mono ' + (rank > 0 ? c.text : 'text-slate-500') + '">' + (node.capstone ? 'CAPSTONE' : rank + '/' + node.maxRank) + '</span></div>' +
+        '<div class="text-[11px] text-slate-400 leading-snug">' + node.desc + '</div>' +
+        (now ? '<div class="text-[11px] font-mono text-emerald-300 mt-0.5">' + now + '</div>' : '') +
+      '</div>' +
+    '</div>' + btn +
+  '</div>';
+}
+
+function renderLegacyTree() {
+  if (!legacyEls.tree || !gameState.legacy) return;
+  legacyEls.tree.innerHTML = LEGACY_BRANCHES.map(branch => {
+    const c = LEGACY_COLORS[branch.color] || LEGACY_COLORS.slate;
+    let body;
+    if (branch.locked) {
+      body = LEGACY_PACKMASTER_PREVIEW.map(p =>
+        '<div class="p-3 rounded-xl border border-dashed border-slate-700 bg-primal-900/40 flex items-start gap-2.5">' +
+          '<div class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center bg-primal-900 text-slate-600"><i class="fa-solid ' + p.icon + '"></i></div>' +
+          '<div><div class="text-sm font-bold text-slate-500">' + p.name + '</div><div class="text-[11px] text-slate-500">' + p.desc + '</div></div>' +
+        '</div>').join('') +
+        '<div class="text-[11px] text-slate-500 text-center pt-1"><i class="fa-solid fa-lock mr-1"></i>Arrives with Seal 3 in a later update</div>';
+    } else {
+      body = LEGACY_NODES.filter(n => n.branch === branch.id).map(n => renderLegacyNode(n, c)).join('<div class="flex justify-center -my-1"><i class="fa-solid fa-chevron-down text-[10px] text-slate-600"></i></div>');
+    }
+    return '<div class="bg-primal-850 border ' + (branch.locked ? 'border-dashed border-slate-700' : 'border-primal-700') + ' rounded-2xl p-4 shadow-xl space-y-3">' +
+      '<div class="flex items-center gap-2"><i class="fa-solid ' + branch.icon + ' ' + c.text + '"></i>' +
+      '<div><div class="font-cinzel font-bold ' + (branch.locked ? 'text-slate-400' : 'text-slate-100') + '">' + branch.name + '</div>' +
+      '<div class="text-[10px] uppercase tracking-wider text-slate-500">' + branch.tagline + '</div></div></div>' +
+      body + '</div>';
+  }).join('');
+}
+
+function getLegacySignature() {
+  return gameState.totem.shards + '|' + JSON.stringify(gameState.legacy.ranks) + '|' + gameState.legacy.freeRespec + '|' + JSON.stringify(gameState.legacy.insight) + '|' + (legacyRespecArmedUntil > Date.now());
+}
+
+function updateLegacyHeader() {
+  const spent = getLegacySpent();
+  legacyEls.shards.textContent = formatNumber(gameState.totem.shards);
+  legacyEls.spent.textContent = formatNumber(spent);
+  const free = !!gameState.legacy.freeRespec;
+  const armed = legacyRespecArmedUntil > Date.now();
+  legacyEls.respecBtn.disabled = spent <= 0;
+  legacyEls.respecBtn.textContent = armed
+    ? 'Click again to refund ' + formatNumber(getLegacyRespecRefund()) + ' Shards'
+    : (free ? 'Free respec' : 'Respec (keep 90%)');
+  legacyEls.respecBtn.classList.toggle('border-rose-500', armed);
+  legacyEls.respecNote.textContent = free
+    ? 'Your free respec from the last Ascension is ready: every Shard comes back.'
+    : 'Refunds all ranks minus a 10% fee. You get one free respec after each Ascension.';
+}
+
+function updateLegacyLive() {
+  if (!legacyEls.tabBtn || !gameState.legacy) return;
+  const unlocked = isLegacyUnlocked();
+  legacyEls.tabBtn.classList.toggle('hidden', !unlocked);
+  if (!unlocked) return;
+  const affordable = LEGACY_NODES.filter(n => canBuyLegacyRank(n)).length;
+  legacyEls.tabBadge.textContent = formatNumber(gameState.totem.shards);
+  legacyEls.tabBadge.className = affordable > 0
+    ? 'text-[9px] bg-emerald-950 text-emerald-300 border border-emerald-600 px-1.5 py-0.2 rounded font-mono font-bold'
+    : 'text-[9px] bg-amber-950 text-amber-300 border border-amber-700 px-1.5 py-0.2 rounded font-mono';
+  if (gameState.activeTab !== 'legacy') return;
+  const sig = getLegacySignature();
+  if (sig !== legacySignature) {
+    legacySignature = sig;
+    updateLegacyHeader();
+    renderLegacyTree();
+  }
+}
+
+function renderLegacyPanel() {
+  if (!legacyEls.tree || !gameState.legacy) return;
+  legacySignature = getLegacySignature();
+  updateLegacyHeader();
+  renderLegacyTree();
+}
+
+if (legacyEls.tabBtn) legacyEls.tabBtn.addEventListener('click', () => switchTab('legacy'));
+
+if (legacyEls.tree) {
+  legacyEls.tree.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-legacy-node]');
+    if (!btn) return;
+    const node = getLegacyNode(btn.getAttribute('data-legacy-node'));
+    if (node && buyLegacyRank(node.id)) {
+      sound.playTone(520, 'triangle', 0.12, 0.1);
+      logCombatMessage('🌳 <strong>Hunter\'s Legacy:</strong> ' + node.name + (node.capstone ? ' learned!' : ' rank ' + getLegacyRank(node.id) + '.'), 'unlock');
+      renderLegacyPanel();
+      renderMenagerie();
+      saveGameToStorage();
+    }
+  });
+}
+
+if (legacyEls.respecBtn) {
+  legacyEls.respecBtn.addEventListener('click', () => {
+    if (getLegacySpent() <= 0) return;
+    if (legacyRespecArmedUntil <= Date.now()) {
+      // Two-step confirm instead of a browser dialog
+      legacyRespecArmedUntil = Date.now() + 4000;
+      renderLegacyPanel();
+      setTimeout(renderLegacyPanel, 4100);
+      return;
+    }
+    legacyRespecArmedUntil = 0;
+    const refund = respecLegacy();
+    showToast('Legacy reset. +' + formatNumber(refund) + ' Totem Shards refunded.', 'success');
+    logCombatMessage('🌳 <strong>Hunter\'s Legacy reset.</strong> +' + formatNumber(refund) + ' Totem Shards refunded.', 'unlock');
+    renderLegacyPanel();
+    renderMenagerie();
+    saveGameToStorage();
+  });
+}
+
 setInterval(saveGameToStorage, 10000);
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -2330,6 +2533,7 @@ window.addEventListener('DOMContentLoaded', () => {
   renderAscensionAltar();
   renderFishingDock();
   renderTotemStatic();
+  renderLegacyPanel();
   switchTab(gameState.activeTab || 'camp');
 
   gameState.lastWallTime = Date.now();

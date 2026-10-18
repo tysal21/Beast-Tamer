@@ -176,6 +176,9 @@ const gameState = {
   // Primal Totem (post-Wyrm, never reset by Ascension)
   totem: defaultTotemState(),
 
+  // Hunter's Legacy skill tree (opens at Seal 1, never reset by Ascension)
+  legacy: defaultLegacyState(),
+
   lastWallTime: Date.now()
 };
 
@@ -315,7 +318,9 @@ function cookRecipe(recipe) {
     }
   }
   recipe.buffs.forEach(b => {
-    gameState.fishing.buffs[b] = Math.min(FISHING_CONFIG.buffMaxSec, (gameState.fishing.buffs[b] || 0) + recipe.durationSec);
+    // Smokehouse (Hunter's Legacy) stretches both the meal and the stacking cap
+    const smoke = getLegacyMult('smokehouse');
+    gameState.fishing.buffs[b] = Math.min(FISHING_CONFIG.buffMaxSec * smoke, (gameState.fishing.buffs[b] || 0) + recipe.durationSec * smoke);
   });
   return true;
 }
@@ -485,7 +490,7 @@ function getTotemBonus(type) {
 /** Passive Totem damage per second */
 function getTotemDps() {
   if (!isTotemUnlocked()) return 0;
-  return getTotalCombatPower() * TOTEM_CONFIG.passivePct;
+  return getTotalCombatPower() * TOTEM_CONFIG.passivePct * getLegacyMult('totem_breaker');
 }
 
 function breakTotemLayer(quiet) {
@@ -554,9 +559,136 @@ function breakTotemSeal(guardian) {
   logCombatMessage('⛓️ <strong>SEAL ' + k + ' BROKEN!</strong> The ' + guardian.name + ' falls. +' + formatNumber(stones) + ' Bloodstones, +' + formatNumber(shards) + ' Totem Shards, permanent +' + Math.round(TOTEM_CONFIG.sealPowerBonus * 100) + '% Combat Power.', 'relic');
   showToast('SEAL ' + k + ' BROKEN! +' + formatNumber(stones) + ' Bloodstones', 'success', true);
   const unlock = TOTEM_UNLOCKS.find(u => u.seal === k);
-  if (unlock) {
+  if (unlock && unlock.live) {
+    logCombatMessage('🌳 Seal ' + k + ' opens: <strong>' + unlock.name + '</strong>! Find it on the Hunter\'s Legacy tab.', 'unlock');
+    showToast(unlock.name + ' is open!', 'success', true);
+  } else if (unlock) {
     logCombatMessage('🧭 Seal ' + k + ' reveals: <strong>' + unlock.name + '</strong> (coming in a future update).', 'unlock');
   }
+}
+
+/**
+ * ================= HUNTER'S LEGACY SKILL TREE =================
+ * Permanent (never reset by Ascension). Opens when Seal 1 is broken.
+ */
+function defaultLegacyState() {
+  return { ranks: {}, freeRespec: false, insight: {} };
+}
+
+function isLegacyUnlocked() {
+  return !!(gameState.totem && gameState.totem.sealsBroken >= LEGACY_CONFIG.unlockSeal);
+}
+
+function getLegacyRank(nodeId) {
+  if (!gameState.legacy || !gameState.legacy.ranks) return 0;
+  return gameState.legacy.ranks[nodeId] || 0;
+}
+
+function getLegacyNode(nodeId) {
+  return LEGACY_NODES.find(n => n.id === nodeId) || null;
+}
+
+/** Cost of the next rank, or null when maxed */
+function getLegacyNodeCost(node) {
+  const rank = getLegacyRank(node.id);
+  if (rank >= node.maxRank) return null;
+  return Math.round(node.baseCost * Math.pow(LEGACY_CONFIG.costGrowth, rank));
+}
+
+/** Total Shards spent on one node */
+function getLegacyNodeSpent(node) {
+  let total = 0;
+  for (let r = 0; r < getLegacyRank(node.id); r++) total += Math.round(node.baseCost * Math.pow(LEGACY_CONFIG.costGrowth, r));
+  return total;
+}
+
+function getLegacySpent() {
+  return LEGACY_NODES.reduce((sum, n) => sum + getLegacyNodeSpent(n), 0);
+}
+
+/** A node opens once every node it requires has rank 1 */
+function isLegacyNodeOpen(node) {
+  return node.requires.every(id => getLegacyRank(id) >= 1);
+}
+
+function canBuyLegacyRank(node) {
+  if (!isLegacyUnlocked() || !isLegacyNodeOpen(node)) return false;
+  const cost = getLegacyNodeCost(node);
+  return cost !== null && gameState.totem.shards >= cost;
+}
+
+function buyLegacyRank(nodeId) {
+  const node = getLegacyNode(nodeId);
+  if (!node || !canBuyLegacyRank(node)) return false;
+  gameState.totem.shards -= getLegacyNodeCost(node);
+  gameState.legacy.ranks[node.id] = getLegacyRank(node.id) + 1;
+  return true;
+}
+
+/** Shards a respec would give back right now */
+function getLegacyRespecRefund() {
+  const spent = getLegacySpent();
+  if (gameState.legacy && gameState.legacy.freeRespec) return spent;
+  return Math.floor(spent * (1 - LEGACY_CONFIG.respecFeePct));
+}
+
+function respecLegacy() {
+  const spent = getLegacySpent();
+  if (spent <= 0) return 0;
+  const refund = getLegacyRespecRefund();
+  gameState.totem.shards += refund;
+  gameState.legacy.ranks = {};
+  gameState.legacy.freeRespec = false;
+  return refund;
+}
+
+/** 1 + rank x perRank for a node (multiplicative bonus helper) */
+function getLegacyMult(nodeId) {
+  const node = getLegacyNode(nodeId);
+  return 1 + getLegacyRank(nodeId) * (node ? node.perRank : 0);
+}
+
+/** 1 - rank x perRank for a node (cost / duration reduction helper) */
+function getLegacyReduction(nodeId) {
+  const node = getLegacyNode(nodeId);
+  return Math.max(0.1, 1 - getLegacyRank(nodeId) * (node ? node.perRank : 0));
+}
+
+function hasLegacyCapstone(nodeId) {
+  return getLegacyRank(nodeId) >= 1;
+}
+
+/** Battle Insight: stacks earned by losing to this boss or guardian */
+function getBattleInsightStacks(beast) {
+  if (!beast || !gameState.legacy || !gameState.legacy.insight) return 0;
+  return Math.min(LEGACY_CONFIG.insightMaxStacks, gameState.legacy.insight[beast.id] || 0);
+}
+
+function getBattleInsightMult(beast) {
+  if (!hasLegacyCapstone('battle_insight')) return 1;
+  return 1 + getBattleInsightStacks(beast) * LEGACY_CONFIG.insightPerLoss;
+}
+
+function addBattleInsight(beast) {
+  if (!beast || !hasLegacyCapstone('battle_insight')) return false;
+  const cur = gameState.legacy.insight[beast.id] || 0;
+  if (cur >= LEGACY_CONFIG.insightMaxStacks) return false;
+  gameState.legacy.insight[beast.id] = cur + 1;
+  return true;
+}
+
+function clearBattleInsight(beast) {
+  if (beast && gameState.legacy && gameState.legacy.insight) delete gameState.legacy.insight[beast.id];
+}
+
+/** Combat Power used against one specific boss or guardian (includes Battle Insight) */
+function getCombatPowerVs(beast) {
+  return Math.floor(getTotalCombatPower() * getBattleInsightMult(beast));
+}
+
+/** Totem damage from one Forage click */
+function getTotemClickDamage() {
+  return getTotalCombatPower() * TOTEM_CONFIG.clickPct * getLegacyMult('totem_breaker');
 }
 
 /**
@@ -599,6 +731,8 @@ function performAscension() {
 
   gameState.bloodstones += claimed;
   gameState.ascensionCount += 1;
+  // Hunter's Legacy: one free respec after each Ascension
+  if (gameState.legacy) gameState.legacy.freeRespec = true;
 
   // Full Loop Prestige Reset: Reset Camp Economy, Weapons, Training, and Milestone Bosses
   gameState.meat = 0;
@@ -656,6 +790,8 @@ function getGeneratorMilestoneMultiplier(genId) {
   for (const m of GENERATOR_MILESTONES) {
     if (count >= m.count) {
       mult *= m.mult;
+      // Feast of Plenty (Hunter's Legacy capstone)
+      if (hasLegacyCapstone('feast_of_plenty')) mult *= LEGACY_CONFIG.feastMult;
     }
   }
   return mult;
@@ -728,7 +864,7 @@ function getParentLevelCost(beastId) {
   const scale = parentDef ? parentDef.costScale : 1.38;
   const warmthLvl = getAscensionPerkLevel('catalytic_warmth');
   const discount = Math.max(0.4, 1 - (warmthLvl * 0.12));
-  return Math.floor(baseCost * discount * Math.pow(scale, lvl - 1));
+  return Math.floor(baseCost * discount * Math.pow(scale, lvl - 1) * getLegacyReduction('nurturing_hands'));
 }
 
 function getEffectiveGestationSec(hybrid) {
@@ -744,7 +880,7 @@ function getHybridLevel(hybridId) {
 
 function getHybridLevelCost(hybrid) {
   const lvl = getHybridLevel(hybrid.id);
-  return Math.floor(hybrid.treatCost * Math.pow(HYBRID_ENHANCE_COST_SCALE, lvl));
+  return Math.floor(hybrid.treatCost * Math.pow(HYBRID_ENHANCE_COST_SCALE, lvl) * getLegacyReduction('hybrid_training'));
 }
 
 function getSparringStaminaCost() {
@@ -807,7 +943,7 @@ function getWoundedDuration(beast = getSelectedFightTarget()) {
   }
   const mult = getRelicEffectMultiplier('chitin_carapace');
   const relicDur = hasRelic('chitin_carapace') ? Math.max(3.0, baseDur / (1 + mult)) : baseDur;
-  return relicDur * (1 - Math.min(0.5, getFishCodexBonus('wound')));
+  return relicDur * (1 - Math.min(0.5, getFishCodexBonus('wound'))) * getLegacyReduction('thick_hide');
 }
 
 function getBrutePowerPerLevel() {
@@ -913,8 +1049,11 @@ function isHybridAwake(hybrid) {
 
 function getHybridRawPower(hybrid) {
   const hLvl = getHybridLevel(hybrid.id);
-  if (hLvl <= 0 || !isHybridAwake(hybrid)) return 0;
-  return Math.floor(hybrid.basePower * (1 + ((hLvl - 1) * 0.20)));
+  if (hLvl <= 0) return 0;
+  const full = Math.floor(hybrid.basePower * (1 + ((hLvl - 1) * 0.20)));
+  if (isHybridAwake(hybrid)) return full;
+  // Pack Alpha (Hunter's Legacy capstone): dormant hybrids still lend part of their power
+  return hasLegacyCapstone('pack_alpha') ? Math.floor(full * LEGACY_CONFIG.packAlphaShare) : 0;
 }
 
 /** Level that a hybrid's passive bonuses use: 0 while it is dormant (both parents must be tamed this run) */
@@ -940,13 +1079,13 @@ function getTotalBeastPower() {
   for (const hybrid of HYBRID_CATALOG) {
     rawBeastPower += getHybridRawPower(hybrid);
   }
-  return Math.floor(rawBeastPower * getBeastMasteryMultiplier());
+  return Math.floor(rawBeastPower * getBeastMasteryMultiplier() * getLegacyMult('beast_bond'));
 }
 
 function getTotalCombatPower() {
   const base = getHunterPower() + getTotalBeastPower();
   // Fishing: Codex power bonus and Abyssal Fervor meal
-  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')));
+  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts'));
 }
 
 function getBaseMeatRate() {
@@ -998,6 +1137,7 @@ function getMeatRate(withAdrenalineOverride = null) {
   rate *= (1 + getFishCodexBonus('meat'));
   rate *= getFishBuffMult('meat');
   rate *= (1 + getTotemBonus('meat'));
+  rate *= getLegacyMult('cleavers_edge');
 
   return rate;
 }
@@ -1040,6 +1180,9 @@ function getClickYield() {
     totalYield = Math.floor(totalYield * (1 + (viperhawkLvl * 0.15)));
   }
 
+  // Marrow Harvest (Hunter's Legacy) boosts the flat strike too
+  totalYield = Math.floor(totalYield * getLegacyMult('marrow_harvest'));
+
   totalYield += Math.floor(passiveRate * percentBonus);
 
   const viperwyrmLvl = getActiveHybridLevel('viperwyrm');
@@ -1063,7 +1206,7 @@ function getEffectiveBossBracket(beast) {
 }
 
 function calculateWinChance(beast) {
-  const power = getTotalCombatPower();
+  const power = getCombatPowerVs(beast);
   const { min, max } = getEffectiveBossBracket(beast);
 
   if (power < min) {
@@ -1258,7 +1401,7 @@ function challengeCurrentBeast() {
     showToast(`Not enough stamina! Requires ${staminaCost} Stamina.`, 'warning');
     return;
   }
-  const playerPower = getTotalCombatPower();
+  const playerPower = getCombatPowerVs(beast);
   const { min: effMin } = getEffectiveBossBracket(beast);
 
   if (playerPower < effMin && !hasRelic('magma_stinger')) {
@@ -1278,6 +1421,7 @@ function challengeCurrentBeast() {
 
     if (roll <= winChance) {
       sound.playWin();
+      clearBattleInsight(beast);
 
       if (hasRelic('magma_stinger') && winChance < 0.25) {
         gameState.stamina = Math.min(getMaxStamina(), gameState.stamina + staminaCost);
@@ -1333,6 +1477,9 @@ function challengeCurrentBeast() {
       }
     } else {
       sound.playDefeat();
+      if (addBattleInsight(beast)) {
+        logCombatMessage('🧠 <strong>Battle Insight:</strong> +' + Math.round(getBattleInsightStacks(beast) * LEGACY_CONFIG.insightPerLoss * 100) + '% Combat Power against ' + beast.name + ' until you beat it.', 'relic');
+      }
       gameState.inCooldown = true;
       gameState.cooldownRemaining = getWoundedDuration(beast);
       gameState.cooldownTotal = gameState.cooldownRemaining;
@@ -1390,6 +1537,7 @@ function saveGameToStorage() {
       unlockedExpansions: gameState.unlockedExpansions,
       fishing: gameState.fishing,
       totem: gameState.totem,
+      legacy: gameState.legacy,
       lastSavedAt: Date.now()
     };
     localStorage.setItem('beast_tamer_savedata', JSON.stringify(data));
@@ -1464,6 +1612,11 @@ function loadGameFromStorage() {
       if (data.totem && typeof data.totem === 'object') {
         gameState.totem = Object.assign(defaultTotemState(), data.totem);
         gameState.totem.bonuses = Object.assign(defaultTotemState().bonuses, data.totem.bonuses || {});
+      }
+      if (data.legacy && typeof data.legacy === 'object') {
+        gameState.legacy = Object.assign(defaultLegacyState(), data.legacy);
+        gameState.legacy.ranks = data.legacy.ranks || {};
+        gameState.legacy.insight = data.legacy.insight || {};
       }
       // Saves that already tamed the Wyrm or Ascended get the Totem right away
       checkTotemUnlock();

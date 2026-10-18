@@ -664,8 +664,55 @@ const TOTEM_TITLES = ['Primordial', 'Ancient', 'Elder', 'Mythic', 'Eternal'];
 
 /** Features that future updates attach to Seals (shown as "coming soon" until built) */
 const TOTEM_UNLOCKS = [
-  { seal: 1, name: "Hunter's Legacy skill tree", desc: 'Spend Totem Shards on a permanent skill tree.', icon: 'fa-sitemap' },
+  { seal: 1, name: "Hunter's Legacy skill tree", desc: 'Spend Totem Shards on a permanent skill tree.', icon: 'fa-sitemap', live: true },
   { seal: 2, name: 'Trophy Weapons', desc: 'Forge weapons beyond the Glaive from boss parts.', icon: 'fa-hammer' },
   { seal: 3, name: 'Packmaster automation', desc: 'Auto-buy generators, auto-tend the nest, auto trophy fights.', icon: 'fa-robot' },
   { seal: 4, name: 'Primordial Relics', desc: 'Guardians drop a new tier of relics.', icon: 'fa-gem' }
+];
+
+/**
+ * Hunter's Legacy skill tree (opens at Seal 1, bought with Totem Shards, never reset by Ascension)
+ * Rank cost = baseCost x costGrowth^(current rank). Capstones are one 300-Shard rank.
+ */
+const LEGACY_CONFIG = {
+  costGrowth: 1.6,
+  respecFeePct: 0.10,      // a paid respec keeps 90% of spent Shards; the first respec after each Ascension is free
+  unlockSeal: 1,
+  insightPerLoss: 0.02,    // Battle Insight: +2% Combat Power vs that foe per loss
+  insightMaxStacks: 10,    // up to +20%
+  packAlphaShare: 0.25,    // Pack Alpha: dormant hybrids give 25% of their Beast Power
+  feastMult: 1.25          // Feast of Plenty: extra x1.25 per Overdrive milestone reached
+};
+
+const LEGACY_BRANCHES = [
+  { id: 'butcher', name: 'Butcher', tagline: 'Meat and clicks', icon: 'fa-drumstick-bite', color: 'amber' },
+  { id: 'warden', name: 'Warden', tagline: 'Beasts and hybrids', icon: 'fa-paw', color: 'emerald' },
+  { id: 'stalker', name: 'Stalker', tagline: 'Combat and the Totem', icon: 'fa-crosshairs', color: 'rose' },
+  { id: 'packmaster', name: 'Packmaster', tagline: 'Opens at Seal 3', icon: 'fa-robot', color: 'slate', locked: true }
+];
+
+const LEGACY_NODES = [
+  // Butcher
+  { id: 'cleavers_edge', branch: 'butcher', name: "Cleaver's Edge", icon: 'fa-utensils', maxRank: 5, baseCost: 25, perRank: 0.10, requires: [], desc: '+10% Meat/s per rank' },
+  { id: 'marrow_harvest', branch: 'butcher', name: 'Marrow Harvest', icon: 'fa-bone', maxRank: 3, baseCost: 50, perRank: 0.20, requires: ['cleavers_edge'], desc: '+20% base Forage click Meat per rank' },
+  { id: 'smokehouse', branch: 'butcher', name: 'Smokehouse', icon: 'fa-fire-burner', maxRank: 3, baseCost: 80, perRank: 0.20, requires: ['marrow_harvest'], desc: 'Cooked meals last 20% longer per rank' },
+  { id: 'feast_of_plenty', branch: 'butcher', name: 'Feast of Plenty', icon: 'fa-crown', maxRank: 1, baseCost: 300, capstone: true, requires: ['cleavers_edge', 'marrow_harvest', 'smokehouse'], desc: 'Every Overdrive milestone a generator has reached gives it an extra x1.25' },
+  // Warden
+  { id: 'beast_bond', branch: 'warden', name: 'Beast Bond', icon: 'fa-handshake', maxRank: 5, baseCost: 25, perRank: 0.05, requires: [], desc: '+5% Beast Power per rank' },
+  { id: 'nurturing_hands', branch: 'warden', name: 'Nurturing Hands', icon: 'fa-hand-holding-heart', maxRank: 3, baseCost: 50, perRank: 0.08, requires: ['beast_bond'], desc: 'Nursery costs -8% per rank' },
+  { id: 'hybrid_training', branch: 'warden', name: 'Hybrid Training', icon: 'fa-dna', maxRank: 3, baseCost: 80, perRank: 0.08, requires: ['nurturing_hands'], desc: 'Hybrid enhance costs -8% per rank' },
+  { id: 'pack_alpha', branch: 'warden', name: 'Pack Alpha', icon: 'fa-crown', maxRank: 1, baseCost: 300, capstone: true, requires: ['beast_bond', 'nurturing_hands', 'hybrid_training'], desc: 'Dormant hybrids still give 25% of their Beast Power (no passives)' },
+  // Stalker
+  { id: 'keen_instincts', branch: 'stalker', name: 'Keen Instincts', icon: 'fa-eye', maxRank: 5, baseCost: 25, perRank: 0.04, requires: [], desc: '+4% Combat Power per rank' },
+  { id: 'totem_breaker', branch: 'stalker', name: 'Totem Breaker', icon: 'fa-hammer', maxRank: 5, baseCost: 50, perRank: 0.10, requires: ['keen_instincts'], desc: '+10% damage to the Totem per rank' },
+  { id: 'thick_hide', branch: 'stalker', name: 'Thick Hide', icon: 'fa-shield-halved', maxRank: 3, baseCost: 80, perRank: 0.10, requires: ['totem_breaker'], desc: '-10% wound time after a lost fight per rank' },
+  { id: 'battle_insight', branch: 'stalker', name: 'Battle Insight', icon: 'fa-crown', maxRank: 1, baseCost: 300, capstone: true, requires: ['keen_instincts', 'totem_breaker', 'thick_hide'], desc: 'Each loss to a boss or guardian gives +2% Combat Power against that one, up to +20%. Resets when you beat it.' }
+];
+
+// Packmaster preview (Seal 3, not buyable yet)
+const LEGACY_PACKMASTER_PREVIEW = [
+  { name: 'Auto-Buy', icon: 'fa-cart-shopping', desc: 'Buys generators for you' },
+  { name: 'Auto-Tend Nest', icon: 'fa-egg', desc: 'Feeds the nursery' },
+  { name: 'Auto-Trophy', icon: 'fa-trophy', desc: 'Repeats boss wins' },
+  { name: 'Auto-Strike', icon: 'fa-bolt', desc: 'Spends spare Stamina on the Totem' }
 ];
