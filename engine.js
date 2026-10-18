@@ -78,6 +78,8 @@ const sound = new SoundEngine();
 const MAX_OFFLINE_SECONDS = 43200; // 12 hours max offline catch-up
 const FORGE_EXCAVATE_COST = 20000000; // Meat to excavate Beast Forge
 const BEAST_MASTERY_PER_LEVEL = 0.1; // +Beast Power % per Beast Mastery level
+const ANATOMY_MAX_RANK = 25; // Weakpoint Anatomy max rank
+const ANATOMY_REDUCTION_PER_RANK = 0.012; // Boss bracket reduction per rank
 const WIN_CHANCE_FLOOR = 0.01; // Lowest possible odds once you meet a boss's minimum power
 let isResetting = false;
 
@@ -650,7 +652,11 @@ function getBeastMasteryCost() {
 
 function getWeakpointAnatomyCost() {
   const baseCost = 8000 * getTrainingDisciplineCostMultiplier();
-  return Math.floor(baseCost * Math.pow(1.55, gameState.weakpointAnatomyLevel));
+  return Math.floor(baseCost * Math.pow(1.6, gameState.weakpointAnatomyLevel));
+}
+
+function getWeakpointAnatomyReduction() {
+  return Math.min(ANATOMY_MAX_RANK, gameState.weakpointAnatomyLevel) * ANATOMY_REDUCTION_PER_RANK;
 }
 
 function isGeneratorUnlocked(gen) {
@@ -821,7 +827,7 @@ function getClickYield() {
 }
 
 function getEffectiveBossBracket(beast) {
-  const reduction = Math.min(0.25, gameState.weakpointAnatomyLevel * 0.025);
+  const reduction = getWeakpointAnatomyReduction();
   return {
     min: Math.floor(beast.minPower * (1 - reduction)),
     max: Math.floor(beast.maxPower * (1 - reduction))

@@ -84,6 +84,7 @@ const elements = {
   trainAnatomyCost: document.getElementById('train-anatomy-cost'),
   btnBuyAnatomy: document.getElementById('btn-buy-anatomy'),
   btnBuyAnatomyLabel: document.getElementById('btn-buy-anatomy-label'),
+  trainAnatomyCurrent: document.getElementById('train-anatomy-current'),
 
   sparringLevel: document.getElementById('sparring-level'),
   sparringCostMeat: document.getElementById('sparring-cost-meat'),
@@ -967,10 +968,11 @@ function renderFrame(meatRate) {
   }
 
   const anatomyCost = getWeakpointAnatomyCost();
-  const isAnatomyMaxed = gameState.weakpointAnatomyLevel >= 10;
-  elements.trainAnatomyLvl.textContent = gameState.weakpointAnatomyLevel;
+  const isAnatomyMaxed = gameState.weakpointAnatomyLevel >= ANATOMY_MAX_RANK;
+  elements.trainAnatomyLvl.textContent = gameState.weakpointAnatomyLevel + '/' + ANATOMY_MAX_RANK;
+  if (elements.trainAnatomyCurrent) elements.trainAnatomyCurrent.textContent = '-' + +(getWeakpointAnatomyReduction() * 100).toFixed(1) + '%';
   if (isAnatomyMaxed) {
-    elements.btnBuyAnatomyLabel.textContent = 'Maxed (-25%)';
+    elements.btnBuyAnatomyLabel.textContent = 'Maxed (-' + +(getWeakpointAnatomyReduction() * 100).toFixed(1) + '%)';
     elements.trainAnatomyCostWrap.classList.add('hidden');
     elements.btnBuyAnatomy.disabled = true;
   } else {
@@ -1515,7 +1517,7 @@ elements.btnBuyMastery.addEventListener('click', () => {
 
 elements.btnBuyAnatomy.addEventListener('click', () => {
   const cost = getWeakpointAnatomyCost();
-  if (gameState.meat >= cost && gameState.weakpointAnatomyLevel < 10) {
+  if (gameState.meat >= cost && gameState.weakpointAnatomyLevel < ANATOMY_MAX_RANK) {
     sound.playBuy();
     gameState.meat -= cost;
     gameState.weakpointAnatomyLevel += 1;
