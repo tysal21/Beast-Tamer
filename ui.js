@@ -1183,8 +1183,19 @@ function renderGeneratorsLadder() {
     const card = document.createElement('div');
     if (isUnlocked) {
       const eachYieldStr = gen.yieldPerSec < 1 ? gen.yieldPerSec.toFixed(1) : formatNumber(gen.yieldPerSec);
-      const totalYieldVal = count * gen.yieldPerSec;
+      // Milestone Overdrive: current multiplier (applied to the total) and the next threshold
+      const milestoneMult = getGeneratorMilestoneMultiplier(gen.id);
+      const totalYieldVal = count * gen.yieldPerSec * milestoneMult;
       const totalYieldStr = totalYieldVal > 0 && totalYieldVal < 10 ? totalYieldVal.toFixed(1) : formatNumber(totalYieldVal);
+      const nextMilestone = GENERATOR_MILESTONES.find(m => count < m.count);
+      const overdriveHtml = milestoneMult > 1
+        ? '<span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/50 px-1.5 py-0.5 rounded-full" title="Milestone Overdrive: this generator\'s output is multiplied">' +
+            '<i class="fa-solid fa-bolt"></i>' + milestoneMult + 'x Overdrive' +
+          '</span>'
+        : '';
+      const nextMilestoneHtml = nextMilestone
+        ? '<span class="text-[10px] text-slate-500">Next: ' + nextMilestone.totalMult + 'x at ' + nextMilestone.count + ' (' + count + '/' + nextMilestone.count + ')</span>'
+        : '<span class="text-[10px] font-bold text-amber-400">MAX OVERDRIVE</span>';
       const disabledAttr = canAfford ? '' : 'disabled';
 
       const iconInnerHtml = gen.image
@@ -1205,8 +1216,10 @@ function renderGeneratorsLadder() {
               '</span>' +
             '</div>' +
             '<div class="text-xs text-slate-400 mt-0.5">' + gen.desc + '</div>' +
-            '<div class="text-[11px] text-emerald-400 font-mono mt-0.5">' +
-              '+' + eachYieldStr + ' Meat/s each (Total: +' + totalYieldStr + '/s)' +
+            '<div class="text-[11px] text-emerald-400 font-mono mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">' +
+              '<span>+' + eachYieldStr + ' Meat/s each (Total: +' + totalYieldStr + '/s)</span>' +
+              overdriveHtml +
+              nextMilestoneHtml +
             '</div>' +
           '</div>' +
         '</div>' +
