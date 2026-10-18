@@ -354,6 +354,26 @@ const WEAPONS_CATALOG = [
     combatPower: 1250,
     icon: 'fa-skull-crossbones',
     desc: '+1,000 Meat per click + 3.5% of passive Meat/sec. +1,250 Combat Power.'
+  },
+  {
+    tier: 8,
+    name: 'Ironhide Greataxe',
+    cost: 250000000,
+    flatBonus: 2499,
+    percentBonus: 0.0375,
+    combatPower: 1500,
+    icon: 'fa-gavel',
+    desc: '+2,500 Meat per click + 3.75% of passive Meat/sec. +1,500 Combat Power.'
+  },
+  {
+    tier: 9,
+    name: 'Stormcaller Trident',
+    cost: 3000000000,
+    flatBonus: 5999,
+    percentBonus: 0.04,
+    combatPower: 3000,
+    icon: 'fa-bolt-lightning',
+    desc: '+6,000 Meat per click + 4% of passive Meat/sec. +3,000 Combat Power.'
   }
 ];
 
@@ -385,7 +405,7 @@ const HYBRID_CATALOG = [
     basePower: 4500,
     icon: 'fa-bug',
     color: '#06b6d4',
-    desc: '+4,500 Base Power. +2% Critical Click Chance & +15% Crit Damage per level.'
+    desc: '+4,500 Base Power. +2% crit chance and +0.75x crit multiplier per level (crits start at 5x).'
   },
   {
     id: 'tuskpion',
@@ -398,7 +418,7 @@ const HYBRID_CATALOG = [
     basePower: 11000,
     icon: 'fa-shield-halved',
     color: '#f59e0b',
-    desc: '+11,000 Base Power. Reduces Sparring Stamina cost to 3. Sparring breakthrough rate +10% per level.'
+    desc: '+11,000 Base Power. Sparring costs 3 Stamina instead of 4. +10% Sparring breakthrough chance per level.'
   },
   {
     id: 'viperwyrm',

@@ -929,7 +929,7 @@ function renderFrame(meatRate) {
     elements.btnCraftWeapon.disabled = gameState.meat < nextWeapon.cost;
   } else {
     elements.armoryNextName.textContent = 'Max Arsenal Reached';
-    elements.armoryNextBenefit.textContent = 'Apex Beast-Bone Glaive Equipped!';
+    elements.armoryNextBenefit.textContent = WEAPONS_CATALOG[WEAPONS_CATALOG.length - 1].name + ' equipped!';
     elements.btnCraftWeapon.classList.add('hidden');
   }
 
@@ -1021,6 +1021,17 @@ function renderFrame(meatRate) {
   elements.sparringLevel.textContent = gameState.sparringLevel;
   elements.sparringCostMeat.textContent = formatNumber(sparCost);
   elements.sparringTotalMultiplier.textContent = '+' + sparPct + '%';
+  const sparStamEl = document.getElementById('sparring-cost-stamina');
+  if (sparStamEl) sparStamEl.textContent = sparStaminaCost;
+  const btPct = Math.round(getSparBreakthroughChance() * 100);
+  const sparOddsEl = document.getElementById('sparring-odds');
+  if (sparOddsEl) sparOddsEl.textContent = btPct + '% Breakthrough chance';
+  const critEl = document.getElementById('forage-crit-info');
+  if (critEl) {
+    const cc = getCritChance();
+    critEl.classList.toggle('hidden', cc <= 0);
+    critEl.textContent = 'Crit: ' + Math.round(cc * 100) + '% chance · ' + (Math.round(getCritMultiplier() * 100) / 100) + 'x multi';
+  }
 
   if (!gameState.isSparring) {
     elements.btnSparLabel.textContent = 'SPAR WITH PACK (LVL ' + gameState.sparringLevel + ')';
@@ -1480,19 +1491,10 @@ elements.btnForage.addEventListener('click', (e) => {
   let earned = getClickYield();
   let isCrit = false;
 
-  let critChance = 0;
-  if (hasRelic('serpents_fang')) critChance += 0.10;
-  if (hasRelic('magma_stinger')) critChance += 0.15;
-
-  const venompincerLvl = getActiveHybridLevel('venompincer');
-  if (venompincerLvl > 0) {
-    critChance += (0.02 * venompincerLvl);
-  }
-
+  const critChance = getCritChance();
   if (critChance > 0 && Math.random() < critChance) {
     isCrit = true;
-    const critMultiplier = 5 * (1 + (0.15 * venompincerLvl));
-    earned = Math.floor(earned * critMultiplier);
+    earned = Math.floor(earned * getCritMultiplier());
   }
 
   addMeat(earned);
@@ -1594,8 +1596,7 @@ elements.btnSpar.addEventListener('click', () => {
     gameState.isSparring = false;
     gameState.sparringLevel += 1;
 
-    const tuskpionLvl = getActiveHybridLevel('tuskpion');
-    const breakthroughChance = 0.20 + (tuskpionLvl * 0.10);
+    const breakthroughChance = getSparBreakthroughChance();
 
     const isBreakthrough = Math.random() < breakthroughChance;
     const scorpiodrakeLvl = getActiveHybridLevel('scorpiodrake');

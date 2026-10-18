@@ -883,6 +883,24 @@ function getHybridLevelCost(hybrid) {
   return Math.floor(hybrid.treatCost * Math.pow(HYBRID_ENHANCE_COST_SCALE, lvl) * getLegacyReduction('hybrid_training'));
 }
 
+/** Chance that a spar is a Breakthrough (Adrenaline Focus): 20% + 10% per Tuskpion level, max 100% */
+function getSparBreakthroughChance() {
+  return Math.min(1, 0.20 + getActiveHybridLevel('tuskpion') * 0.10);
+}
+
+/** Forage click crits: chance from relics + Venompincer, multiplier 5x + 0.75x per Venompincer level */
+function getCritChance() {
+  let c = 0;
+  if (hasRelic('serpents_fang')) c += 0.10;
+  if (hasRelic('magma_stinger')) c += 0.15;
+  c += 0.02 * getActiveHybridLevel('venompincer');
+  return Math.min(1, c);
+}
+
+function getCritMultiplier() {
+  return 5 * (1 + 0.15 * getActiveHybridLevel('venompincer'));
+}
+
 function getSparringStaminaCost() {
   const tuskpionLvl = getActiveHybridLevel('tuskpion');
   return tuskpionLvl > 0 ? 3 : 4;
