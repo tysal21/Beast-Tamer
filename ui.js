@@ -2583,19 +2583,26 @@ function renderLegacyTree() {
     const c = LEGACY_COLORS[branch.color] || LEGACY_COLORS.slate;
     let body;
     if (branch.locked) {
-      body = LEGACY_PACKMASTER_PREVIEW.map(p =>
-        '<div class="p-3 rounded-xl border border-dashed border-slate-700 bg-primal-900/40 flex items-start gap-2.5">' +
-          '<div class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center bg-primal-900 text-slate-600"><i class="fa-solid ' + p.icon + '"></i></div>' +
-          '<div><div class="text-sm font-bold text-slate-500">' + p.name + '</div><div class="text-[11px] text-slate-500">' + p.desc + '</div></div>' +
-        '</div>').join('') +
-        '<div class="text-[11px] text-slate-500 text-center pt-1"><i class="fa-solid fa-lock mr-1"></i>Arrives with Seal 3 in a later update</div>';
+      const pmOpen = isPackmasterUnlocked();
+      body = LEGACY_PACKMASTER_PREVIEW.map(p => {
+        const ready = pmOpen && p.unlock === 'seal3';
+        const on = ready && isAutomationOn(p.id);
+        const right = ready
+          ? '<button data-automation="' + p.id + '" class="shrink-0 px-3 py-1 rounded-full text-[11px] font-mono font-bold border cursor-pointer ' + (on ? 'bg-emerald-700 text-white border-emerald-400' : 'bg-primal-900 text-slate-300 border-primal-600') + '">' + (on ? 'ON' : 'OFF') + '</button>'
+          : '<span class="shrink-0 text-[10px] font-mono text-slate-500"><i class="fa-solid fa-lock mr-1"></i>' + (p.unlock === 'seal3' ? 'Seal 3' : 'World 2') + '</span>';
+        return '<div class="p-3 rounded-xl border ' + (ready ? 'border-sky-700/60 bg-sky-950/20' : 'border-dashed border-slate-700 bg-primal-900/40') + ' flex items-start gap-2.5">' +
+          '<div class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center bg-primal-900 ' + (ready ? 'text-sky-300' : 'text-slate-600') + '"><i class="fa-solid ' + p.icon + '"></i></div>' +
+          '<div class="min-w-0 flex-1"><div class="text-sm font-bold ' + (ready ? 'text-slate-100' : 'text-slate-500') + '">' + p.name + '</div><div class="text-[11px] ' + (ready ? 'text-slate-400' : 'text-slate-500') + '">' + p.desc + '</div></div>' + right +
+        '</div>';
+      }).join('') +
+        (pmOpen ? '' : '<div class="text-[11px] text-slate-500 text-center pt-1"><i class="fa-solid fa-lock mr-1"></i>Break Seal 3 on the Primal Totem to unlock</div>');
     } else {
       body = LEGACY_NODES.filter(n => n.branch === branch.id).map(n => renderLegacyNode(n, c)).join('<div class="flex justify-center -my-1"><i class="fa-solid fa-chevron-down text-[10px] text-slate-600"></i></div>');
     }
     return '<div class="bg-primal-850 border ' + (branch.locked ? 'border-dashed border-slate-700' : 'border-primal-700') + ' rounded-2xl p-4 shadow-xl space-y-3">' +
       '<div class="flex items-center gap-2"><i class="fa-solid ' + branch.icon + ' ' + c.text + '"></i>' +
       '<div><div class="font-cinzel font-bold ' + (branch.locked ? 'text-slate-400' : 'text-slate-100') + '">' + branch.name + '</div>' +
-      '<div class="text-[10px] uppercase tracking-wider text-slate-500">' + branch.tagline + '</div></div></div>' +
+      '<div class="text-[10px] uppercase tracking-wider text-slate-500">' + (branch.locked && isPackmasterUnlocked() ? 'Automation' : branch.tagline) + '</div></div></div>' +
       body + '</div>';
   }).join('');
 }
@@ -2650,6 +2657,17 @@ if (legacyEls.tabBtn) legacyEls.tabBtn.addEventListener('click', () => switchTab
 
 if (legacyEls.tree) {
   legacyEls.tree.addEventListener('click', (e) => {
+    const auto = e.target.closest('[data-automation]');
+    if (auto) {
+      const id = auto.getAttribute('data-automation');
+      if (!gameState.automation) gameState.automation = { autoBuy: false, autoTend: false };
+      gameState.automation[id] = !gameState.automation[id];
+      sound.playClick();
+      renderLegacyPanel();
+      updateAutoBuyBadge();
+      saveGameToStorage();
+      return;
+    }
     const btn = e.target.closest('[data-legacy-node]');
     if (!btn) return;
     const node = getLegacyNode(btn.getAttribute('data-legacy-node'));
@@ -3291,6 +3309,36 @@ function renderBestiary() {
     });
   });
 }
+
+/**
+ * Seal 3 Packmaster: run automation once a second, and show an Auto-Buy toggle on the generator list
+ */
+function updateAutoBuyBadge() {
+  const btn = document.getElementById('btn-auto-buy');
+  if (!btn) return;
+  const open = isPackmasterUnlocked();
+  btn.classList.toggle('hidden', !open);
+  const on = isAutomationOn('autoBuy');
+  btn.textContent = 'Auto ' + (on ? 'ON' : 'OFF');
+  btn.className = (open ? '' : 'hidden ') + 'px-2 py-1 rounded font-mono text-[11px] font-bold cursor-pointer border ' + (on ? 'bg-emerald-700 text-white border-emerald-400' : 'bg-primal-800 text-slate-300 border-primal-700');
+}
+(function initAutomation() {
+  const btn = document.getElementById('btn-auto-buy');
+  if (btn) btn.addEventListener('click', () => {
+    if (!isPackmasterUnlocked()) return;
+    gameState.automation.autoBuy = !gameState.automation.autoBuy;
+    updateAutoBuyBadge();
+    if (gameState.activeTab === 'legacy') renderLegacyPanel();
+    saveGameToStorage();
+  });
+  updateAutoBuyBadge();
+  setInterval(() => {
+    const did = runAutomation();
+    if (did.bought > 0) renderGeneratorsLadder();
+    if (did.tended && gameState.activeTab === 'forge') renderForge();
+    updateAutoBuyBadge();
+  }, 1000);
+})();
 
 setInterval(saveGameToStorage, 10000);
 

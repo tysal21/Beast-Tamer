@@ -745,7 +745,7 @@ const APEX_CONFIG = {
 const TOTEM_UNLOCKS = [
   { seal: 1, name: "Hunter's Legacy skill tree", desc: 'Spend Totem Shards on a permanent skill tree.', icon: 'fa-sitemap', live: true },
   { seal: 2, name: 'Trophy Weapons', desc: 'Forge a permanent Trophy Weapon from Apex Fangs.', icon: 'fa-hammer', live: true },
-  { seal: 3, name: 'Packmaster automation', desc: 'Auto-buy generators, auto-tend the nest, auto trophy fights.', icon: 'fa-robot' },
+  { seal: 3, name: 'Packmaster automation', desc: 'Auto-Buy generators and Auto-Tend the nest (toggles on the Hunter\'s Legacy tab).', icon: 'fa-robot', live: true },
   { seal: 4, name: 'Primordial Relics', desc: 'Guardians drop a new tier of relics.', icon: 'fa-gem' }
 ];
 
@@ -790,8 +790,13 @@ const LEGACY_NODES = [
 
 // Packmaster preview (Seal 3, not buyable yet)
 const LEGACY_PACKMASTER_PREVIEW = [
-  { name: 'Auto-Buy', icon: 'fa-cart-shopping', desc: 'Buys generators for you' },
-  { name: 'Auto-Tend Nest', icon: 'fa-egg', desc: 'Feeds the nursery' },
-  { name: 'Auto-Trophy', icon: 'fa-trophy', desc: 'Repeats boss wins' },
-  { name: 'Auto-Strike', icon: 'fa-bolt', desc: 'Spends spare Stamina on the Totem' }
+  { id: 'autoBuy', name: 'Auto-Buy', icon: 'fa-cart-shopping', desc: 'Buys generators for you, using your x1 / x10 / Next setting. Never spends more than half your Meat on one purchase.', unlock: 'seal3' },
+  { id: 'autoTend', name: 'Auto-Tend Nest', icon: 'fa-egg', desc: 'Tends the incubating egg with Stamina that would otherwise go to waste (only when your Stamina bar is full).', unlock: 'seal3' },
+  { id: 'autoTrophy', name: 'Auto-Trophy', icon: 'fa-trophy', desc: 'Repeats boss wins for relics', unlock: 'world2' },
+  { id: 'autoStrike', name: 'Auto-Strike', icon: 'fa-bolt', desc: 'Spends spare Stamina on the Totem', unlock: 'world2' }
 ];
+
+const PACKMASTER_CONFIG = {
+  unlockSeal: 3,
+  maxSpendShare: 0.5 // Auto-Buy never spends more than this share of your Meat on one purchase
+};

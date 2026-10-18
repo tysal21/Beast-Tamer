@@ -185,6 +185,9 @@ const gameState = {
   // Fight counter per boss / guardian (kept forever; taming tries reset each run)
   fightStats: {},
 
+  // Seal 3 Packmaster automation toggles (kept forever)
+  automation: { autoBuy: false, autoTend: false },
+
   // Generator buy amount toggle: 'x1', 'x10' or 'next'
   genBuyMode: 'x1',
 
@@ -779,6 +782,45 @@ function getGeneratorBulk(gen, mode = gameState.genBuyMode || 'x1') {
   }
   gameState.generators[gen.id] = count;
   return { qty, cost };
+}
+
+/** ---------- Seal 3 Packmaster ---------- */
+function isPackmasterUnlocked() {
+  return !!(gameState.totem && gameState.totem.sealsBroken >= PACKMASTER_CONFIG.unlockSeal);
+}
+
+function isAutomationOn(id) {
+  return isPackmasterUnlocked() && !!(gameState.automation && gameState.automation[id]);
+}
+
+/** Runs once a second while the game is open. Returns what it did (for the UI). */
+function runAutomation() {
+  const did = { bought: 0, tended: false };
+  if (!isPackmasterUnlocked()) return did;
+  if (isAutomationOn('autoBuy')) {
+    // Highest tier first; a few buys per tick at most
+    for (let guard = 0; guard < 6; guard++) {
+      let boughtThisPass = false;
+      for (let i = GENERATOR_LADDER.length - 1; i >= 0; i--) {
+        const gen = GENERATOR_LADDER[i];
+        if (!isGeneratorUnlocked(gen)) continue;
+        const bulk = getGeneratorBulk(gen);
+        if (bulk.cost <= gameState.meat * PACKMASTER_CONFIG.maxSpendShare && buyGeneratorBulk(gen) > 0) {
+          did.bought += bulk.qty;
+          boughtThisPass = true;
+          break;
+        }
+      }
+      if (!boughtThisPass) break;
+    }
+  }
+  if (isAutomationOn('autoTend') && gameState.incubator && !gameState.isBattling && gameState.stamina >= 2 && gameState.stamina >= getMaxStamina() - 0.001) {
+    gameState.stamina -= 2;
+    gameState.incubator.remaining = Math.max(0, gameState.incubator.remaining - 30);
+    did.tended = true;
+    checkIncubatorHatch();
+  }
+  return did;
 }
 
 function buyGeneratorBulk(gen) {
@@ -1945,6 +1987,7 @@ function saveGameToStorage() {
       fightAnim: gameState.fightAnim || 'full',
       bestiary: gameState.bestiary || {},
       genBuyMode: gameState.genBuyMode,
+      automation: gameState.automation,
       lastSavedAt: Date.now()
     };
     localStorage.setItem('beast_tamer_savedata', JSON.stringify(data));
@@ -2044,6 +2087,7 @@ function loadGameFromStorage() {
       if (data.trophy && typeof data.trophy === 'object') gameState.trophy = { fangs: data.trophy.fangs || 0, level: data.trophy.level || 0 };
       if (typeof data.bestApexDepth === 'number') gameState.bestApexDepth = data.bestApexDepth;
       if (['x1', 'x10', 'next'].includes(data.genBuyMode)) gameState.genBuyMode = data.genBuyMode;
+      if (data.automation && typeof data.automation === 'object') gameState.automation = Object.assign({ autoBuy: false, autoTend: false }, data.automation);
       // Saves that already tamed the Wyrm or Ascended get the Totem right away
       checkTotemUnlock();
 
