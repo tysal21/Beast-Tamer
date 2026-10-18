@@ -541,6 +541,7 @@ const ASCENSION_EXPANSIONS = [
     cost: 250,
     reqAscensions: 3,
     badge: 'Expansion II',
+    comingSoon: true, // not built yet: can't be bought
     desc: 'Dispatch idle tamed hybrids on timed autonomous scavenging missions into primeval ruins.'
   }
 ];

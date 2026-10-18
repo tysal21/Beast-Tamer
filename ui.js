@@ -272,6 +272,7 @@ function buyAscensionExpansion(expId) {
   if (!exp) return;
   if (!gameState.unlockedExpansions) gameState.unlockedExpansions = {};
   if (gameState.unlockedExpansions[exp.id]) return;
+  if (exp.comingSoon) return;
   if (gameState.ascensionCount < exp.reqAscensions) return;
   if (gameState.bloodstones < exp.cost) return;
 
@@ -337,6 +338,8 @@ function renderAscensionAltar() {
         footer = exp.id === 'primal_fishing'
           ? '<button class="btn-open-fishing w-full py-2 px-3 bg-cyan-800 hover:bg-cyan-700 text-white text-xs font-semibold rounded-lg font-mono flex items-center justify-center gap-1.5 cursor-pointer"><i class="fa-solid fa-fish-fins"></i><span>UNLOCKED · Open Fishing Dock</span></button>'
           : '<div class="text-center text-[11px] font-mono font-bold text-cyan-300 py-1.5 border border-cyan-700/50 rounded-lg bg-cyan-950/40">UNLOCKED · Content coming soon</div>';
+      } else if (exp.comingSoon) {
+        footer = '<div class="text-center text-[11px] font-mono text-slate-400 py-1.5 border border-dashed border-slate-700 rounded-lg"><i class="fa-solid fa-hourglass-half mr-1"></i>Coming in a future update</div>';
       } else if (!meetsReq) {
         footer = '<div class="text-center text-[11px] font-mono text-slate-400 py-1.5 border border-slate-700 rounded-lg">' +
           '<i class="fa-solid fa-lock mr-1"></i>Requires ' + exp.reqAscensions + ' Ascension' + (exp.reqAscensions === 1 ? '' : 's') +
@@ -2812,6 +2815,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   gameState.lastWallTime = Date.now();
   logCombatMessage('Camp initialized. Ready for primal hunts and trophy expeditions.', 'default');
+  if (gameState.pendingNotice) { logCombatMessage('💎 ' + gameState.pendingNotice, 'relic'); showToast(gameState.pendingNotice, 'success', true); delete gameState.pendingNotice; saveGameToStorage(); }
 
   if (lastSavedAt) {
     const offlineSec = Math.max(0, (Date.now() - lastSavedAt) / 1000);

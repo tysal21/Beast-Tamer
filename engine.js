@@ -1744,6 +1744,14 @@ function loadGameFromStorage() {
       if (typeof data.ascensionCount === 'number' && Number.isFinite(data.ascensionCount)) gameState.ascensionCount = data.ascensionCount;
       if (data.ascensionPerks && typeof data.ascensionPerks === 'object') gameState.ascensionPerks = data.ascensionPerks;
       if (data.unlockedExpansions && typeof data.unlockedExpansions === 'object') gameState.unlockedExpansions = data.unlockedExpansions;
+      // Refund expansions that were bought before they had any content
+      ASCENSION_EXPANSIONS.forEach(exp => {
+        if (exp.comingSoon && gameState.unlockedExpansions && gameState.unlockedExpansions[exp.id]) {
+          delete gameState.unlockedExpansions[exp.id];
+          gameState.bloodstones += exp.cost;
+          gameState.pendingNotice = 'Refunded ' + exp.cost + ' Bloodstones for ' + exp.name + ' (not built yet).';
+        }
+      });
       if (data.fishing && typeof data.fishing === 'object') {
         const fresh = defaultFishingState();
         gameState.fishing = Object.assign(fresh, data.fishing);
