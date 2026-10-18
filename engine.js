@@ -538,6 +538,10 @@ function getSelectedFightTarget() {
     const guardian = getTotemGuardian();
     if (guardian) return guardian;
   }
+  if (gameState.selectedBeastIndex === APEX_SLOT) {
+    const apex = getApexBoss();
+    if (apex) return apex;
+  }
   return BEAST_CATALOG[gameState.selectedBeastIndex] || BEAST_CATALOG[0];
 }
 
@@ -802,6 +806,7 @@ function getCombatPowerBreakdown() {
     const p = getHybridRawPower(h);
     if (p > 0) beasts.push({ label: h.name + ' Lvl ' + getHybridLevel(h.id) + (isHybridAwake(h) ? '' : ' (Pack Alpha 25%)'), value: p });
   }
+  if (getApexDepth() > 0) beasts.push({ label: 'Apex Ladder (' + getApexDepth() + ' tamed)', value: getApexBeastPower() });
   const beastMults = [];
   if (gameState.beastMasteryLevel > 0) beastMults.push({ label: 'Beast Mastery Lvl ' + gameState.beastMasteryLevel, mult: getBeastMasteryMultiplier() });
   if (getLegacyRank('beast_bond') > 0) beastMults.push({ label: 'Beast Bond (Legacy)', mult: getLegacyMult('beast_bond') });
@@ -818,6 +823,85 @@ function getCombatPowerBreakdown() {
     beasts, beastMults, beastTotal: getTotalBeastPower(),
     mults, total: getTotalCombatPower()
   };
+}
+
+/**
+ * ================= APEX LADDER (past the Chimera-Wyrm, resets every Ascension) =================
+ * Tier k (k = 1, 2, 3 ...) is shown as Tier 4 + k. Each is stronger than the last; taming it adds Beast Power
+ * for the rest of the run and raises the Bloodstones you get for Ascending.
+ */
+const APEX_SLOT = 98; // selectedBeastIndex value meaning "the next Apex boss"
+const APEX_TITLES = ['Dread', 'Savage', 'Feral', 'Rabid', 'Bloodmad', 'Abyssal', 'Cataclysm', 'Worldender'];
+
+function isApexUnlocked() {
+  return !!gameState.tamedBeasts['chimera_wyrm'];
+}
+
+function getApexDepth() {
+  return gameState.apexDepth || 0;
+}
+
+/** Bracket minimum of Apex tier k before Weakpoint Anatomy and Ascension growth */
+function getApexBaseMin(k) {
+  const wyrm = BEAST_CATALOG[BEAST_CATALOG.length - 1];
+  return Math.floor(wyrm.minPower * APEX_CONFIG.firstMult * Math.pow(APEX_CONFIG.growth, k - 1));
+}
+
+/** The next Apex boss to fight, shaped like a BEAST_CATALOG entry */
+function getApexBoss() {
+  if (!isApexUnlocked()) return null;
+  const k = getApexDepth() + 1;
+  const base = BEAST_CATALOG[(k - 1) % BEAST_CATALOG.length];
+  const lap = Math.floor((k - 1) / BEAST_CATALOG.length);
+  const title = APEX_TITLES[Math.min(lap, APEX_TITLES.length - 1)] + (lap >= APEX_TITLES.length ? ' ' + toRomanNumeral(lap - APEX_TITLES.length + 2) : '');
+  const min = getApexBaseMin(k);
+  return {
+    id: 'apex_' + k,
+    isApex: true,
+    apexTier: k,
+    tier: 4 + k,
+    baseId: base.id,
+    name: title + ' ' + base.name,
+    image: base.image,
+    fallbackImage: base.fallbackImage,
+    minPower: min,
+    maxPower: min * APEX_CONFIG.maxMult,
+    rewardPower: getApexReward(k),
+    accentColor: base.accentColor,
+    desc: 'Apex Tier ' + (4 + k) + '. Every Apex you tame this run adds Beast Power and raises your Ascension Bloodstones. The ladder resets when you Ascend.',
+    relics: [],
+    staminaCost: APEX_CONFIG.stamina,
+    woundedSec: APEX_CONFIG.woundSec
+  };
+}
+
+function getApexReward(k) {
+  return Math.floor(getApexBaseMin(k) * APEX_CONFIG.rewardShare);
+}
+
+/** Raw Beast Power from Apex tiers tamed this run */
+function getApexBeastPower() {
+  let p = 0;
+  for (let k = 1; k <= getApexDepth(); k++) p += getApexReward(k);
+  return p;
+}
+
+/** Bloodstone multiplier from how deep you got this run */
+function getApexStoneMult() {
+  return 1 + APEX_CONFIG.stonesPerTier * getApexDepth();
+}
+
+function tameApexBoss(boss) {
+  gameState.apexDepth = getApexDepth() + 1;
+  if (gameState.apexDepth > (gameState.bestApexDepth || 0)) {
+    // Deepest ever: a one-time Totem Shard reward
+    gameState.bestApexDepth = gameState.apexDepth;
+    const shards = APEX_CONFIG.bestShardsPerTier * gameState.apexDepth;
+    if (gameState.totem) gameState.totem.shards += shards;
+    logCombatMessage('🏅 <strong>NEW DEEPEST APEX!</strong> Tier ' + boss.tier + ' reached for the first time: +' + formatNumber(shards) + ' Totem Shards.', 'relic');
+  }
+  logCombatMessage('👑 <strong>APEX TAMED!</strong> ' + boss.name + ' (Tier ' + boss.tier + ') joins your pack: +' + formatNumber(boss.rewardPower) + ' Beast Power. Ascension Bloodstones now x' + getApexStoneMult().toFixed(2) + '.', 'unlock');
+  showToast('APEX TAMED: ' + boss.name + '!', 'success', true);
 }
 
 /**
@@ -849,7 +933,7 @@ function calculatePendingBloodstones() {
   const powerFactor = 1 + 1.6 * Math.log10(1 + (getTotalCombatPower() / 100000));
   const soulLvl = getAscensionPerkLevel('primordial_soul');
   const soulMult = 1 + (soulLvl * 0.20);
-  return Math.max(10, Math.floor(10 * meatFactor * powerFactor * soulMult * (1 + getFishCodexBonus('stones'))));
+  return Math.max(10, Math.floor(10 * meatFactor * powerFactor * soulMult * (1 + getFishCodexBonus('stones')) * getApexStoneMult()));
 }
 
 function performAscension() {
@@ -884,6 +968,7 @@ function performAscension() {
   gameState.cooldownRemaining = 0;
 
   gameState.tamedBeasts = {};
+  gameState.apexDepth = 0; // the Apex Ladder starts over
   BEAST_CATALOG.forEach(b => { if (gameState.fightStats && gameState.fightStats[b.id]) gameState.fightStats[b.id].tameTries = 0; });
   gameState.highestTierUnlocked = 1;
   gameState.selectedBeastIndex = 0;
@@ -1263,6 +1348,7 @@ function getTotalBeastPower() {
   for (const hybrid of HYBRID_CATALOG) {
     rawBeastPower += getHybridRawPower(hybrid);
   }
+  rawBeastPower += getApexBeastPower();
   return Math.floor(rawBeastPower * getBeastMasteryMultiplier() * getLegacyMult('beast_bond'));
 }
 
@@ -1382,7 +1468,7 @@ function getClickYield() {
 }
 
 /** Bosses grow stronger with every Ascension (Totem guardians use their own scaling) */
-const BOSS_ASCENSION_GROWTH = 0.25; // +this much boss power per Ascension (linear)
+const BOSS_ASCENSION_GROWTH = 0.75; // +this much boss power per Ascension (linear)
 function getBossAscensionMult(beast) {
   if (!beast || beast.isGuardian) return 1;
   return 1 + BOSS_ASCENSION_GROWTH * (gameState.ascensionCount || 0);
@@ -1646,6 +1732,11 @@ function challengeCurrentBeast() {
       if (beast.isGuardian) {
         breakTotemSeal(beast);
         updateBeastSelectorOptions();
+      } else if (beast.isApex) {
+        tameApexBoss(beast);
+        updateBeastSelectorOptions();
+        renderMenagerie();
+        renderAscensionAltar();
       } else if (!isAlreadyTamed) {
         gameState.tamedBeasts[beast.id] = true;
 
@@ -1752,6 +1843,8 @@ function saveGameToStorage() {
       unlockedExpansions: gameState.unlockedExpansions,
       fishing: gameState.fishing,
       totem: gameState.totem,
+      apexDepth: gameState.apexDepth || 0,
+      bestApexDepth: gameState.bestApexDepth || 0,
       legacy: gameState.legacy,
       fightStats: gameState.fightStats,
       genBuyMode: gameState.genBuyMode,
@@ -1845,6 +1938,8 @@ function loadGameFromStorage() {
         gameState.legacy.insight = data.legacy.insight || {};
       }
       if (data.fightStats && typeof data.fightStats === 'object') gameState.fightStats = data.fightStats;
+      if (typeof data.apexDepth === 'number') gameState.apexDepth = data.apexDepth;
+      if (typeof data.bestApexDepth === 'number') gameState.bestApexDepth = data.bestApexDepth;
       if (['x1', 'x10', 'next'].includes(data.genBuyMode)) gameState.genBuyMode = data.genBuyMode;
       // Saves that already tamed the Wyrm or Ascended get the Totem right away
       checkTotemUnlock();

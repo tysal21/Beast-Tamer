@@ -702,6 +702,18 @@ const TOTEM_LAYER_BONUSES = [
 const TOTEM_TITLES = ['Primordial', 'Ancient', 'Elder', 'Mythic', 'Eternal'];
 
 /** Features that future updates attach to Seals (shown as "coming soon" until built) */
+/** Apex Ladder: bosses past the Wyrm, reset each Ascension */
+const APEX_CONFIG = {
+  firstMult: 3,        // Tier 5 minimum = Wyrm minimum x this
+  growth: 1.5,         // each Apex tier's minimum = previous x this
+  maxMult: 5,          // bracket max = min x this
+  rewardShare: 0.02,   // taming gives Beast Power = 2% of that tier's minimum
+  stonesPerTier: 0.05, // +5% Ascension Bloodstones per Apex tamed this run
+  stamina: 25,
+  woundSec: 300,
+  bestShardsPerTier: 10 // first time ever reaching Apex tier k: +10 x k Totem Shards
+};
+
 const TOTEM_UNLOCKS = [
   { seal: 1, name: "Hunter's Legacy skill tree", desc: 'Spend Totem Shards on a permanent skill tree.', icon: 'fa-sitemap', live: true },
   { seal: 2, name: 'Trophy Weapons', desc: 'Forge weapons beyond the Glaive from boss parts.', icon: 'fa-hammer' },

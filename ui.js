@@ -419,7 +419,9 @@ function updateAscensionLiveElements(force = false) {
       elements.ascendReqNote.textContent = 'Finish the current battle first';
       elements.ascendReqNote.className = 'text-[11px] text-amber-400 font-mono';
     } else {
-      elements.ascendReqNote.textContent = 'Ritual ready. More run Meat & Power = more Bloodstones';
+      const mult = getApexStoneMult();
+      const nextGain = Math.max(0, Math.floor(pending * (mult + APEX_CONFIG.stonesPerTier) / mult) - pending);
+      elements.ascendReqNote.textContent = 'Ritual ready. Apex tamed this run: ' + getApexDepth() + ' (x' + mult.toFixed(2) + ' Bloodstones). Taming the next Apex adds about +' + formatNumber(nextGain) + '.';
       elements.ascendReqNote.className = 'text-[11px] text-emerald-400 font-mono';
     }
   }
@@ -1146,17 +1148,20 @@ function renderFrame(meatRate) {
   // Active Encounter Details
   const activeBeast = getSelectedFightTarget();
   const isGuardianFight = !!activeBeast.isGuardian;
-  const isAlreadyTamed = !isGuardianFight && !!gameState.tamedBeasts[activeBeast.id];
+  const isApexFight = !!activeBeast.isApex;
+  const isAlreadyTamed = !isGuardianFight && !isApexFight && !!gameState.tamedBeasts[activeBeast.id];
   const bracket = getEffectiveBossBracket(activeBeast);
   const effMin = bracket.min;
   const effMax = bracket.max;
 
-  elements.encounterTierBadge.textContent = isGuardianFight ? 'Totem Seal ' + activeBeast.sealNumber : 'Tier ' + activeBeast.tier;
+  elements.encounterTierBadge.textContent = isGuardianFight ? 'Totem Seal ' + activeBeast.sealNumber : (isApexFight ? 'Apex Tier ' : 'Tier ') + activeBeast.tier;
   elements.beastName.textContent = activeBeast.name;
   const fsEl = document.getElementById('beast-fight-stats');
   if (fsEl) {
     const st = (gameState.fightStats && gameState.fightStats[activeBeast.id]) || { trophyFights: 0, trophyWins: 0, relics: 0, tameTries: 0 };
-    if (isGuardianFight) {
+    if (isApexFight) {
+      fsEl.textContent = 'Apex this run: ' + getApexDepth() + ' tamed \u00b7 deepest ever: ' + (gameState.bestApexDepth ? 'Tier ' + (4 + gameState.bestApexDepth) : 'none yet') + ' \u00b7 attempts on this one: ' + st.tameTries;
+    } else if (isGuardianFight) {
       fsEl.textContent = 'Attempts on this Seal: ' + st.tameTries;
     } else if (isAlreadyTamed) {
       const pct = st.trophyFights > 0 ? Math.round(st.trophyWins / st.trophyFights * 100) : 0;
@@ -1170,7 +1175,10 @@ function renderFrame(meatRate) {
   elements.beastPowerMin.textContent = formatNumber(effMin);
   elements.beastPowerMax.textContent = formatNumber(effMax);
 
-  if (isGuardianFight) {
+  if (isApexFight) {
+    elements.beastRewardPower.textContent = '+' + formatNumber(activeBeast.rewardPower) + ' Power, +' + Math.round(APEX_CONFIG.stonesPerTier * 100) + '% Stones';
+    elements.beastRewardPower.className = 'text-fuchsia-300 font-mono';
+  } else if (isGuardianFight) {
     elements.beastRewardPower.textContent = 'Breaks Seal ' + activeBeast.sealNumber;
     elements.beastRewardPower.className = 'text-rose-300 font-mono';
   } else if (isAlreadyTamed) {
@@ -1191,7 +1199,10 @@ function renderFrame(meatRate) {
     elements.beastPortraitImg.src = activeBeast.image;
   }
 
-  if (isGuardianFight) {
+  if (isApexFight) {
+    elements.beastStatusRibbon.textContent = 'APEX LADDER';
+    elements.beastStatusRibbon.className = 'absolute bottom-0 inset-x-0 bg-fuchsia-950/90 text-[10px] text-center font-mono py-0.5 text-fuchsia-300 border-t border-fuchsia-700/60 font-bold';
+  } else if (isGuardianFight) {
     elements.beastStatusRibbon.textContent = 'TOTEM GUARDIAN';
     elements.beastStatusRibbon.className = 'absolute bottom-0 inset-x-0 bg-rose-950/90 text-[10px] text-center font-mono py-0.5 text-rose-300 border-t border-rose-700/60 font-bold';
   } else if (isAlreadyTamed) {
@@ -1222,6 +1233,9 @@ function renderFrame(meatRate) {
   if (gameState.isBattling) {
     elements.btnFightLabel.textContent = 'BATTLING...';
     elements.btnFightIcon.className = 'fa-solid fa-spinner fa-spin text-lg';
+  } else if (isApexFight) {
+    elements.btnFightLabel.textContent = 'TAME APEX';
+    elements.btnFightIcon.className = 'fa-solid fa-crown text-lg text-fuchsia-200';
   } else if (isGuardianFight) {
     elements.btnFightLabel.textContent = 'BREAK THE SEAL';
     elements.btnFightIcon.className = 'fa-solid fa-lock-open text-lg text-rose-200';
@@ -1337,6 +1351,14 @@ function updateBeastSelectorOptions() {
       elements.selectBeastTier.appendChild(opt);
     }
   });
+  const apex = (typeof getApexBoss === 'function') ? getApexBoss() : null;
+  if (apex) {
+    const opt = document.createElement('option');
+    opt.value = APEX_SLOT;
+    opt.textContent = '👑 T' + apex.tier + ': ' + apex.name + ' (Apex Ladder)';
+    if (gameState.selectedBeastIndex === APEX_SLOT) opt.selected = true;
+    elements.selectBeastTier.appendChild(opt);
+  }
   const guardian = (typeof getTotemGuardian === 'function') ? getTotemGuardian() : null;
   if (guardian) {
     const opt = document.createElement('option');
