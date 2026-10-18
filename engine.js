@@ -233,7 +233,16 @@ function getFishStars(fish) {
 /** Share of a species' full Codex bonus you have right now */
 function getFishMasteryShare(fish) {
   const s = getFishStars(fish);
-  return s > 0 ? FISHING_CONFIG.masteryShare[s - 1] : 0;
+  if (s < 3) return s > 0 ? FISHING_CONFIG.masteryShare[s - 1] : 0;
+  return FISHING_CONFIG.masteryShare[2] + getFishGoldPlus(fish) * FISHING_CONFIG.masteryPastGold.perStep;
+}
+
+/** Steps past Gold: Gold +1, +2 ... (each needs another Gold-sized batch of catches) */
+function getFishGoldPlus(fish) {
+  const gold = (FISHING_CONFIG.mastery[fish.rarity] || [1, 25, 100])[2];
+  const n = getFishCatchCount(fish);
+  if (n < gold) return 0;
+  return Math.min(FISHING_CONFIG.masteryPastGold.maxSteps, Math.floor((n - gold) / gold));
 }
 
 /** Sum of permanent Codex bonuses of one type, scaled by each species' mastery stars */
@@ -286,7 +295,8 @@ function getNextLineCost() {
 /** Skill-check settings for a fish, with the rod's wider catch zone applied */
 function getSkillCheckFor(fish) {
   const base = FISHING_CONFIG.skillCheck[fish.rarity];
-  const zone = Math.min(0.9, base.zone * (1 + gameState.fishing.rodLevel * FISHING_CONFIG.rod.zoneBonusPerLevel));
+  const zoneLv = Math.min(gameState.fishing.rodLevel, FISHING_CONFIG.rod.zoneLevels || FISHING_CONFIG.rod.maxLevel);
+  const zone = Math.min(0.9, base.zone * (1 + zoneLv * FISHING_CONFIG.rod.zoneBonusPerLevel));
   return Object.assign({}, base, { zone });
 }
 

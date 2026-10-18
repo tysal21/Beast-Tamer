@@ -580,18 +580,21 @@ const FISHING_CONFIG = {
     mythic:    [1, 2, 3]
   },
   masteryShare: [0.25, 0.6, 1],
+  // Past Gold: every further Gold-sized batch of catches adds +10% of the full bonus, up to +100% (Gold +10)
+  masteryPastGold: { perStep: 0.10, maxSteps: 10 },
   // Gold sliver in the middle of the zone: hitting it lands 2 fish. Set enabled: false to remove it.
   perfect: { enabled: true, size: 0.25, bonusFish: 1 },
   rod: {
-    maxLevel: 5,
+    maxLevel: 15,
     baseCost: 5000000,
     costScale: 4,
-    zoneBonusPerLevel: 0.06,     // +6% wider catch zone per level
+    zoneBonusPerLevel: 0.06,     // +6% wider catch zone per level (levels 1-5 only, so rare fish stay hard)
+    zoneLevels: 5,
     rareWeightPerLevel: 0.15     // +15% rare, legendary & mythic odds per level
   },
   lines: {
-    maxLines: 3,
-    costs: [0, 25000000, 750000000], // 1st line is free with the dock
+    maxLines: 6,
+    costs: [0, 25000000, 750000000, 50000000000, 5000000000000, 500000000000000], // 1st line is free with the dock
     catchIntervalSec: 300            // each line lands a fish every 5 minutes (also while offline)
   },
   basketCap: 40,

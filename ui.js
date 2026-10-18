@@ -2066,7 +2066,9 @@ function renderFishingDock() {
     const tiers = FISHING_CONFIG.mastery[fish.rarity];
     const caughtN = getFishCatchCount(fish);
     const starHtml = '<span class="text-[11px] tracking-tight">' + [1, 2, 3].map(i => '<i class="fa-' + (stars >= i ? 'solid text-amber-300' : 'regular text-slate-600') + ' fa-star"></i>').join('') + '</span>';
-    const nextTxt = stars >= 3 ? 'Gold mastery' : (caughtN + '/' + tiers[stars] + ' to ' + FISH_STAR_NAMES[stars + 1]);
+    const gPlus = getFishGoldPlus(fish), gMax = FISHING_CONFIG.masteryPastGold.maxSteps;
+    const nextTxt = stars < 3 ? (caughtN + '/' + tiers[stars] + ' to ' + FISH_STAR_NAMES[stars + 1])
+      : gPlus >= gMax ? 'Gold +' + gMax + ' (max)' : ('Gold' + (gPlus ? ' +' + gPlus : '') + ' \u00b7 ' + caughtN + '/' + (tiers[2] * (gPlus + 2)) + ' to +' + (gPlus + 1));
     const style = FISH_RARITY_STYLE[fish.rarity];
     const count = f.basket[fish.id] || 0;
     const card = document.createElement('div');
@@ -2207,7 +2209,7 @@ function updateFishingLive() {
   // Rod
   const rodCost = getRodUpgradeCost();
   fishEls.rodLevel.textContent = 'Lv ' + f.rodLevel + '/' + FISHING_CONFIG.rod.maxLevel;
-  fishEls.rodEffect.innerHTML = 'Catch zone +' + Math.round(f.rodLevel * FISHING_CONFIG.rod.zoneBonusPerLevel * 100) + '% &middot; Rare &amp; Legendary odds +' + Math.round(f.rodLevel * FISHING_CONFIG.rod.rareWeightPerLevel * 100) + '%';
+  fishEls.rodEffect.innerHTML = 'Catch zone +' + Math.round(Math.min(f.rodLevel, FISHING_CONFIG.rod.zoneLevels) * FISHING_CONFIG.rod.zoneBonusPerLevel * 100) + '% (max at Lv ' + FISHING_CONFIG.rod.zoneLevels + ') &middot; Rare, Legendary &amp; Mythic odds +' + Math.round(f.rodLevel * FISHING_CONFIG.rod.rareWeightPerLevel * 100) + '%';
   if (rodCost === null) {
     fishEls.rodBtn.disabled = true;
     fishEls.rodCost.textContent = 'MAX';
