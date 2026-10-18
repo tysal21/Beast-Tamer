@@ -981,26 +981,35 @@ function rollRelicDrops(beast) {
   const resonanceLvl = getAscensionPerkLevel('trophy_resonance');
   const dropMult = 1 + (resonanceLvl * 0.25);
 
-  beast.relics.forEach(relicId => {
-    const relic = RELIC_REGISTRY[relicId];
-    if (!relic || gameState.ownedRelics[relicId]) return;
+  // One roll per expedition, so at most ONE relic can drop per win.
+  // Each unowned relic keeps its own drop chance; the rarest is checked first.
+  const unowned = beast.relics
+    .map(relicId => RELIC_REGISTRY[relicId])
+    .filter(relic => relic && !gameState.ownedRelics[relic.id])
+    .sort((a, b) => a.dropRate - b.dropRate);
 
-    const roll = Math.random();
-    if (roll <= relic.dropRate * dropMult) {
-      gameState.ownedRelics[relicId] = true;
-      droppedAny = true;
-      sound.playWin();
+  let roll = Math.random();
+  let relic = null;
+  for (const candidate of unowned) {
+    const chance = Math.min(1, candidate.dropRate * dropMult);
+    if (roll < chance) { relic = candidate; break; }
+    roll -= chance;
+  }
 
-      const isLegendary = relic.rarity === 'Legendary';
-      if (isLegendary) {
-        showToast(`LEGENDARY DROP: ${relic.name} acquired!`, 'success', true);
-        logCombatMessage(`✨ <strong>LEGENDARY DROP!</strong> Found [<strong>${relic.name}</strong>]!${relic.desc}`, 'relic');
-      } else {
-        showToast(`RELIC DROP: ${relic.name} acquired!`, 'success');
-        logCombatMessage(`🏆 <strong>RELIC ACQUIRED!</strong> Found [<strong>${relic.name}</strong>]!${relic.desc}`, 'relic');
-      }
+  if (relic) {
+    gameState.ownedRelics[relic.id] = true;
+    droppedAny = true;
+    sound.playWin();
+
+    const isLegendary = relic.rarity === 'Legendary';
+    if (isLegendary) {
+      showToast(`LEGENDARY DROP: ${relic.name} acquired!`, 'success', true);
+      logCombatMessage(`✨ <strong>LEGENDARY DROP!</strong> Found [<strong>${relic.name}</strong>]! ${relic.desc}`, 'relic');
+    } else {
+      showToast(`RELIC DROP: ${relic.name} acquired!`, 'success');
+      logCombatMessage(`🏆 <strong>RELIC ACQUIRED!</strong> Found [<strong>${relic.name}</strong>]! ${relic.desc}`, 'relic');
     }
-  });
+  }
 
   if (!droppedAny) {
     logCombatMessage(`No new relics discovered on this expedition. Refight the boss to roll again!`, 'default');

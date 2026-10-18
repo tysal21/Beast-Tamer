@@ -813,7 +813,9 @@ function updateForgeLiveElements() {
 function renderFrame(meatRate) {
   const hunterPower = getHunterPower();
   const beastPower = getTotalBeastPower();
-  const totalPower = hunterPower + beastPower;
+  // Includes Fish Codex / Abyssal Fervor bonuses, same number the fights use
+  const totalPower = getTotalCombatPower();
+  const fishPowerMult = (hunterPower + beastPower) > 0 ? totalPower / (hunterPower + beastPower) : 1;
   const maxStamina = getMaxStamina();
   const regenInterval = getStaminaRegenInterval();
 
@@ -836,7 +838,11 @@ function renderFrame(meatRate) {
   }
 
   elements.hudTotalPower.textContent = formatNumber(totalPower);
-  elements.hudPowerSplit.textContent = '(Hunter: ' + formatNumber(hunterPower) + ' + Beasts: ' + formatNumber(beastPower) + ')';
+
+  // Keep the Menagerie in sync with Beast Mastery, nursery levels and hybrids waking up
+  if (beastPower !== lastMenageriePower) renderMenagerie();
+  elements.hudPowerSplit.textContent = '(Hunter: ' + formatNumber(hunterPower) + ' + Beasts: ' + formatNumber(beastPower) + ')' +
+    (fishPowerMult > 1.0005 ? ' ×' + fishPowerMult.toFixed(2) + ' Fishing' : '');
 
   // Buffs bar display (Adrenaline + Fishing meals)
   const anyMealBuff = updateFishBuffBadges();
@@ -1343,11 +1349,15 @@ function renderTrophyCabinet() {
 /**
  * Tamed Menagerie Renderer
  */
+// Last Beast Power the Menagerie was drawn with; renderFrame redraws it whenever this changes
+let lastMenageriePower = -1;
+
 function renderMenagerie() {
   if (!elements.menagerieContainer) return;
   elements.menagerieContainer.innerHTML = '';
 
   const totalBeastPower = getTotalBeastPower();
+  lastMenageriePower = totalBeastPower;
   if (elements.menagerieTotalPower) {
     elements.menagerieTotalPower.textContent = formatNumber(totalBeastPower);
   }
