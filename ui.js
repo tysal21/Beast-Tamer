@@ -1979,20 +1979,22 @@ function fishHooked(isPerfect = false) {
       if (landFish(fish).stored) bonusStored++;
     }
   }
-  if (isPerfect || fish.rarity === 'rare' || fish.rarity === 'legendary') sound.playWin(); else sound.playBuy();
+  if (isPerfect || fish.rarity === 'rare' || fish.rarity === 'legendary' || fish.rarity === 'mythic') sound.playWin(); else sound.playBuy();
 
   let msg = (isPerfect ? '<span class="text-amber-300 font-bold">PERFECT!</span> ' : '') +
     'Caught ' + (bonusStored > 0 ? (1 + bonusStored) + '× ' : 'a ') + '<strong class="' + style.text + '">' + style.label + ' ' + fish.name + '</strong>!';
   if (res.isNewCodex) msg += ' <span class="text-amber-300">New Codex entry: ' + fish.codexLabel + '</span>';
-  if (!res.stored) msg += ' <span class="text-red-400">Basket full, so you released it.</span>';
+  if (res.starUp) msg += ' <span class="text-amber-300">' + fish.name + ' mastery: ' + FISH_STAR_NAMES[res.starUp] + '!</span>';
+  if (!res.stored && fish.rarity !== 'mythic') msg += ' <span class="text-red-400">Basket full, so you released it.</span>';
   setFishResult(msg, 'text-slate-200');
 
   if (res.isNewCodex) {
     showToast('FISH CODEX: ' + fish.name + ' (' + fish.codexLabel + ')', 'success', fish.rarity === 'legendary');
     logCombatMessage('🎣 <strong>NEW CODEX ENTRY!</strong> Caught a ' + style.label + ' <strong>' + fish.name + '</strong>. Permanent bonus: ' + fish.codexLabel + '.', 'relic');
-  } else if (fish.rarity === 'legendary') {
-    showToast('LEGENDARY CATCH: ' + fish.name + '!', 'success', true);
+  } else if (fish.rarity === 'legendary' || fish.rarity === 'mythic') {
+    showToast(FISH_RARITY_STYLE[fish.rarity].label.toUpperCase() + ' CATCH: ' + fish.name + '!', 'success', true);
   }
+  if (res.starUp) logCombatMessage('⭐ <strong>' + fish.name + '</strong> reached ' + FISH_STAR_NAMES[res.starUp] + ' mastery: now ' + Math.round(getFishMasteryShare(fish) * 100) + '% of ' + fish.codexLabel + '.', 'relic');
   renderFishingDock();
   saveGameToStorage();
 }
@@ -2029,6 +2031,8 @@ function formatDuration(sec) {
   return m + ':' + String(s).padStart(2, '0');
 }
 
+const FISH_STAR_NAMES = ['', 'First Catch', 'Silver', 'Gold'];
+
 /** Full rebuild of the dock's lists (recipes, codex) and static numbers */
 function renderFishingDock() {
   if (!fishEls.codexGrid || !gameState.fishing) return;
@@ -2039,11 +2043,12 @@ function renderFishingDock() {
   FISH_RECIPES.forEach(recipe => {
     const effects = recipe.buffs.map(b => FISH_BUFFS[b].effect).join(', ');
     const row = document.createElement('div');
-    row.className = 'p-3 rounded-lg border bg-primal-800/90 border-primal-700 flex items-center justify-between gap-3';
+    const isActive = f.meal === recipe.id && recipe.buffs.some(b => isFishBuffActive(b));
+    row.className = 'p-3 rounded-lg border flex items-center justify-between gap-3 ' + (isActive ? 'bg-orange-950/40 border-orange-500/60' : 'bg-primal-800/90 border-primal-700');
     row.innerHTML =
       '<div class="min-w-0">' +
         '<div class="text-xs font-bold text-slate-100 flex items-center gap-1.5"><i class="fa-solid ' + recipe.icon + ' text-orange-400"></i>' + recipe.name + '</div>' +
-        '<div class="text-[11px] text-emerald-300 mt-0.5">' + effects + ' &middot; ' + Math.round(recipe.durationSec / 60) + ' min</div>' +
+        '<div class="text-[11px] text-emerald-300 mt-0.5">' + effects + ' &middot; ' + Math.round(recipe.durationSec / 60) + ' min' + (isActive ? ' <span class="text-orange-300 font-bold">(in the pot)</span>' : '') + '</div>' +
         '<div class="text-[11px] font-mono mt-0.5">' + formatNeeds(recipe) + '</div>' +
       '</div>' +
       '<button data-recipe-id="' + recipe.id + '" class="btn-cook-recipe shrink-0 px-3 py-1.5 bg-orange-700 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-semibold rounded font-mono cursor-pointer"' +
@@ -2057,6 +2062,13 @@ function renderFishingDock() {
   FISH_CATALOG.forEach(fish => {
     const caught = !!f.codex[fish.id];
     if (caught) codexCount++;
+    const stars = getFishStars(fish);
+    const tiers = FISHING_CONFIG.mastery[fish.rarity];
+    const caughtN = getFishCatchCount(fish);
+    const starHtml = '<span class="text-[11px] tracking-tight">' + [1, 2, 3].map(i => '<i class="fa-' + (stars >= i ? 'solid text-amber-300' : 'regular text-slate-600') + ' fa-star"></i>').join('') + '</span>';
+    const gPlus = getFishGoldPlus(fish), gMax = FISHING_CONFIG.masteryPastGold.maxSteps;
+    const nextTxt = stars < 3 ? (caughtN + '/' + tiers[stars] + ' to ' + FISH_STAR_NAMES[stars + 1])
+      : gPlus >= gMax ? 'Gold +' + gMax + ' (max)' : ('Gold' + (gPlus ? ' +' + gPlus : '') + ' \u00b7 ' + caughtN + '/' + (tiers[2] * (gPlus + 2)) + ' to +' + (gPlus + 1));
     const style = FISH_RARITY_STYLE[fish.rarity];
     const count = f.basket[fish.id] || 0;
     const card = document.createElement('div');
@@ -2064,7 +2076,7 @@ function renderFishingDock() {
     card.innerHTML =
       '<div class="flex items-center justify-between">' +
         '<span class="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded border ' + style.badge + '">' + style.label + '</span>' +
-        (caught ? '<span class="text-[11px] font-mono font-bold ' + (count > 0 ? 'text-slate-100' : 'text-slate-600') + '">×' + count + '</span>' : '') +
+        (caught ? '<span class="text-[11px] font-mono font-bold ' + (count > 0 ? 'text-slate-100' : 'text-slate-600') + '">' + (fish.rarity === 'mythic' ? '' : '×' + count) + '</span>' : '') +
       '</div>' +
       '<div class="flex items-center gap-2">' +
         '<i class="fa-solid ' + (caught ? fish.icon + ' ' + style.text : 'fa-question text-slate-600') + ' text-lg w-5 text-center"></i>' +
@@ -2072,20 +2084,25 @@ function renderFishingDock() {
       '</div>' +
       (caught ? '<p class="text-[10px] text-slate-400 leading-snug">' + fish.desc + '</p>' : '') +
       '<div class="text-[11px] font-mono font-semibold ' + (caught ? 'text-emerald-300' : 'text-slate-600') + '">' +
-        (caught ? '<i class="fa-solid fa-check mr-1"></i>' : '<i class="fa-solid fa-lock mr-1"></i>') + fish.codexLabel +
-      '</div>';
+        (caught ? '<i class="fa-solid fa-check mr-1"></i>' : '<i class="fa-solid fa-lock mr-1"></i>') + fish.codexLabel + (caught ? ' <span class="text-slate-400 font-normal">(' + Math.round(getFishMasteryShare(fish) * 100) + '% now)</span>' : '') +
+      '</div>' +
+      '<div class="flex items-center justify-between text-[10px] font-mono text-slate-400">' + starHtml + '<span>' + (caught ? nextTxt : '') + '</span></div>';
     fishEls.codexGrid.appendChild(card);
   });
 
   const totals = [];
   const meat = getFishCodexBonus('meat'), click = getFishCodexBonus('click'), power = getFishCodexBonus('power');
   const regen = getFishCodexBonus('regen'), wound = getFishCodexBonus('wound'), stam = getFishCodexBonus('maxStamina');
+  const totemB = getFishCodexBonus('totem'), relicB = getFishCodexBonus('relic'), stonesB = getFishCodexBonus('stones');
   if (meat) totals.push('+' + Math.round(meat * 100) + '% Meat/sec');
-  if (click) totals.push('+' + Math.round(click * 100) + '% Click');
-  if (power) totals.push('+' + Math.round(power * 100) + '% Power');
-  if (regen) totals.push('+' + Math.round(regen * 100) + '% Regen');
-  if (stam) totals.push('+' + stam + ' Max Stamina');
-  if (wound) totals.push('-' + Math.round(wound * 100) + '% Wounds');
+  if (totemB) totals.push('+' + (Math.round(totemB * 1000) / 10) + '% Totem dmg');
+  if (relicB) totals.push('+' + (Math.round(relicB * 1000) / 10) + '% Relic drops');
+  if (stonesB) totals.push('+' + (Math.round(stonesB * 1000) / 10) + '% Bloodstones');
+  if (click) totals.push('+' + (Math.round(click * 1000) / 10) + '% Click');
+  if (power) totals.push('+' + (Math.round(power * 1000) / 10) + '% Power');
+  if (regen) totals.push('+' + (Math.round(regen * 1000) / 10) + '% Regen');
+  if (stam) totals.push('+' + (Math.round(stam * 10) / 10) + ' Max Stamina');
+  if (wound) totals.push('-' + (Math.round(wound * 1000) / 10) + '% Wounds');
   fishEls.codexTotals.innerHTML = totals.length ? 'Codex bonuses:<br><span class="text-emerald-300">' + totals.join(' &middot; ') + '</span>' : 'No Codex bonuses yet';
 
   fishEls.codexCount.textContent = codexCount + '/' + FISH_CATALOG.length;
@@ -2096,7 +2113,7 @@ function renderFishingDock() {
 
 function getFishDockSignature() {
   const f = gameState.fishing;
-  return JSON.stringify([f.basket, f.codex, f.lines, f.rodLevel]);
+  return JSON.stringify([f.basket, f.codex, f.catches, f.meal, f.lines, f.rodLevel]);
 }
 
 /** Global buff bar badges for meal buffs. Returns true if any meal buff is active. */
@@ -2192,7 +2209,7 @@ function updateFishingLive() {
   // Rod
   const rodCost = getRodUpgradeCost();
   fishEls.rodLevel.textContent = 'Lv ' + f.rodLevel + '/' + FISHING_CONFIG.rod.maxLevel;
-  fishEls.rodEffect.innerHTML = 'Catch zone +' + Math.round(f.rodLevel * FISHING_CONFIG.rod.zoneBonusPerLevel * 100) + '% &middot; Rare &amp; Legendary odds +' + Math.round(f.rodLevel * FISHING_CONFIG.rod.rareWeightPerLevel * 100) + '%';
+  fishEls.rodEffect.innerHTML = 'Catch zone +' + Math.round(Math.min(f.rodLevel, FISHING_CONFIG.rod.zoneLevels) * FISHING_CONFIG.rod.zoneBonusPerLevel * 100) + '% (max at Lv ' + FISHING_CONFIG.rod.zoneLevels + ') &middot; Rare, Legendary &amp; Mythic odds +' + Math.round(f.rodLevel * FISHING_CONFIG.rod.rareWeightPerLevel * 100) + '%';
   if (rodCost === null) {
     fishEls.rodBtn.disabled = true;
     fishEls.rodCost.textContent = 'MAX';
