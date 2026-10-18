@@ -308,22 +308,52 @@ const WEAPONS_CATALOG = [
   {
     tier: 3,
     name: 'Steel Crossbow',
-    cost: 350000,
+    cost: 250000,
     flatBonus: 99,
     percentBonus: 0.02,
-    combatPower: 250,
+    combatPower: 220,
     icon: 'fa-crosshairs',
-    desc: '+100 Meat per click + 2% of passive Meat/sec. +250 Combat Power.'
+    desc: '+100 Meat per click + 2% of passive Meat/sec. +220 Combat Power.'
   },
   {
     tier: 4,
+    name: 'Bone-Tipped Lance',
+    cost: 900000,
+    flatBonus: 249,
+    percentBonus: 0.025,
+    combatPower: 380,
+    icon: 'fa-bone',
+    desc: '+250 Meat per click + 2.5% of passive Meat/sec. +380 Combat Power.'
+  },
+  {
+    tier: 5,
+    name: 'Barbed Harpoon',
+    cost: 2500000,
+    flatBonus: 449,
+    percentBonus: 0.0275,
+    combatPower: 560,
+    icon: 'fa-anchor',
+    desc: '+450 Meat per click + 2.75% of passive Meat/sec. +560 Combat Power.'
+  },
+  {
+    tier: 6,
+    name: 'Obsidian War-Hammer',
+    cost: 7000000,
+    flatBonus: 699,
+    percentBonus: 0.03,
+    combatPower: 800,
+    icon: 'fa-hammer',
+    desc: '+700 Meat per click + 3% of passive Meat/sec. +800 Combat Power.'
+  },
+  {
+    tier: 7,
     name: 'Beast-Bone Glaive',
-    cost: 18000000,
+    cost: 30000000,
     flatBonus: 999,
     percentBonus: 0.035,
-    combatPower: 1500,
+    combatPower: 1250,
     icon: 'fa-skull-crossbones',
-    desc: '+1,000 Meat per click + 3.5% of passive Meat/sec. +1,500 Combat Power.'
+    desc: '+1,000 Meat per click + 3.5% of passive Meat/sec. +1,250 Combat Power.'
   }
 ];
 

@@ -1122,6 +1122,7 @@ function saveGameToStorage() {
       runMeatEarned: gameState.runMeatEarned,
       lifetimeMeat: gameState.lifetimeMeat,
       weaponTier: gameState.weaponTier,
+      weaponLadderVersion: 2,
       stamina: gameState.stamina,
       generators: gameState.generators,
       campEnduranceLevel: gameState.campEnduranceLevel,
@@ -1170,6 +1171,9 @@ function loadGameFromStorage() {
         : gameState.runMeatEarned;
 
       if (typeof data.weaponTier === 'number') gameState.weaponTier = data.weaponTier;
+      // Saves from before the 7-weapon armory: the Glaive moved from tier 4 to tier 7
+      if (data.weaponLadderVersion !== 2 && gameState.weaponTier >= 4) gameState.weaponTier = 7;
+      gameState.weaponTier = Math.max(0, Math.min(WEAPONS_CATALOG.length, gameState.weaponTier));
       if (typeof data.stamina === 'number') gameState.stamina = Math.min(data.stamina, 200);
 
       if (data.generators && typeof data.generators === 'object') {
