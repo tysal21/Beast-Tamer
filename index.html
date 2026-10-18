@@ -42,151 +42,8 @@
     }
   </script>
 
-  <style>
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #12171d;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #222d3a;
-      border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #e67e22;
-    }
-
-    .floating-text {
-      position: absolute;
-      pointer-events: none;
-      animation: floatUpFade 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-      font-weight: 700;
-      z-index: 50;
-      user-select: none;
-    }
-
-    @keyframes floatUpFade {
-      0% {
-        opacity: 1;
-        transform: translate(-50%, 0) scale(0.9);
-      }
-      50% {
-        transform: translate(-50%, -35px) scale(1.15);
-      }
-      100% {
-        opacity: 0;
-        transform: translate(-50%, -60px) scale(1);
-      }
-    }
-
-    .glow-amber {
-      box-shadow: 0 0 20px -3px rgba(230, 126, 34, 0.35);
-    }
-    .glow-emerald {
-      box-shadow: 0 0 22px -3px rgba(46, 204, 113, 0.4);
-    }
-    .glow-blood {
-      box-shadow: 0 0 22px -3px rgba(231, 76, 60, 0.4);
-    }
-
-    .odds-gradient {
-      background: linear-gradient(90deg, #e74c3c 0%, #f39c12 50%, #2ecc71 100%);
-    }
-
-    .shimmer {
-      position: relative;
-      overflow: hidden;
-    }
-    .shimmer::after {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: linear-gradient(
-        60deg,
-        transparent 0%,
-        rgba(255, 255, 255, 0.04) 50%,
-        transparent 100%
-      );
-      transform: rotate(30deg);
-      pointer-events: none;
-      animation: shimmerSweep 6s infinite ease-in-out;
-    }
-    @keyframes shimmerSweep {
-      0% { transform: translateX(-100%) rotate(30deg); }
-      100% { transform: translateX(100%) rotate(30deg); }
-    }
-
-    /* Monster Portrait Container & Pixel Art Rendering */
-    .monster-portrait-frame {
-      width: 180px;
-      height: 180px;
-      background: radial-gradient(circle at center, #18222d 0%, #0c1015 100%);
-      border: 2px solid rgba(230, 126, 34, 0.45);
-      box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.8), 0 4px 15px rgba(0, 0, 0, 0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-      border-radius: 1rem;
-    }
-    .monster-portrait-img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      image-rendering: pixelated;
-      image-rendering: -moz-crisp-edges;
-      image-rendering: crisp-edges;
-      transition: transform 0.25s ease-out;
-    }
-    .monster-portrait-img:hover {
-      transform: scale(1.05);
-    }
-    .menagerie-thumb {
-      width: 42px;
-      height: 42px;
-      object-fit: contain;
-      image-rendering: pixelated;
-      image-rendering: -moz-crisp-edges;
-      image-rendering: crisp-edges;
-      background: #0d1217;
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      border-radius: 0.5rem;
-      flex-shrink: 0;
-    }
-
-    /* Tab navigation states */
-    .nav-tab-btn {
-      transition: all 0.2s ease-in-out;
-      position: relative;
-    }
-    .nav-tab-btn.active {
-      color: #f59e0b;
-      background: rgba(245, 158, 11, 0.12);
-      border-color: rgba(245, 158, 11, 0.5);
-    }
-    .nav-tab-btn.active::after {
-      content: '';
-      position: absolute;
-      bottom: -1px;
-      left: 15%;
-      right: 15%;
-      height: 2px;
-      background: #f59e0b;
-      box-shadow: 0 0 8px #f59e0b;
-      border-radius: 9999px;
-    }
-    .nav-tab-btn.disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-      filter: grayscale(1);
-    }
-  </style>
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="bg-primal-900 text-slate-200 font-sans min-h-screen selection:bg-primal-accent selection:text-white flex flex-col justify-between">
@@ -202,31 +59,31 @@
         </div>
         <div>
           <h1 class="text-xl sm:text-2xl font-cinzel font-bold text-amber-400 tracking-wider flex items-center gap-2">
-            BEAST TAMER <span class="text-xs bg-amber-500/20 text-amber-300 font-sans px-2 py-0.5 rounded border border-amber-500/40 uppercase tracking-normal">Alpha v1.2</span>
+            BEAST TAMER <span class="text-xs bg-amber-500/20 text-amber-300 font-sans px-2 py-0.5 rounded border border-amber-500/40 uppercase tracking-normal">Phase 3 v1.3</span>
           </h1>
           <p class="text-xs text-slate-400">Hunt, harvest, tame primeval hybrid apex beasts</p>
         </div>
       </div>
 
       <!-- Quick Economy & Stats Badges -->
-      <div class="flex flex-wrap items-center gap-3 sm:gap-6 text-sm">
+      <div class="flex flex-wrap items-center gap-3 sm:gap-4 text-sm">
         
         <!-- Meat Balance -->
-        <div class="bg-primal-800/90 border border-primal-700 rounded-lg px-3.5 py-1.5 flex items-center space-x-3 shadow-inner">
+        <div class="bg-primal-800/90 border border-primal-700 rounded-lg px-3 py-1.5 flex items-center space-x-2.5 shadow-inner">
           <div class="w-8 h-8 rounded-full bg-red-950/80 border border-red-700/60 flex items-center justify-center text-red-400">
             <i class="fa-solid fa-drumstick-bite"></i>
           </div>
           <div>
             <div class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Meat Stock</div>
             <div class="flex items-baseline space-x-1.5">
-              <span id="hud-meat" class="text-lg font-bold text-white font-mono">0</span>
+              <span id="hud-meat" class="text-base sm:text-lg font-bold text-white font-mono">0</span>
               <span class="text-xs text-emerald-400 font-mono">(+<span id="hud-meat-rate">0.0</span>/s)</span>
             </div>
           </div>
         </div>
 
         <!-- Stamina HUD with Real-time Regen Interval -->
-        <div class="bg-primal-800/90 border border-primal-700 rounded-lg px-3.5 py-1.5 flex items-center space-x-3 shadow-inner min-w-[190px]">
+        <div class="bg-primal-800/90 border border-primal-700 rounded-lg px-3 py-1.5 flex items-center space-x-2.5 shadow-inner min-w-[180px]">
           <div class="w-8 h-8 rounded-full bg-blue-950/80 border border-blue-700/60 flex items-center justify-center text-blue-400">
             <i class="fa-solid fa-bolt-lightning"></i>
           </div>
@@ -245,15 +102,29 @@
         </div>
 
         <!-- Total Power HUD -->
-        <div class="bg-primal-800/90 border border-primal-700 rounded-lg px-3.5 py-1.5 flex items-center space-x-3 shadow-inner">
+        <div class="bg-primal-800/90 border border-primal-700 rounded-lg px-3 py-1.5 flex items-center space-x-2.5 shadow-inner">
           <div class="w-8 h-8 rounded-full bg-amber-950/80 border border-amber-600/60 flex items-center justify-center text-amber-400">
             <i class="fa-solid fa-hand-fist"></i>
           </div>
           <div>
             <div class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Total Combat Power</div>
             <div class="flex items-baseline space-x-1.5">
-              <span id="hud-total-power" class="text-lg font-bold text-amber-300 font-mono">5</span>
+              <span id="hud-total-power" class="text-base sm:text-lg font-bold text-amber-300 font-mono">5</span>
               <span class="text-[11px] text-slate-400 font-mono" id="hud-power-split">(Hunter: 5 + Beasts: 0)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Primal Bloodstones HUD (Phase 3 Prestige Currency) -->
+        <div id="hud-bloodstones-card" class="bg-primal-800/90 border border-rose-800/60 rounded-lg px-3 py-1.5 flex items-center space-x-2.5 shadow-inner">
+          <div class="w-8 h-8 rounded-full bg-rose-950/90 border border-rose-600/60 flex items-center justify-center text-rose-400">
+            <i class="fa-solid fa-fire-flame-Simple fa-gem"></i>
+          </div>
+          <div>
+            <div class="text-[10px] text-rose-300/80 uppercase tracking-wider font-semibold">Bloodstones</div>
+            <div class="flex items-baseline space-x-1.5">
+              <span id="hud-bloodstones" class="text-base sm:text-lg font-bold text-rose-400 font-mono">0</span>
+              <span id="hud-ascension-count" class="text-[10px] text-slate-400 font-mono">(Asc: 0)</span>
             </div>
           </div>
         </div>
@@ -264,7 +135,7 @@
 
     <!-- Active Buffs Indicator Bar -->
     <div id="active-buffs-bar" class="hidden bg-primal-900/95 border-t border-amber-500/30 px-4 py-1.5 text-xs">
-      <div class="max-w-7xl mx-auto flex items-center gap-3">
+      <div class="max-w-7xl mx-auto flex flex-wrap items-center gap-3">
         <span class="text-amber-400 font-bold uppercase text-[10px] tracking-widest flex items-center gap-1.5">
           <i class="fa-solid fa-sparkles"></i> Active Buffs:
         </span>
@@ -272,6 +143,7 @@
           <i class="fa-solid fa-fire text-amber-400"></i>
           <span>Adrenaline Focus (+25% Meat, +20% Regen): <span id="buff-adrenaline-timer" class="font-bold">60s</span></span>
         </div>
+        <div id="buff-fish-badges" class="flex flex-wrap items-center gap-2"></div>
       </div>
     </div>
 
@@ -295,6 +167,16 @@
           <button id="tab-btn-relics" class="nav-tab-btn px-3.5 py-2 rounded-lg border border-transparent text-slate-300 hover:text-amber-300 flex items-center gap-2 whitespace-nowrap cursor-pointer">
             <i class="fa-solid fa-trophy text-amber-400"></i>
             <span>Relics &amp; Trophies</span>
+          </button>
+          <button id="tab-btn-fish" class="nav-tab-btn hidden px-3.5 py-2 rounded-lg border border-transparent text-slate-300 hover:text-cyan-300 flex items-center gap-2 whitespace-nowrap cursor-pointer">
+            <i class="fa-solid fa-fish-fins text-cyan-400"></i>
+            <span>Fishing Dock</span>
+            <span id="tab-fish-badge" class="hidden text-[9px] bg-cyan-950 text-cyan-300 border border-cyan-700 px-1.5 py-0.2 rounded font-mono">0</span>
+          </button>
+          <button id="tab-btn-ascend" class="nav-tab-btn disabled px-3.5 py-2 rounded-lg border border-transparent text-slate-400 flex items-center gap-2 whitespace-nowrap">
+            <i class="fa-solid fa-skull-crossbones text-rose-500"></i>
+            <span>Ascension Altar</span>
+            <span id="tab-ascend-badge" class="text-[9px] bg-primal-800 text-slate-500 border border-slate-700 px-1.5 py-0.2 rounded font-mono">Locked</span>
           </button>
         </div>
       </div>
@@ -373,7 +255,7 @@
               <span>Craft Weapon</span>
               <span class="text-amber-200 flex items-center gap-1 font-bold">
                 <i class="fa-solid fa-drumstick-bite text-[11px]"></i>
-                <span id="armory-next-cost">50</span>
+                <span id="armory-next-cost">250</span>
               </span>
             </button>
           </div>
@@ -417,7 +299,7 @@
                 <span id="btn-buy-endurance-label">Fortify</span>
                 <span id="btn-buy-endurance-cost-wrap" class="text-amber-300 flex items-center gap-1 font-bold">
                   <i class="fa-solid fa-drumstick-bite text-[11px]"></i>
-                  <span id="camp-endurance-cost">1,500</span>
+                  <span id="camp-endurance-cost">5,000</span>
                 </span>
               </button>
             </div>
@@ -448,7 +330,7 @@
                 <span id="btn-buy-recovery-label">Enhance</span>
                 <span id="btn-buy-recovery-cost-wrap" class="text-amber-300 flex items-center gap-1 font-bold">
                   <i class="fa-solid fa-drumstick-bite text-[11px]"></i>
-                  <span id="camp-recovery-cost">5,000</span>
+                  <span id="camp-recovery-cost">25,000</span>
                 </span>
               </button>
             </div>
@@ -466,10 +348,10 @@
               <h2 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2">
                 <i class="fa-solid fa-cubes-stacked text-amber-500"></i> Camp Infrastructure Ladder
               </h2>
-              <p class="text-xs text-slate-400">Automated hunting installations generating meat continuously.</p>
+              <p class="text-xs text-slate-400">Hit <strong class="text-amber-300">10, 25, 50, and 100</strong> owned in any tier to unlock massive Milestone Overdrives.</p>
             </div>
             <span class="text-xs font-mono bg-primal-800 text-amber-300 px-2.5 py-1 rounded border border-primal-700">
-              6 Generator Tiers
+              Milestones Active
             </span>
           </div>
 
@@ -546,13 +428,13 @@
                   <div class="bg-primal-900/80 rounded-lg p-2 border border-primal-700/80">
                     <div class="text-[10px] uppercase text-slate-400 font-semibold">Target Power Range</div>
                     <div class="text-sm font-mono font-bold text-slate-200">
-                      <span id="beast-power-min" class="text-amber-400">20</span> - <span id="beast-power-max" class="text-red-400">120</span>
+                      <span id="beast-power-min" class="text-amber-400">35</span> - <span id="beast-power-max" class="text-red-400">220</span>
                     </div>
                   </div>
                   <div class="bg-primal-900/80 rounded-lg p-2 border border-primal-700/80">
                     <div class="text-[10px] uppercase text-slate-400 font-semibold">Tame Reward</div>
                     <div id="beast-reward-power" class="text-sm font-mono font-bold text-emerald-400">
-                      +50 Power
+                      +60 Power
                     </div>
                   </div>
                 </div>
@@ -590,7 +472,7 @@
                 </div>
                 <div class="flex items-center gap-3 text-xs font-mono font-normal bg-black/30 px-3 py-1 rounded-md border border-white/10">
                   <span class="flex items-center gap-1 text-blue-300">
-                    <i class="fa-solid fa-bolt-lightning"></i> Cost: 10 Stamina
+                    <i class="fa-solid fa-bolt-lightning"></i> Cost: <span id="fight-stamina-cost">10</span> Stamina &middot; Loss: <span id="fight-wound-time">30</span>s wound
                   </span>
                   <span class="text-amber-300 font-bold" id="btn-chance-pill">Odds: 0.0%</span>
                 </div>
@@ -657,7 +539,7 @@
                     </span>
                   </div>
                   <div class="text-xs text-slate-400 mt-0.5">
-                    Increases Base Hunter Power by <span id="train-brute-yield" class="text-amber-400 font-mono font-semibold">+4</span>
+                    Increases Base Hunter Power by <span id="train-brute-yield" class="text-amber-400 font-mono font-semibold">+3</span>
                   </div>
                 </div>
               </div>
@@ -666,7 +548,7 @@
                 <span>Train</span>
                 <span class="text-white flex items-center gap-1 font-bold">
                   <i class="fa-solid fa-drumstick-bite text-[11px]"></i>
-                  <span id="train-brute-cost">30</span>
+                  <span id="train-brute-cost">120</span>
                 </span>
               </button>
             </div>
@@ -694,7 +576,7 @@
                 <span id="btn-buy-mastery-label">Attune</span>
                 <span id="train-mastery-cost-wrap" class="text-amber-300 flex items-center gap-1 font-bold">
                   <i class="fa-solid fa-drumstick-bite text-[11px]"></i>
-                  <span id="train-mastery-cost">150</span>
+                  <span id="train-mastery-cost">2,500</span>
                 </span>
               </button>
             </div>
@@ -722,7 +604,7 @@
                 <span id="btn-buy-anatomy-label">Dissect</span>
                 <span id="train-anatomy-cost-wrap" class="text-amber-300 flex items-center gap-1 font-bold">
                   <i class="fa-solid fa-drumstick-bite text-[11px]"></i>
-                  <span id="train-anatomy-cost">300</span>
+                  <span id="train-anatomy-cost">8,000</span>
                 </span>
               </button>
             </div>
@@ -740,7 +622,7 @@
                     </span>
                   </div>
                   <p class="text-xs text-slate-400 mt-0.5">
-                    Cost: <span id="sparring-cost-meat" class="text-amber-300 font-mono">50</span> Meat + <span class="text-blue-300 font-mono">3 Stamina</span>. 80% Success / 20% Breakthrough.
+                    Cost: <span id="sparring-cost-meat" class="text-amber-300 font-mono">300</span> Meat + <span id="sparring-cost-stamina" class="text-blue-300 font-mono">4</span> Stamina. 80% Success / 20% Breakthrough.
                   </p>
                   <p class="text-[11px] text-emerald-400 font-mono mt-0.5">
                     Hunter Power Multiplier: <span id="sparring-total-multiplier" class="font-bold">+0%</span>
@@ -797,7 +679,7 @@
         </div>
       </div>
 
-      <!-- Construction / Excavation State (Boar-Hawk tamed, but not yet paid 25k) -->
+      <!-- Construction / Excavation State -->
       <div id="forge-excavate-view" class="hidden bg-primal-850 border border-purple-700/60 rounded-2xl p-8 shadow-xl text-center relative overflow-hidden">
         <div class="w-20 h-20 rounded-2xl bg-amber-950/80 border border-amber-500/50 mx-auto flex items-center justify-center text-amber-400 text-3xl mb-4 shadow-inner">
           <i class="fa-solid fa-person-digging"></i>
@@ -810,7 +692,7 @@
           <i class="fa-solid fa-fire-flame-curved text-amber-300"></i>
           <span>Excavate Beast Forge</span>
           <span class="bg-black/30 px-2.5 py-1 rounded-md text-amber-200 font-mono text-xs flex items-center gap-1 font-semibold">
-            <i class="fa-solid fa-drumstick-bite text-amber-400 text-[11px]"></i> 25,000 Meat
+            <i class="fa-solid fa-drumstick-bite text-amber-400 text-[11px]"></i> 1.00M Meat
           </span>
         </button>
       </div>
@@ -864,7 +746,7 @@
               <h3 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2">
                 <i class="fa-solid fa-dna text-purple-400"></i> Chimera Synthesizer (6 Apex Hybrids)
               </h3>
-              <p class="text-xs text-slate-400">Brew specialized breeding treats once both parent beasts reach Level 5. Only 1 of each chimera can be hatched.</p>
+              <p class="text-xs text-slate-400">Brew specialized breeding treats once both parent beasts reach Level 5. Hatched hybrids persist through Ascension, but stay dormant (no Beast Power) until both parents are tamed again.</p>
             </div>
             <span class="text-xs font-mono bg-primal-800 text-purple-300 px-3 py-1 rounded border border-primal-700 font-bold" id="forge-hatched-count">
               0 / 6 Hatched
@@ -881,25 +763,211 @@
 
     <!-- ================= TAB 4: RELICS & TROPHIES ================= -->
     <div id="panel-relics" class="tab-panel hidden max-w-5xl mx-auto w-full">
-      <!-- Trophy Cabinet / Relics Panel -->
       <div class="bg-primal-850 border border-primal-700 rounded-2xl p-6 shadow-xl">
         <div class="flex items-center justify-between pb-4 border-b border-primal-700/60 mb-5">
           <div>
             <h2 class="font-cinzel text-xl font-bold text-slate-100 flex items-center gap-2">
               <i class="fa-solid fa-gem text-amber-400"></i> Relic Trophy Cabinet
             </h2>
-            <p class="text-xs text-slate-400">Permanent boss artifacts unlocked via repeated Trophy Expeditions.</p>
+            <p class="text-xs text-slate-400">Permanent boss artifacts unlocked via repeated Trophy Expeditions. Relics never reset on Ascension.</p>
           </div>
           <span class="text-xs font-mono bg-primal-800 text-amber-300 px-3 py-1 rounded border border-primal-700 font-bold">
             <span id="relic-owned-count">0</span>/8 Relics
           </span>
         </div>
 
-        <!-- Relic Grid -->
         <div id="relic-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3.5">
           <!-- Dynamically populated relics -->
         </div>
       </div>
+    </div>
+
+    <!-- ================= TAB: PRIMAL FISHING DOCK (EXPANSION I) ================= -->
+    <div id="panel-fish" class="tab-panel hidden max-w-6xl mx-auto w-full space-y-6">
+
+      <!-- Dock Banner -->
+      <div class="bg-gradient-to-br from-cyan-950/60 via-primal-850 to-primal-900 border border-cyan-700/50 rounded-2xl p-5 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/90 border border-cyan-600/50 text-cyan-300 text-xs font-mono font-bold">
+              <i class="fa-solid fa-water"></i> EXPANSION I
+            </div>
+            <h2 class="font-cinzel text-2xl font-bold text-white tracking-wide">Primal Fishing Dock</h2>
+            <p class="text-xs text-slate-400 max-w-xl">Cast into the subterranean river and hook what bites. Cook your catch into powerful meals, and fill the Fish Codex for permanent bonuses. Everything here survives Ascension.</p>
+          </div>
+          <div class="flex flex-wrap gap-2 text-xs font-mono">
+            <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">Caught: <span id="fish-total-caught" class="text-cyan-300 font-bold">0</span></div>
+            <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">Codex: <span id="fish-codex-count" class="text-amber-300 font-bold">0/10</span></div>
+            <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">Basket: <span id="fish-basket-count" class="text-emerald-300 font-bold">0/40</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Cast & Hook -->
+        <div class="lg:col-span-7 bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2"><i class="fa-solid fa-anchor text-cyan-400"></i> Abyssal Angling</h3>
+            <span class="text-[11px] font-mono text-slate-400">Cast: <span class="text-blue-300 font-bold">2 Stamina</span> &middot; Space to cast/reel</span>
+          </div>
+
+          <div id="fish-water" class="relative h-52 rounded-xl overflow-hidden border border-cyan-900/70 bg-gradient-to-b from-cyan-950/80 via-slate-900 to-primal-900 select-none">
+            <div class="absolute inset-x-0 top-10 h-px bg-cyan-500/20"></div>
+            <div class="absolute inset-x-0 top-11 h-px bg-cyan-500/10"></div>
+            <div id="fish-ring" class="hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full border-4 animate-ping"></div>
+            <div id="fish-bobber" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl text-slate-500 transition-colors">
+              <i class="fa-solid fa-location-pin"></i>
+            </div>
+            <div id="fish-status" class="absolute inset-x-0 bottom-14 text-center text-sm font-semibold text-slate-300 px-3">The water is still. Cast your line.</div>
+
+            <!-- Skill check bar: click when the marker is inside the catch zone -->
+            <div id="fish-skill" class="hidden absolute inset-x-6 bottom-4">
+              <div class="flex items-center justify-between text-[10px] font-mono mb-1">
+                <span id="fish-skill-label" class="font-bold uppercase tracking-wider">Reel it in!</span>
+                <span id="fish-skill-misses" class="text-slate-300"></span>
+              </div>
+              <div id="fish-skill-track" class="relative h-6 rounded-md bg-primal-900/90 border border-primal-600 overflow-hidden">
+                <div id="fish-skill-zone" class="absolute inset-y-0 bg-emerald-500/45 border-x-2 border-emerald-300">
+                  <div id="fish-skill-perfect" class="absolute inset-y-0 bg-amber-300/80"></div>
+                </div>
+                <div id="fish-skill-marker" class="absolute -inset-y-0.5 w-1 -ml-0.5 bg-white rounded shadow-[0_0_8px_rgba(255,255,255,0.9)]"></div>
+              </div>
+            </div>
+          </div>
+
+          <button id="btn-fish-action" class="w-full py-3.5 px-4 rounded-xl font-cinzel font-bold text-base text-white border shadow-lg cursor-pointer transition-all active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-cyan-700 via-sky-600 to-cyan-700 border-cyan-400/50 hover:brightness-110">
+            CAST LINE
+          </button>
+          <div id="fish-result" class="min-h-[1.25rem] text-center text-xs font-mono text-slate-400"></div>
+
+          <div class="border-t border-primal-700/60 pt-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div class="text-sm font-bold text-slate-100 flex items-center gap-2"><i class="fa-solid fa-wand-sparkles text-cyan-300"></i> Abyssal Rod <span id="fish-rod-level" class="text-[11px] font-mono text-cyan-300 bg-cyan-950/60 border border-cyan-700/50 rounded px-1.5">Lv 0/5</span></div>
+              <div id="fish-rod-effect" class="text-[11px] text-slate-400 mt-0.5">Catch zone +0% &middot; Rare odds +0%</div>
+            </div>
+            <button id="btn-fish-rod" class="px-3 py-2 bg-cyan-800 hover:bg-cyan-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg font-mono flex items-center gap-1.5 cursor-pointer">
+              <span>Upgrade Rod</span><i class="fa-solid fa-drumstick-bite text-amber-400 text-[11px]"></i><span id="fish-rod-cost" class="font-bold text-amber-200">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Idle Lines & Cookpot -->
+        <div class="lg:col-span-5 space-y-6">
+          <div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2"><i class="fa-solid fa-bars-staggered text-emerald-400"></i> Idle Lines</h3>
+              <span id="fish-lines-count" class="text-xs font-mono text-emerald-300 bg-emerald-950/50 border border-emerald-700/50 rounded px-2 py-0.5 font-bold">1/3 Lines</span>
+            </div>
+            <p class="text-[11px] text-slate-400">Each line lands a Common or Uncommon fish every 5 minutes, even while you're away. Lines stop when the basket is full.</p>
+            <div>
+              <div class="flex justify-between text-[11px] font-mono text-slate-400 mb-1"><span>Next catch</span><span id="fish-line-next">5:00</span></div>
+              <div class="h-2 rounded-full bg-primal-900 border border-primal-700 overflow-hidden"><div id="fish-line-bar" class="h-full w-0 bg-emerald-500"></div></div>
+            </div>
+            <button id="btn-fish-line" class="w-full py-2 px-3 bg-emerald-800 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg font-mono flex items-center justify-center gap-1.5 cursor-pointer">
+              <span>Set Another Line</span><i class="fa-solid fa-drumstick-bite text-amber-400 text-[11px]"></i><span id="fish-line-cost" class="font-bold text-amber-200">0</span>
+            </button>
+          </div>
+
+          <div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl space-y-3">
+            <h3 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2"><i class="fa-solid fa-fire-burner text-orange-400"></i> Cookpot</h3>
+            <p class="text-[11px] text-slate-400">Recipes use any fish of the listed rarity. Cooking a meal again extends it (max 60 min).</p>
+            <div id="fish-recipes" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Basket & Codex -->
+      <div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between pb-3 border-b border-primal-700/60 mb-4">
+          <div>
+            <h3 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2"><i class="fa-solid fa-book-open text-amber-400"></i> Fish Codex</h3>
+            <p class="text-xs text-slate-400">Catch each species once to unlock its permanent bonus. The number on each card is how many are in your basket.</p>
+          </div>
+          <div id="fish-codex-totals" class="text-[11px] font-mono text-slate-400 text-right"></div>
+        </div>
+        <div id="fish-codex-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3"></div>
+      </div>
+    </div>
+
+    <!-- ================= TAB 5: ASCENSION ALTAR (PHASE 3) ================= -->
+    <div id="panel-ascend" class="tab-panel hidden max-w-6xl mx-auto w-full space-y-6">
+
+      <!-- Top Ritual Banner -->
+      <div class="bg-gradient-to-br from-rose-950/60 via-primal-850 to-primal-900 border border-rose-700/60 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          <div class="lg:col-span-8 space-y-2">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-950/90 border border-rose-600/50 text-rose-300 text-xs font-mono font-bold">
+              <i class="fa-solid fa-fire-flame-curved"></i> PRIMAL ASCENSION RITUAL
+            </div>
+            <h2 class="font-cinzel text-2xl sm:text-3xl font-bold text-white tracking-wide">
+              Sacrifice Your Camp for Primal Bloodstones
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
+              Ascending resets your current run's <strong class="text-amber-300">Meat, Generators, Weapons, Training, and untames the 4 Milestone Bosses</strong> so you can hunt them anew. You permanently retain all <strong class="text-emerald-400">Trophy Relics, Beast Forge access, Hatched Hybrid Chimeras, Bloodstone Perks, and Realm Expansions</strong>. Hybrids sleep until both of their parents are re-tamed.
+            </p>
+            <div class="flex flex-wrap items-center gap-4 pt-2 text-xs font-mono">
+              <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">
+                Current Run Meat: <span id="ascend-run-meat" class="text-amber-300 font-bold">0</span>
+              </div>
+              <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">
+                Chimera-Wyrm Status: <span id="ascend-wyrm-status" class="text-red-400 font-bold">Untamed</span>
+              </div>
+              <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">
+                Total Ascensions: <span id="ascend-total-count" class="text-rose-400 font-bold">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-4 bg-primal-900/90 border border-rose-600/50 rounded-xl p-4 text-center space-y-3 shadow-inner">
+            <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Pending Ritual Claim</div>
+            <div class="text-3xl font-mono font-extrabold text-rose-400 flex items-center justify-center gap-2">
+              <i class="fa-solid fa-gem text-2xl"></i>
+              <span>+<span id="ascend-pending-stones">0</span></span>
+            </div>
+            <div id="ascend-req-note" class="text-[11px] text-amber-400 font-mono">
+              Requires taming Tier 4 Chimera-Wyrm on this run
+            </div>
+            <button id="btn-trigger-ascend" class="w-full py-3 px-4 bg-gradient-to-r from-rose-700 via-amber-600 to-rose-700 hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white font-cinzel font-bold text-sm rounded-xl border border-rose-400/50 shadow-lg cursor-pointer transition-all">
+              PERFORM ASCENSION RITUAL
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Realm Expansions (Major Feature Unlocks like Fishing) -->
+      <div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between pb-3 border-b border-primal-700/60 mb-4">
+          <div>
+            <h3 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2">
+              <i class="fa-solid fa-compass text-cyan-400"></i> Realm Expansions (Bloodstone Feature Unlocks)
+            </h3>
+            <p class="text-xs text-slate-400">Unlock permanent new game modes and territories across your hunting grounds.</p>
+          </div>
+        </div>
+        <div id="expansions-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Dynamically populated via ui.js -->
+        </div>
+      </div>
+
+      <!-- Bloodstone Perk Tree -->
+      <div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between pb-3 border-b border-primal-700/60 mb-4">
+          <div>
+            <h3 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2">
+              <i class="fa-solid fa-ankh text-rose-400"></i> Primal Bloodstone Perks
+            </h3>
+            <p class="text-xs text-slate-400">Channel Primal Bloodstones into ancient blessings that persist across all runs.</p>
+          </div>
+          <span class="text-xs font-mono bg-rose-950/80 text-rose-300 px-3 py-1 rounded border border-rose-700/60 font-bold">
+            Available: <span id="perk-available-stones">0</span> Bloodstones
+          </span>
+        </div>
+        <div id="ascension-perks-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Dynamically populated via ui.js -->
+        </div>
+      </div>
+
     </div>
 
   </main>
@@ -909,7 +977,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
       <div class="flex items-center space-x-2">
         <i class="fa-solid fa-code-commit text-amber-500"></i>
-        <span>Idle Engine: Accurate delta-time `requestAnimationFrame` loop.</span>
+        <span>Idle Engine: Wall-clock delta-time `requestAnimationFrame` + Offline Sync.</span>
       </div>
       <div class="flex items-center space-x-4">
         <button id="btn-toggle-sound" class="hover:text-amber-400 transition-colors flex items-center gap-1.5 cursor-pointer">
@@ -924,19 +992,41 @@
     </div>
   </footer>
 
-  <!-- Modal Dialog for Progress Reset (No window.confirm) -->
+  <!-- Modal Dialog for Ascension Confirmation -->
+  <div id="ascend-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-primal-850 border border-rose-600/70 rounded-2xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl">
+      <div class="w-12 h-12 rounded-full bg-rose-950/90 border border-rose-500/60 mx-auto flex items-center justify-center text-rose-400 text-xl">
+        <i class="fa-solid fa-fire-flame-curved"></i>
+      </div>
+      <div>
+        <h3 class="font-cinzel text-lg font-bold text-white">Ascend &amp; Claim Bloodstones?</h3>
+        <p class="text-xs text-slate-300 mt-1">
+          You will claim <strong class="text-rose-400 font-mono">+<span id="modal-ascend-stones">0</span> Primal Bloodstones</strong>.
+        </p>
+        <p class="text-[11px] text-slate-400 mt-2">
+          Your Meat, Generators, Weapons, Training, and 4 Milestone Bosses will reset for a fresh run. Your Relics, Beast Forge, Hatched Hybrids, and Perks remain permanent!
+        </p>
+      </div>
+      <div class="flex items-center justify-center gap-3 pt-2">
+        <button id="btn-cancel-ascend" class="px-4 py-2 bg-primal-700 hover:bg-primal-600 text-slate-200 text-xs font-semibold rounded-lg cursor-pointer">Cancel</button>
+        <button id="btn-confirm-ascend" class="px-5 py-2 bg-gradient-to-r from-rose-700 to-amber-600 hover:brightness-110 text-white text-xs font-bold rounded-lg cursor-pointer">Confirm Ascension</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Dialog for Hard Progress Reset -->
   <div id="reset-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-primal-850 border border-primal-700 rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
       <div class="w-12 h-12 rounded-full bg-red-950/80 border border-red-600/50 mx-auto flex items-center justify-center text-red-400 text-xl">
         <i class="fa-solid fa-triangle-exclamation"></i>
       </div>
       <div>
-        <h3 class="font-cinzel text-lg font-bold text-white">Reset All Progress?</h3>
-        <p class="text-xs text-slate-400 mt-1">This will permanently erase all tamed beasts, crafted weapons, relics, and meat stocks.</p>
+        <h3 class="font-cinzel text-lg font-bold text-white">Hard Reset All Progress?</h3>
+        <p class="text-xs text-slate-400 mt-1">This will permanently erase everything including Bloodstones, Relics, Hybrids, and Meat stocks.</p>
       </div>
       <div class="flex items-center justify-center gap-3 pt-2">
-        <button id="btn-cancel-reset" class="px-4 py-2 bg-primal-700 hover:bg-primal-600 text-slate-200 text-xs font-semibold rounded-lg">Cancel</button>
-        <button id="btn-confirm-reset" class="px-4 py-2 bg-red-700 hover:bg-red-600 text-white text-xs font-semibold rounded-lg">Confirm Reset</button>
+        <button id="btn-cancel-reset" class="px-4 py-2 bg-primal-700 hover:bg-primal-600 text-slate-200 text-xs font-semibold rounded-lg cursor-pointer">Cancel</button>
+        <button id="btn-confirm-reset" class="px-4 py-2 bg-red-700 hover:bg-red-600 text-white text-xs font-semibold rounded-lg cursor-pointer">Confirm Wipe</button>
       </div>
     </div>
   </div>
@@ -944,2412 +1034,9 @@
   <!-- Notification Toast Container -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
-  <script>
-    /**
-     * Web Audio API Synthesizer (Zero external audio URLs)
-     */
-    class SoundEngine {
-      constructor() {
-        this.ctx = null;
-        this.enabled = true;
-      }
-
-      initContext() {
-        if (!this.ctx) {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          if (AudioContext) {
-            this.ctx = new AudioContext();
-          }
-        }
-        if (this.ctx && this.ctx.state === 'suspended') {
-          this.ctx.resume();
-        }
-      }
-
-      playTone(freq, type = 'sine', duration = 0.1, startGain = 0.15) {
-        if (!this.enabled) return;
-        try {
-          this.initContext();
-          if (!this.ctx) return;
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-
-          osc.type = type;
-          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-
-          gain.gain.setValueAtTime(startGain, this.ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
-
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-
-          osc.start();
-          osc.stop(this.ctx.currentTime + duration);
-        } catch (e) {
-          // Audio safe fail
-        }
-      }
-
-      playClick() {
-        this.playTone(320, 'triangle', 0.08, 0.1);
-      }
-
-      playBuy() {
-        this.playTone(540, 'sine', 0.12, 0.12);
-        setTimeout(() => this.playTone(720, 'sine', 0.15, 0.1), 60);
-      }
-
-      playWin() {
-        const notes = [440, 554.37, 659.25, 880];
-        notes.forEach((freq, idx) => {
-          setTimeout(() => this.playTone(freq, 'triangle', 0.25, 0.2), idx * 80);
-        });
-      }
-
-      playDefeat() {
-        this.playTone(180, 'sawtooth', 0.25, 0.15);
-        setTimeout(() => this.playTone(110, 'sawtooth', 0.35, 0.18), 100);
-      }
-
-      playSpar() {
-        this.playTone(280, 'triangle', 0.1, 0.15);
-        setTimeout(() => this.playTone(340, 'triangle', 0.12, 0.15), 100);
-      }
-    }
-
-    const sound = new SoundEngine();
-
-    /**
-     * 6-Tier Generator Ladder Catalog
-     */
-    const GENERATOR_LADDER = [
-      {
-        id: 'snare_lines',
-        name: 'Snare Lines',
-        icon: 'fa-ring',
-        baseCost: 15,
-        costScale: 1.15,
-        yieldPerSec: 1,
-        desc: 'Twisted wire cords catching lesser prey.',
-        reqType: 'none',
-        reqLabel: 'Unlocked'
-      },
-      {
-        id: 'hunting_pack',
-        name: 'Hunting Pack',
-        icon: 'fa-dog',
-        baseCost: 120,
-        costScale: 1.16,
-        yieldPerSec: 6,
-        desc: 'Trained scouting hounds harrying perimeter wildwood.',
-        reqType: 'generator',
-        reqTargetId: 'snare_lines',
-        reqCount: 5,
-        reqLabel: 'Requires 5 Snare Lines'
-      },
-      {
-        id: 'heavy_deadfalls',
-        name: 'Heavy Deadfalls',
-        icon: 'fa-cubes',
-        baseCost: 900,
-        costScale: 1.16,
-        yieldPerSec: 35,
-        desc: 'Crushing stone deadfalls along migratory game trails.',
-        reqType: 'generator',
-        reqTargetId: 'hunting_pack',
-        reqCount: 10,
-        reqLabel: 'Requires 10 Hunting Packs'
-      },
-      {
-        id: 'pheromone_pits',
-        name: 'Pheromone Bait Pits',
-        icon: 'fa-flask-vial',
-        baseCost: 7500,
-        costScale: 1.17,
-        yieldPerSec: 220,
-        desc: 'Deep subterranean pits fueled by chimera musk.',
-        reqType: 'beast',
-        reqBeastId: 'viper_hound',
-        reqLabel: 'Requires Taming Viper-Hound'
-      },
-      {
-        id: 'subjugated_dens',
-        name: 'Subjugated Dens',
-        icon: 'fa-dungeon',
-        baseCost: 65000,
-        costScale: 1.18,
-        yieldPerSec: 1400,
-        desc: 'Conquered breeding caves supplying steady harvests.',
-        reqType: 'beast',
-        reqBeastId: 'boar_hawk',
-        reqLabel: 'Requires Taming Boar-Hawk'
-      },
-      {
-        id: 'harpoon_rigs',
-        name: 'Colossal Harpoon Rigs',
-        icon: 'fa-anchor',
-        baseCost: 550000,
-        costScale: 1.19,
-        yieldPerSec: 9500,
-        desc: 'Pneumatic ballistae anchoring primeval behemoths.',
-        reqType: 'beast',
-        reqBeastId: 'grizzly_scorpion',
-        reqLabel: 'Requires Taming Grizzly-Scorpion'
-      }
-    ];
-
-    /**
-     * Permanent Relic Registry with Legendary Overhauls
-     */
-    const RELIC_REGISTRY = {
-      venom_vial: {
-        id: 'venom_vial',
-        beastId: 'viper_hound',
-        name: 'Venom Vial',
-        rarity: 'Common',
-        dropRate: 0.35,
-        desc: '+15% Meat production per second.',
-        icon: 'fa-flask-round-poison'
-      },
-      serpents_fang: {
-        id: 'serpents_fang',
-        beastId: 'viper_hound',
-        name: "Serpent's Fang",
-        rarity: 'Legendary',
-        dropRate: 0.05,
-        desc: 'Clicks gain +15% of passive Meat/sec. 10% chance per click for 5x Critical Hunt.',
-        icon: 'fa-tooth'
-      },
-      raptor_feather: {
-        id: 'raptor_feather',
-        beastId: 'boar_hawk',
-        name: 'Raptor Feather',
-        rarity: 'Common',
-        dropRate: 0.30,
-        desc: 'Stamina regenerates 15% faster.',
-        icon: 'fa-feather'
-      },
-      razor_talons: {
-        id: 'razor_talons',
-        beastId: 'boar_hawk',
-        name: 'Razor Talons',
-        rarity: 'Legendary',
-        dropRate: 0.04,
-        desc: 'All Training Disciplines cost 25% less Meat. Brute Conditioning gives +6 Power instead of +4.',
-        icon: 'fa-hand-back-fist'
-      },
-      chitin_carapace: {
-        id: 'chitin_carapace',
-        beastId: 'grizzly_scorpion',
-        name: 'Chitin Carapace',
-        rarity: 'Common',
-        dropRate: 0.25,
-        desc: 'Wounded recovery time cut from 30s to 15s.',
-        icon: 'fa-shield'
-      },
-      magma_stinger: {
-        id: 'magma_stinger',
-        beastId: 'grizzly_scorpion',
-        name: 'Magma Stinger',
-        rarity: 'Legendary',
-        dropRate: 0.03,
-        desc: "Underdog's Fury: Wins under 25% odds refund 100% stamina and award 10m Meat windfall. +15% Critical Hunt chance.",
-        icon: 'fa-fire'
-      },
-      dragon_scale: {
-        id: 'dragon_scale',
-        beastId: 'chimera_wyrm',
-        name: 'Dragon Scale',
-        rarity: 'Common',
-        dropRate: 0.20,
-        desc: '+100% global Meat production.',
-        icon: 'fa-gem'
-      },
-      eldritch_crown: {
-        id: 'eldritch_crown',
-        beastId: 'chimera_wyrm',
-        name: 'Eldritch Crown',
-        rarity: 'Legendary',
-        dropRate: 0.02,
-        desc: 'Doubles Max Stamina. Cuts stamina regen interval in half. Boosts all other relics by +50%.',
-        icon: 'fa-crown'
-      }
-    };
-
-    /**
-     * Beast Catalog
-     */
-    const BEAST_CATALOG = [
-      {
-        id: 'viper_hound',
-        tier: 1,
-        name: 'Viper-Hound',
-        image: 'viper-hound.png',
-        fallbackImage: 'https://placehold.co/180x180/171e26/10b981?text=Viper+Hound',
-        minPower: 20,
-        maxPower: 120,
-        rewardPower: 50,
-        accentColor: '#10b981',
-        desc: 'A venomous canine chimera swift as striking lightning.',
-        relics: ['venom_vial', 'serpents_fang']
-      },
-      {
-        id: 'boar_hawk',
-        tier: 2,
-        name: 'Boar-Hawk',
-        image: 'boar-hawk.png',
-        fallbackImage: 'https://placehold.co/180x180/171e26/f59e0b?text=Boar+Hawk',
-        minPower: 180,
-        maxPower: 800,
-        rewardPower: 300,
-        accentColor: '#f59e0b',
-        desc: 'Armored avian brute equipped with titanium tusks and razor talons.',
-        relics: ['raptor_feather', 'razor_talons']
-      },
-      {
-        id: 'grizzly_scorpion',
-        tier: 3,
-        name: 'Grizzly-Scorpion',
-        image: 'grizzly-scorpion.png',
-        fallbackImage: 'https://placehold.co/180x180/171e26/ef4444?text=Grizzly+Scorpion',
-        minPower: 1200,
-        maxPower: 5000,
-        rewardPower: 2000,
-        accentColor: '#ef4444',
-        desc: 'Massive apex terror boasting thick bone carapace and a molten sting.',
-        relics: ['chitin_carapace', 'magma_stinger']
-      },
-      {
-        id: 'chimera_wyrm',
-        tier: 4,
-        name: 'Chimera-Wyrm',
-        image: 'chimera-wyrm.png',
-        fallbackImage: 'https://placehold.co/180x180/171e26/8b5cf6?text=Chimera+Wyrm',
-        minPower: 8000,
-        maxPower: 35000,
-        rewardPower: 0,
-        accentColor: '#8b5cf6',
-        desc: 'Colossal primeval serpent with obsidian scales. The ultimate Apex milestone.',
-        relics: ['dragon_scale', 'eldritch_crown']
-      }
-    ];
-
-    /**
-     * Armory Weapons Catalog
-     */
-    const WEAPONS_CATALOG = [
-      {
-        tier: 1,
-        name: 'Crude Spear',
-        cost: 50,
-        flatBonus: 2,
-        percentBonus: 0.0,
-        icon: 'fa-wand-magic-sparkles',
-        desc: 'Increases click gain to +3 Meat per strike.'
-      },
-      {
-        tier: 2,
-        name: 'Recurve Bow',
-        cost: 600,
-        flatBonus: 14,
-        percentBonus: 0.02,
-        icon: 'fa-bullseye',
-        desc: '+15 Meat per click + 2% of passive Meat/sec.'
-      },
-      {
-        tier: 3,
-        name: 'Steel Crossbow',
-        cost: 5000,
-        flatBonus: 59,
-        percentBonus: 0.04,
-        icon: 'fa-crosshairs',
-        desc: '+60 Meat per click + 4% of passive Meat/sec.'
-      },
-      {
-        tier: 4,
-        name: 'Beast-Bone Glaive',
-        cost: 45000,
-        flatBonus: 249,
-        percentBonus: 0.06,
-        icon: 'fa-skull-crossbones',
-        desc: '+250 Meat per click + 6% of passive Meat/sec.'
-      }
-    ];
-
-    const HYBRID_CATALOG = [
-      {
-        id: 'viperhawk',
-        name: 'Viperhawk',
-        parent1: 'viper_hound',
-        parent2: 'boar_hawk',
-        treatName: 'Venom-Grain Mash',
-        treatCost: 50000,
-        gestationSec: 180,
-        basePower: 250,
-        icon: 'fa-crow',
-        color: '#10b981',
-        desc: '+250 Base Power. +15% Click Meat & +5% Stamina Regen speed per level.'
-      },
-      {
-        id: 'venompincer',
-        name: 'Venompincer',
-        parent1: 'viper_hound',
-        parent2: 'grizzly_scorpion',
-        treatName: 'Toxic Marrow Chunk',
-        treatCost: 150000,
-        gestationSec: 240,
-        basePower: 1200,
-        icon: 'fa-bug',
-        color: '#06b6d4',
-        desc: '+1,200 Base Power. +2% Critical Click Chance & +15% Crit Damage per level.'
-      },
-      {
-        id: 'tuskpion',
-        name: 'Tuskpion',
-        parent1: 'boar_hawk',
-        parent2: 'grizzly_scorpion',
-        treatName: 'Crag-Root Broth',
-        treatCost: 350000,
-        gestationSec: 300,
-        basePower: 2500,
-        icon: 'fa-shield-halved',
-        color: '#f59e0b',
-        desc: '+2,500 Base Power. Reduces Sparring Stamina cost to 2. Sparring breakthrough rate +10% per level.'
-      },
-      {
-        id: 'viperwyrm',
-        name: 'Viperwyrm',
-        parent1: 'viper_hound',
-        parent2: 'chimera_wyrm',
-        treatName: 'Eldritch Bile Pellet',
-        treatCost: 1000000,
-        gestationSec: 360,
-        basePower: 8000,
-        icon: 'fa-dragon',
-        color: '#a855f7',
-        desc: '+8,000 Base Power. Clicks grant +1.5% of banked Meat stock per level.'
-      },
-      {
-        id: 'gryphowyrm',
-        name: 'Gryphowyrm',
-        parent1: 'boar_hawk',
-        parent2: 'chimera_wyrm',
-        treatName: 'Volcanic Feather Suet',
-        treatCost: 2500000,
-        gestationSec: 420,
-        basePower: 12000,
-        icon: 'fa-feather-pointed',
-        color: '#ec4899',
-        desc: '+12,000 Base Power. +35% global Meat/sec generator speed per level.'
-      },
-      {
-        id: 'scorpiodrake',
-        name: 'Scorpiodrake',
-        parent1: 'grizzly_scorpion',
-        parent2: 'chimera_wyrm',
-        treatName: 'Primordial Heart Meat',
-        treatCost: 8000000,
-        gestationSec: 600,
-        basePower: 35000,
-        icon: 'fa-skull-crossbones',
-        color: '#ef4444',
-        desc: '+35,000 Base Power. Triples Sparring multiplier gains (+6%/lvl) and +100% Meat/sec per level.'
-      }
-    ];
-
-    /**
-     * Global Game State
-     */
-    const gameState = {
-      meat: 0,
-      baseClickPower: 1,
-
-      // Armory / Weapon progression
-      weaponTier: 0,
-
-      // Stamina system
-      stamina: 30,
-      staminaMaxBase: 30,
-      staminaIntervalSec: 15,
-
-      // Camp Provisions Upgrades (Rebalanced)
-      campEnduranceLevel: 0,
-      campRecoveryLevel: 0,
-
-      // 6-Tier Generator Ladder counts
-      generators: {
-        snare_lines: 0,
-        hunting_pack: 0,
-        heavy_deadfalls: 0,
-        pheromone_pits: 0,
-        subjugated_dens: 0,
-        harpoon_rigs: 0
-      },
-
-      // Hunter Training Disciplines
-      bruteConditioningLevel: 0,
-      beastMasteryLevel: 0,
-      weakpointAnatomyLevel: 0,
-      sparringLevel: 0,
-      isSparring: false,
-      adrenalineFocusRemaining: 0,
-
-      baseHunterPower: 5,
-
-      // Bosses & Relics
-      selectedBeastIndex: 0,
-      highestTierUnlocked: 1,
-      tamedBeasts: {},
-      ownedRelics: {},
-
-      // Active tab
-      activeTab: 'camp',
-
-      // Combat states
-      isBattling: false,
-      inCooldown: false,
-      cooldownRemaining: 0,
-      cooldownDurationBase: 30.0,
-
-      // Phase 2: Forge, Nursery & Hybrids
-      forgeUnlocked: false,
-      parentLevels: {
-        viper_hound: 1,
-        boar_hawk: 1,
-        grizzly_scorpion: 1,
-        chimera_wyrm: 1
-      },
-      incubator: null,
-      hybrids: {},
-
-      lastTick: performance.now()
-    };
-
-    function hasRelic(id) {
-      return !!gameState.ownedRelics[id];
-    }
-
-    function getRelicEffectMultiplier(id) {
-      if (!hasRelic(id)) return 0;
-      if (id !== 'eldritch_crown' && hasRelic('eldritch_crown')) {
-        return 1.5;
-      }
-      return 1.0;
-    }
-
-    function getMaxStamina() {
-      const campBonus = gameState.campEnduranceLevel * 2;
-      let maxCap = Math.min(100, gameState.staminaMaxBase + campBonus);
-      if (hasRelic('eldritch_crown')) {
-        maxCap *= 2;
-      }
-      return maxCap;
-    }
-
-    function getParentLevel(beastId) {
-      if (!gameState.parentLevels) {
-        gameState.parentLevels = { viper_hound: 1, boar_hawk: 1, grizzly_scorpion: 1, chimera_wyrm: 1 };
-      }
-      return gameState.parentLevels[beastId] || 1;
-    }
-
-    function getParentLevelCost(beastId) {
-      const lvl = getParentLevel(beastId);
-      return Math.floor(1000 * Math.pow(1.25, lvl));
-    }
-
-    function getHybridLevel(hybridId) {
-      if (!gameState.hybrids || !gameState.hybrids[hybridId]) return 0;
-      return gameState.hybrids[hybridId].level || 1;
-    }
-
-    function getHybridLevelCost(hybrid) {
-      const lvl = getHybridLevel(hybrid.id);
-      return Math.floor(hybrid.treatCost * Math.pow(1.30, lvl));
-    }
-
-    function getSparringStaminaCost() {
-      const tuskpionLvl = getHybridLevel('tuskpion');
-      return tuskpionLvl > 0 ? 2 : 3;
-    }
-
-    function getStaminaRegenInterval() {
-      let interval = gameState.staminaIntervalSec - (gameState.campRecoveryLevel * 0.75);
-      interval = Math.max(6.0, interval);
-
-      // Boar-Hawk parent passive: "Keen Eye" (-0.25s stamina regen interval per level)
-      if (gameState.tamedBeasts['boar_hawk']) {
-        const bLvl = getParentLevel('boar_hawk');
-        interval = Math.max(3.0, interval - (bLvl * 0.25));
-      }
-
-      if (hasRelic('eldritch_crown')) {
-        interval *= 0.5;
-      }
-      if (hasRelic('raptor_feather')) {
-        const mult = getRelicEffectMultiplier('raptor_feather');
-        interval /= (1 + (0.15 * mult));
-      }
-      if (gameState.adrenalineFocusRemaining > 0) {
-        interval /= 1.20;
-      }
-
-      // Viperhawk hybrid: +5% Stamina Regen speed per level
-      const viperhawkLvl = getHybridLevel('viperhawk');
-      if (viperhawkLvl > 0) {
-        interval /= (1 + (viperhawkLvl * 0.05));
-      }
-
-      return Math.max(1.0, interval);
-    }
-
-    function getStaminaRegenRate() {
-      const interval = getStaminaRegenInterval();
-      return 1 / interval;
-    }
-
-    function getWoundedDuration() {
-      let baseDur = gameState.cooldownDurationBase;
-      // Grizzly-Scorpion parent passive: "Chitin Bulwark" (-2s per level, min 5s)
-      if (gameState.tamedBeasts['grizzly_scorpion']) {
-        const gLvl = getParentLevel('grizzly_scorpion');
-        baseDur = Math.max(5.0, baseDur - (gLvl * 2));
-      }
-      const mult = getRelicEffectMultiplier('chitin_carapace');
-      return hasRelic('chitin_carapace') ? Math.max(3.0, baseDur / (1 + mult)) : baseDur;
-    }
-
-    function getBrutePowerPerLevel() {
-      return hasRelic('razor_talons') ? 6 : 4;
-    }
-
-    function getTrainingDisciplineCostMultiplier() {
-      return hasRelic('razor_talons') ? 0.75 : 1.0;
-    }
-
-    function getSparringCost() {
-      return Math.floor(50 * Math.pow(1.18, gameState.sparringLevel));
-    }
-
-    function getCampEnduranceCost() {
-      return Math.floor(1500 * Math.pow(2.0, gameState.campEnduranceLevel));
-    }
-
-    function getCampRecoveryCost() {
-      return Math.floor(5000 * Math.pow(2.25, gameState.campRecoveryLevel));
-    }
-
-    function getBruteConditioningCost() {
-      const baseCost = 30 * getTrainingDisciplineCostMultiplier();
-      return Math.floor(baseCost * Math.pow(1.30, gameState.bruteConditioningLevel));
-    }
-
-    function getBeastMasteryCost() {
-      const baseCost = 150 * getTrainingDisciplineCostMultiplier();
-      return Math.floor(baseCost * Math.pow(1.35, gameState.beastMasteryLevel));
-    }
-
-    function getWeakpointAnatomyCost() {
-      const baseCost = 300 * getTrainingDisciplineCostMultiplier();
-      return Math.floor(baseCost * Math.pow(1.40, gameState.weakpointAnatomyLevel));
-    }
-
-    function isGeneratorUnlocked(gen) {
-      if (gen.reqType === 'none') return true;
-      if (gen.reqType === 'generator') {
-        const count = gameState.generators[gen.reqTargetId] || 0;
-        return count >= gen.reqCount;
-      }
-      if (gen.reqType === 'beast') {
-        return !!gameState.tamedBeasts[gen.reqBeastId];
-      }
-      return true;
-    }
-
-    function getGeneratorCost(gen) {
-      const count = gameState.generators[gen.id] || 0;
-      return Math.floor(gen.baseCost * Math.pow(gen.costScale, count));
-    }
-
-    function getHunterPower() {
-      const rawPower = gameState.baseHunterPower + (gameState.bruteConditioningLevel * getBrutePowerPerLevel());
-      const scorpiodrakeLvl = getHybridLevel('scorpiodrake');
-      const perLevelMult = scorpiodrakeLvl > 0 ? 0.06 : 0.02;
-      const sparringMultiplier = 1 + (gameState.sparringLevel * perLevelMult);
-      return Math.floor(rawPower * sparringMultiplier);
-    }
-
-    function getTotalBeastPower() {
-      let rawBeastPower = 0;
-      // Milestone beasts
-      for (const beast of BEAST_CATALOG) {
-        if (gameState.tamedBeasts[beast.id]) {
-          const pLvl = getParentLevel(beast.id);
-          const levelMult = 1 + ((pLvl - 1) * 0.15);
-          rawBeastPower += Math.floor(beast.rewardPower * levelMult);
-        }
-      }
-      // Hybrids
-      for (const hybrid of HYBRID_CATALOG) {
-        const hLvl = getHybridLevel(hybrid.id);
-        if (hLvl > 0) {
-          const levelMult = 1 + ((hLvl - 1) * 0.20);
-          rawBeastPower += Math.floor(hybrid.basePower * levelMult);
-        }
-      }
-      const masteryMultiplier = 1 + (gameState.beastMasteryLevel * 0.10);
-      return Math.floor(rawBeastPower * masteryMultiplier);
-    }
-
-    function getTotalCombatPower() {
-      return getHunterPower() + getTotalBeastPower();
-    }
-
-    function getBaseMeatRate() {
-      let total = 0;
-      GENERATOR_LADDER.forEach(gen => {
-        const count = gameState.generators[gen.id] || 0;
-        total += count * gen.yieldPerSec;
-      });
-      return total;
-    }
-
-    function getMeatRate() {
-      let rate = getBaseMeatRate();
-      if (hasRelic('venom_vial')) {
-        rate *= (1 + 0.15 * getRelicEffectMultiplier('venom_vial'));
-      }
-      if (hasRelic('dragon_scale')) {
-        rate *= (1 + 1.0 * getRelicEffectMultiplier('dragon_scale'));
-      }
-      if (gameState.adrenalineFocusRemaining > 0) {
-        rate *= 1.25;
-      }
-      // Chimera-Wyrm parent passive: "Apex Dominance" (+10% global Meat/sec per level)
-      if (gameState.tamedBeasts['chimera_wyrm']) {
-        const cLvl = getParentLevel('chimera_wyrm');
-        rate *= (1 + (cLvl * 0.10));
-      }
-      // Gryphowyrm hybrid bonus: +35% generator speed per level
-      const gryphoLvl = getHybridLevel('gryphowyrm');
-      if (gryphoLvl > 0) {
-        rate *= (1 + (gryphoLvl * 0.35));
-      }
-      // Scorpiodrake hybrid bonus: +100% Meat/sec per level
-      const scorpioLvl = getHybridLevel('scorpiodrake');
-      if (scorpioLvl > 0) {
-        rate *= (1 + (scorpioLvl * 1.0));
-      }
-      return rate;
-    }
-
-    function getEquippedWeapon() {
-      if (gameState.weaponTier <= 0) return null;
-      return WEAPONS_CATALOG[gameState.weaponTier - 1] || null;
-    }
-
-    function getClickYield() {
-      const equipped = getEquippedWeapon();
-      const flatBonus = equipped ? equipped.flatBonus : 0;
-      let percentBonus = equipped ? equipped.percentBonus : 0;
-
-      if (hasRelic('serpents_fang')) {
-        percentBonus += 0.15 * getRelicEffectMultiplier('serpents_fang');
-      }
-
-      const passiveRate = getMeatRate();
-      let totalYield = gameState.baseClickPower + flatBonus + Math.floor(passiveRate * percentBonus);
-
-      // Viper-Hound parent passive: "Envenomed Tools" (+10% manual click meat per level)
-      if (gameState.tamedBeasts['viper_hound']) {
-        const vLvl = getParentLevel('viper_hound');
-        totalYield = Math.floor(totalYield * (1 + (vLvl * 0.10)));
-      }
-
-      // Viperhawk hybrid: +15% Click Meat per level
-      const viperhawkLvl = getHybridLevel('viperhawk');
-      if (viperhawkLvl > 0) {
-        totalYield = Math.floor(totalYield * (1 + (viperhawkLvl * 0.15)));
-      }
-
-      // Viperwyrm hybrid: Clicks grant +1.5% of banked Meat per level
-      const viperwyrmLvl = getHybridLevel('viperwyrm');
-      if (viperwyrmLvl > 0) {
-        const bankedBonus = Math.floor(gameState.meat * (0.015 * viperwyrmLvl));
-        totalYield += Math.min(bankedBonus, totalYield * 25);
-      }
-
-      return Math.max(1, totalYield);
-    }
-
-    function getEffectiveBossBracket(beast) {
-      const reduction = Math.min(0.25, gameState.weakpointAnatomyLevel * 0.025);
-      return {
-        min: Math.floor(beast.minPower * (1 - reduction)),
-        max: Math.floor(beast.maxPower * (1 - reduction))
-      };
-    }
-
-    function calculateWinChance(beast) {
-      const power = getTotalCombatPower();
-      const { min, max } = getEffectiveBossBracket(beast);
-
-      if (power < min) {
-        return 0.0;
-      }
-
-      if (power >= max) {
-        return 0.98;
-      }
-
-      const t = (power - min) / (max - min);
-      const baseChance = 0.05 + 0.93 * (3 * t * t - 2 * t * t * t);
-      return Math.min(0.98, Math.max(0.05, baseChance));
-    }
-
-    function isBeastMasteryUnlocked() {
-      return Object.keys(gameState.tamedBeasts).length > 0;
-    }
-
-    function checkIncubatorHatch() {
-      if (!gameState.incubator) return;
-      if (gameState.incubator.remaining <= 0) {
-        const hybridId = gameState.incubator.hybridId;
-        const hybrid = HYBRID_CATALOG.find(h => h.id === hybridId);
-        gameState.incubator = null;
-        if (!gameState.hybrids) gameState.hybrids = {};
-        gameState.hybrids[hybridId] = { level: 1 };
-        sound.playWin();
-        logCombatMessage(`🧬 <strong>HYBRID CHIMERA HATCHED!</strong> [<strong>${hybrid ? hybrid.name : hybridId}</strong>] has emerged from the incubator! Gained +${hybrid ? hybrid.basePower.toLocaleString() : 0} Beast Power!`, 'unlock');
-        showToast(`HYBRID HATCHED: ${hybrid ? hybrid.name : hybridId}!`, 'success', true);
-        renderForge();
-        renderMenagerie();
-        saveGameToStorage();
-      }
-    }
-
-    const elements = {
-      hudMeat: document.getElementById('hud-meat'),
-      hudMeatRate: document.getElementById('hud-meat-rate'),
-      hudStaminaVal: document.getElementById('hud-stamina-val'),
-      hudStaminaMax: document.getElementById('hud-stamina-max'),
-      hudStaminaBar: document.getElementById('hud-stamina-bar'),
-      hudStaminaLabel: document.getElementById('hud-stamina-label'),
-      hudStaminaInterval: document.getElementById('hud-stamina-interval'),
-      hudTotalPower: document.getElementById('hud-total-power'),
-      hudPowerSplit: document.getElementById('hud-power-split'),
-
-      activeBuffsBar: document.getElementById('active-buffs-bar'),
-      buffAdrenalineBadge: document.getElementById('buff-adrenaline-badge'),
-      buffAdrenalineTimer: document.getElementById('buff-adrenaline-timer'),
-
-      // Tab navigation buttons & panels
-      tabBtnCamp: document.getElementById('tab-btn-camp'),
-      tabBtnHunt: document.getElementById('tab-btn-hunt'),
-      tabBtnForge: document.getElementById('tab-btn-forge'),
-      tabBtnRelics: document.getElementById('tab-btn-relics'),
-      tabForgeBadge: document.getElementById('tab-forge-badge'),
-
-      panelCamp: document.getElementById('panel-camp'),
-      panelHunt: document.getElementById('panel-hunt'),
-      panelForge: document.getElementById('panel-forge'),
-      panelRelics: document.getElementById('panel-relics'),
-
-      forgeLockedView: document.getElementById('forge-locked-view'),
-      forgeExcavateView: document.getElementById('forge-excavate-view'),
-      forgeUnlockedView: document.getElementById('forge-unlocked-view'),
-      btnUnlockForge: document.getElementById('btn-unlock-forge'),
-      nurseryContainer: document.getElementById('nursery-container'),
-      incubatorCard: document.getElementById('incubator-card'),
-      synthesizerContainer: document.getElementById('synthesizer-container'),
-      forgeHatchedCount: document.getElementById('forge-hatched-count'),
-
-      btnForage: document.getElementById('btn-forage'),
-      btnForageText: document.getElementById('btn-forage-text'),
-      labelClickYield: document.getElementById('label-click-yield'),
-
-      armoryTierBadge: document.getElementById('armory-tier-badge'),
-      armoryEquippedIcon: document.getElementById('armory-equipped-icon'),
-      armoryEquippedName: document.getElementById('armory-equipped-name'),
-      armoryEquippedBonus: document.getElementById('armory-equipped-bonus'),
-      armoryCraftBox: document.getElementById('armory-craft-box'),
-      armoryNextName: document.getElementById('armory-next-name'),
-      armoryNextBenefit: document.getElementById('armory-next-benefit'),
-      armoryNextCost: document.getElementById('armory-next-cost'),
-      btnCraftWeapon: document.getElementById('btn-craft-weapon'),
-
-      generatorsContainer: document.getElementById('generators-container'),
-
-      campEnduranceLvl: document.getElementById('camp-endurance-lvl'),
-      campEnduranceBonus: document.getElementById('camp-endurance-bonus'),
-      campEnduranceCost: document.getElementById('camp-endurance-cost'),
-      btnBuyEndurance: document.getElementById('btn-buy-endurance'),
-      btnBuyEnduranceLabel: document.getElementById('btn-buy-endurance-label'),
-      btnBuyEnduranceCostWrap: document.getElementById('btn-buy-endurance-cost-wrap'),
-
-      campRecoveryLvl: document.getElementById('camp-recovery-lvl'),
-      campRecoveryInterval: document.getElementById('camp-recovery-interval'),
-      campRecoveryCost: document.getElementById('camp-recovery-cost'),
-      btnBuyRecovery: document.getElementById('btn-buy-recovery'),
-      btnBuyRecoveryLabel: document.getElementById('btn-buy-recovery-label'),
-      btnBuyRecoveryCostWrap: document.getElementById('btn-buy-recovery-cost-wrap'),
-
-      trainBruteLvl: document.getElementById('train-brute-lvl'),
-      trainBruteYield: document.getElementById('train-brute-yield'),
-      trainBruteCost: document.getElementById('train-brute-cost'),
-      btnBuyBrute: document.getElementById('btn-buy-brute'),
-
-      trainMasteryCard: document.getElementById('train-mastery-card'),
-      trainMasteryLvl: document.getElementById('train-mastery-lvl'),
-      trainMasteryDesc: document.getElementById('train-mastery-desc'),
-      trainMasteryCostWrap: document.getElementById('train-mastery-cost-wrap'),
-      trainMasteryCost: document.getElementById('train-mastery-cost'),
-      btnBuyMastery: document.getElementById('btn-buy-mastery'),
-      btnBuyMasteryLabel: document.getElementById('btn-buy-mastery-label'),
-
-      trainAnatomyLvl: document.getElementById('train-anatomy-lvl'),
-      trainAnatomyCostWrap: document.getElementById('train-anatomy-cost-wrap'),
-      trainAnatomyCost: document.getElementById('train-anatomy-cost'),
-      btnBuyAnatomy: document.getElementById('btn-buy-anatomy'),
-      btnBuyAnatomyLabel: document.getElementById('btn-buy-anatomy-label'),
-
-      sparringLevel: document.getElementById('sparring-level'),
-      sparringCostMeat: document.getElementById('sparring-cost-meat'),
-      sparringTotalMultiplier: document.getElementById('sparring-total-multiplier'),
-      btnSpar: document.getElementById('btn-spar'),
-      btnSparLabel: document.getElementById('btn-spar-label'),
-
-      relicOwnedCount: document.getElementById('relic-owned-count'),
-      relicGrid: document.getElementById('relic-grid'),
-
-      encounterTierBadge: document.getElementById('encounter-tier-badge'),
-      selectBeastTier: document.getElementById('select-beast-tier'),
-      beastPortraitImg: document.getElementById('beast-portrait-img'),
-      beastName: document.getElementById('beast-name'),
-      beastDesc: document.getElementById('beast-desc'),
-      beastPowerMin: document.getElementById('beast-power-min'),
-      beastPowerMax: document.getElementById('beast-power-max'),
-      beastRewardPower: document.getElementById('beast-reward-power'),
-      beastAvatarBox: document.getElementById('beast-avatar-box'),
-      beastStatusRibbon: document.getElementById('beast-status-ribbon'),
-
-      oddsPercentageText: document.getElementById('odds-percentage-text'),
-      oddsMeterFill: document.getElementById('odds-meter-fill'),
-      btnChallenge: document.getElementById('btn-challenge'),
-      btnFightLabel: document.getElementById('btn-fight-label'),
-      btnFightIcon: document.getElementById('btn-fight-icon'),
-      btnChancePill: document.getElementById('btn-chance-pill'),
-
-      cooldownContainer: document.getElementById('cooldown-container'),
-      cooldownTimer: document.getElementById('cooldown-timer'),
-      cooldownBar: document.getElementById('cooldown-bar'),
-      cooldownLabel: document.getElementById('cooldown-label'),
-
-      combatLog: document.getElementById('combat-log'),
-      btnClearLog: document.getElementById('btn-clear-log'),
-
-      menagerieTotalPower: document.getElementById('menagerie-total-power'),
-      menagerieContainer: document.getElementById('menagerie-container'),
-
-      btnToggleSound: document.getElementById('btn-toggle-sound'),
-      soundStatus: document.getElementById('sound-status'),
-      soundIcon: document.getElementById('sound-icon'),
-      btnResetGame: document.getElementById('btn-reset-game'),
-      resetModal: document.getElementById('reset-modal'),
-      btnConfirmReset: document.getElementById('btn-confirm-reset'),
-      btnCancelReset: document.getElementById('btn-cancel-reset'),
-      toastContainer: document.getElementById('toast-container')
-    };
-
-    function switchTab(tabId) {
-      const isBoarHawkTamed = !!gameState.tamedBeasts['boar_hawk'];
-      if (tabId === 'forge' && !isBoarHawkTamed) {
-        showToast('Beast Forge unlocks after taming the Boar-Hawk!', 'warning');
-        return;
-      }
-
-      gameState.activeTab = tabId;
-
-      const tabs = [
-        { id: 'camp', btn: elements.tabBtnCamp, panel: elements.panelCamp },
-        { id: 'hunt', btn: elements.tabBtnHunt, panel: elements.panelHunt },
-        { id: 'forge', btn: elements.tabBtnForge, panel: elements.panelForge },
-        { id: 'relics', btn: elements.tabBtnRelics, panel: elements.panelRelics }
-      ];
-
-      tabs.forEach(t => {
-        if (t.id === tabId) {
-          t.btn.classList.add('active');
-          t.panel.classList.remove('hidden');
-        } else {
-          t.btn.classList.remove('active');
-          t.panel.classList.add('hidden');
-        }
-      });
-
-      if (tabId === 'forge') {
-        renderForge();
-      }
-    }
-
-    window.nurtureParent = function(rawBeastId) {
-      if (!rawBeastId) return;
-      // Support both hyphenated (viper-hound) and underscore (viper_hound) keys
-      const beastId = rawBeastId.replace(/-/g, '_');
-
-      // 1. Check if the beast exists in tamed beasts
-      if (!gameState.tamedBeasts[beastId]) {
-        showToast('You must tame this beast before nurturing it!', 'warning');
-        return;
-      }
-
-      const currentLvl = getParentLevel(beastId);
-      const cost = getParentLevelCost(beastId);
-
-      // 2. Check Meat balance and deduct
-      if (gameState.meat < cost) {
-        showToast(`Not enough Meat! Requires ${cost.toLocaleString()} Meat.`, 'warning');
-        return;
-      }
-
-      sound.playBuy();
-      gameState.meat -= cost;
-
-      // 3. Increment level
-      if (!gameState.parentLevels) gameState.parentLevels = {};
-      gameState.parentLevels[beastId] = currentLvl + 1;
-      const newLvl = gameState.parentLevels[beastId];
-
-      const beastObj = BEAST_CATALOG.find(b => b.id === beastId);
-      const beastName = beastObj ? beastObj.name : beastId;
-
-      logCombatMessage(
-        `🌿 Nurtured <strong>${beastName}</strong> to Level ${newLvl}! Beast Power & passives upgraded.`,
-        'unlock'
-      );
-      showToast(`${beastName} upgraded to Level ${newLvl}!`, 'success');
-
-      // 4. Breeding Unlock Check: Check if both parents of any hybrid recipe are at Level 5+
-      HYBRID_CATALOG.forEach(hybrid => {
-        if (hybrid.parent1 === beastId || hybrid.parent2 === beastId) {
-          const p1Lvl = getParentLevel(hybrid.parent1);
-          const p2Lvl = getParentLevel(hybrid.parent2);
-          const isHatched = getHybridLevel(hybrid.id) > 0;
-          const isIncubating = gameState.incubator && gameState.incubator.hybridId === hybrid.id;
-
-          if (p1Lvl >= 5 && p2Lvl >= 5 && !isHatched && !isIncubating) {
-            logCombatMessage(
-              `🧬 <strong>BREEDING UNLOCKED!</strong> Both parents reached Level 5. You can now brew treats for <strong>${hybrid.name}</strong>!`,
-              'relic'
-            );
-            showToast(`Breeding unlocked for ${hybrid.name}!`, 'success', true);
-          }
-        }
-      });
-
-      // 5. Re-render Nursery, Menagerie and persist changes
-      renderForge();
-      renderMenagerie();
-      saveGameToStorage();
-    };
-
-    function renderForge() {
-      const isBoarHawkTamed = !!gameState.tamedBeasts['boar_hawk'];
-
-      if (!isBoarHawkTamed) {
-        elements.forgeLockedView.classList.remove('hidden');
-        elements.forgeExcavateView.classList.add('hidden');
-        elements.forgeUnlockedView.classList.add('hidden');
-        return;
-      }
-
-      if (!gameState.forgeUnlocked) {
-        elements.forgeLockedView.classList.add('hidden');
-        elements.forgeExcavateView.classList.remove('hidden');
-        elements.forgeUnlockedView.classList.add('hidden');
-        elements.btnUnlockForge.disabled = gameState.meat < 25000;
-        return;
-      }
-
-      elements.forgeLockedView.classList.add('hidden');
-      elements.forgeExcavateView.classList.add('hidden');
-      elements.forgeUnlockedView.classList.remove('hidden');
-
-      // 1. Render Nursery
-      elements.nurseryContainer.innerHTML = '';
-      const parentDefinitions = [
-        { id: 'viper_hound', name: 'Viper-Hound', tier: 1, passive: 'Envenomed Tools (+10% click meat/lvl)', icon: 'fa-dog' },
-        { id: 'boar_hawk', name: 'Boar-Hawk', tier: 2, passive: 'Keen Eye (-0.25s stamina interval/lvl)', icon: 'fa-feather' },
-        { id: 'grizzly_scorpion', name: 'Grizzly-Scorpion', tier: 3, passive: 'Chitin Bulwark (-2s wounded time/lvl)', icon: 'fa-shield-halved' },
-        { id: 'chimera_wyrm', name: 'Chimera-Wyrm', tier: 4, passive: 'Apex Dominance (+10% Meat/sec/lvl)', icon: 'fa-dragon' }
-      ];
-
-      parentDefinitions.forEach(parent => {
-        const isTamed = !!gameState.tamedBeasts[parent.id];
-        const lvl = getParentLevel(parent.id);
-        const cost = getParentLevelCost(parent.id);
-        const canAfford = gameState.meat >= cost;
-        const isBreedingReady = lvl >= 5;
-
-        const row = document.createElement('div');
-        if (isTamed) {
-          row.className = 'bg-primal-800/80 border border-primal-700 rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3';
-          row.innerHTML = `
-            <div class="flex items-center space-x-3">
-              <div class="w-10 h-10 rounded-lg bg-stone-900 border border-purple-500/40 flex items-center justify-center text-purple-400 text-lg shadow-inner">
-                <i class="fa-solid ${parent.icon}"></i>
-              </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="font-bold text-slate-100 text-sm">${parent.name}</span>
-                  <span class="text-xs bg-purple-950 text-purple-300 border border-purple-700/60 font-mono px-2 py-0.2 rounded-full font-bold">Lvl ${lvl}</span>
-                  <span class="text-[10px] font-mono px-1.5 py-0.2 rounded ${isBreedingReady ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-primal-900 text-slate-400 border border-primal-700'}">
-                    ${isBreedingReady ? 'Breeding Ready (Lvl 5+)' : `Need Lvl 5 (${lvl}/5)`}
-                  </span>
-                </div>
-                <div class="text-[11px] text-emerald-400 font-mono mt-0.5">
-                  Passive: ${parent.passive}
-                </div>
-              </div>
-            </div>
-            <button 
-              data-beast-id="${parent.id}"
-              data-parent-id="${parent.id}"
-              onclick="nurtureParent('${parent.id}')"
-              class="nurture-btn btn-level-parent w-full sm:w-auto px-3.5 py-2 bg-gradient-to-r from-purple-800 to-purple-700 hover:from-purple-700 hover:to-purple-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg border border-purple-500/50 flex items-center justify-center gap-2 font-mono cursor-pointer" 
-              ${canAfford ? '' : 'disabled'}>
-              <span>Nurture (Lvl ${lvl + 1})</span>
-              <span class="text-amber-300 flex items-center gap-1 font-bold">
-                <i class="fa-solid fa-drumstick-bite text-[11px]"></i>
-                ${cost.toLocaleString()}
-              </span>
-            </button>
-          `;
-        } else {
-          row.className = 'bg-primal-800/40 border border-dashed border-primal-700/60 rounded-xl p-3 flex items-center justify-between opacity-50 grayscale';
-          row.innerHTML = `
-            <div class="flex items-center space-x-3">
-              <div class="w-10 h-10 rounded-lg bg-primal-900 border border-slate-700 flex items-center justify-center text-slate-600">
-                <i class="fa-solid fa-lock"></i>
-              </div>
-              <div>
-                <span class="font-bold text-slate-400 text-sm">${parent.name}</span>
-                <p class="text-[11px] text-amber-500 font-mono mt-0.5">Untamed (Defeat in Hunt zone first)</p>
-              </div>
-            </div>
-            <span class="text-xs bg-primal-900 text-slate-500 px-3 py-1 rounded border border-primal-800 font-mono">Locked</span>
-          `;
-        }
-        elements.nurseryContainer.appendChild(row);
-      });
-
-      // 2. Render Incubator Card
-      if (gameState.incubator) {
-        const hybrid = HYBRID_CATALOG.find(h => h.id === gameState.incubator.hybridId);
-        const total = gameState.incubator.totalDuration;
-        const rem = Math.max(0, gameState.incubator.remaining);
-        const pct = Math.min(100, Math.max(0, ((total - rem) / total) * 100));
-        const canTend = gameState.stamina >= 2;
-
-        elements.incubatorCard.innerHTML = `
-          <div class="flex items-center justify-center space-x-2 text-purple-300 font-cinzel font-bold text-base mb-1">
-            <i class="fa-solid fa-dna animate-spin text-amber-400"></i>
-            <span>Incubating: ${hybrid ? hybrid.name : 'Chimera Egg'}</span>
-          </div>
-          <div class="text-xs text-slate-400 font-mono mb-3">
-            Gestation Remaining: <span id="incubator-time-remaining" class="text-amber-400 font-bold">${rem.toFixed(1)}s</span> / ${total}s
-          </div>
-          <div class="w-full bg-primal-950 h-3 rounded-full overflow-hidden p-0.5 border border-purple-700/60 mb-4">
-            <div id="incubator-progress-fill" class="h-full bg-gradient-to-r from-purple-600 via-amber-500 to-emerald-400 rounded-full transition-all duration-150" style="width: ${pct}%;"></div>
-          </div>
-          <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button id="btn-tend-nest" class="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 active:scale-95 text-white text-xs font-semibold rounded-lg transition-all border border-amber-400/50 flex items-center justify-center gap-2 font-mono shadow-md cursor-pointer" ${canTend ? '' : 'disabled'}>
-              <i class="fa-solid fa-hand-holding-heart text-amber-300"></i>
-              <span>Tend Nest (-30s)</span>
-              <span class="text-blue-300 font-bold flex items-center gap-1 bg-black/30 px-1.5 py-0.2 rounded">
-                <i class="fa-solid fa-bolt-lightning text-[10px]"></i> 2 Stamina
-              </span>
-            </button>
-            <span class="text-[11px] text-slate-400 italic">Main Hunt clicks shave -1.0s each</span>
-          </div>
-        `;
-
-        const btnTend = document.getElementById('btn-tend-nest');
-        if (btnTend) {
-          btnTend.addEventListener('click', () => {
-            if (gameState.stamina >= 2 && gameState.incubator) {
-              sound.playClick();
-              gameState.stamina -= 2;
-              gameState.incubator.remaining = Math.max(0, gameState.incubator.remaining - 30);
-              checkIncubatorHatch();
-              renderForge();
-            }
-          });
-        }
-      } else {
-        elements.incubatorCard.innerHTML = `
-          <div class="py-4 text-center">
-            <div class="w-12 h-12 rounded-full bg-purple-950/60 border border-purple-800 mx-auto flex items-center justify-center text-purple-400 text-xl mb-2">
-              <i class="fa-solid fa-egg"></i>
-            </div>
-            <div class="text-sm font-semibold text-slate-300">Incubator Empty</div>
-            <p class="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-              Select a pairing below and brew a specialized Breeding Treat to start incubation.
-            </p>
-          </div>
-        `;
-      }
-
-      // 3. Render Chimera Synthesizer
-      elements.synthesizerContainer.innerHTML = '';
-      let hatchedCount = 0;
-
-      HYBRID_CATALOG.forEach(hybrid => {
-        const p1Tamed = !!gameState.tamedBeasts[hybrid.parent1];
-        const p2Tamed = !!gameState.tamedBeasts[hybrid.parent2];
-        const p1Lvl = getParentLevel(hybrid.parent1);
-        const p2Lvl = getParentLevel(hybrid.parent2);
-        const meetsBreedingReq = p1Tamed && p2Tamed && p1Lvl >= 5 && p2Lvl >= 5;
-
-        const hLvl = getHybridLevel(hybrid.id);
-        const isHatched = hLvl > 0;
-        const isIncubating = gameState.incubator && gameState.incubator.hybridId === hybrid.id;
-        const canAfford = gameState.meat >= hybrid.treatCost;
-        if (isHatched) hatchedCount++;
-
-        const card = document.createElement('div');
-        card.className = `p-4 rounded-xl border flex flex-col justify-between transition-all ${
-          isHatched
-            ? 'bg-gradient-to-b from-purple-950/40 to-primal-850 border-purple-600/70 shadow-md'
-            : isIncubating
-            ? 'bg-amber-950/30 border-amber-500/60 ring-1 ring-amber-500/40'
-            : meetsBreedingReq
-            ? 'bg-primal-800/90 border-primal-700 hover:border-purple-500/50'
-            : 'bg-primal-900/60 border-dashed border-primal-800 opacity-60'
-        }`;
-
-        let actionHtml = '';
-        if (isHatched) {
-          const enhanceCost = getHybridLevelCost(hybrid);
-          const canEnhance = gameState.meat >= enhanceCost;
-          actionHtml = `
-            <div class="mt-3 pt-3 border-t border-purple-800/50 flex items-center justify-between">
-              <span class="text-xs font-mono text-purple-300 font-bold">Hatched (Lvl ${hLvl})</span>
-              <button data-hybrid-id="${hybrid.id}" class="btn-enhance-hybrid px-3 py-1.5 bg-purple-700 hover:bg-purple-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-semibold rounded font-mono flex items-center gap-1.5 cursor-pointer" ${canEnhance ? '' : 'disabled'}>
-                <span>Enhance</span>
-                <span class="text-amber-300 font-bold">${enhanceCost.toLocaleString()}</span>
-              </button>
-            </div>
-          `;
-        } else if (isIncubating) {
-          actionHtml = `
-            <div class="mt-3 pt-3 border-t border-amber-800/50 text-center">
-              <span class="text-xs font-mono text-amber-300 font-bold animate-pulse">
-                <i class="fa-solid fa-spinner fa-spin mr-1"></i> Incubating (${gameState.incubator.remaining.toFixed(0)}s left)
-              </span>
-            </div>
-          `;
-        } else if (meetsBreedingReq) {
-          const incubatorBusy = !!gameState.incubator;
-          actionHtml = `
-            <div class="mt-3 pt-3 border-t border-primal-700 flex flex-col gap-2">
-              <button data-hybrid-id="${hybrid.id}" class="btn-brew-treat w-full py-2 bg-gradient-to-r from-purple-700 to-amber-600 hover:from-purple-600 hover:to-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg font-mono flex items-center justify-center gap-2 cursor-pointer shadow-sm" ${canAfford && !incubatorBusy ? '' : 'disabled'}>
-                <i class="fa-solid fa-flask-vial"></i>
-                <span>Brew Treat &amp; Incubate</span>
-                <span class="text-amber-200 font-bold flex items-center gap-1">
-                  <i class="fa-solid fa-drumstick-bite text-[10px]"></i> ${hybrid.treatCost.toLocaleString()}
-                </span>
-              </button>
-              ${incubatorBusy ? '<div class="text-[10px] text-amber-400 font-mono text-center">Incubator currently busy</div>' : ''}
-            </div>
-          `;
-        } else {
-          actionHtml = `
-            <div class="mt-3 pt-3 border-t border-primal-800 text-[11px] font-mono text-slate-500 text-center">
-              Requires: ${hybrid.parent1} (Lvl ${p1Lvl}/5) &amp; ${hybrid.parent2} (Lvl ${p2Lvl}/5)
-            </div>
-          `;
-        }
-
-        card.innerHTML = `
-          <div>
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center space-x-2.5">
-                <div class="w-8 h-8 rounded-lg bg-purple-950 border border-purple-700/60 flex items-center justify-center text-purple-400 text-sm">
-                  <i class="fa-solid ${hybrid.icon}"></i>
-                </div>
-                <div>
-                  <h4 class="font-bold text-slate-100 text-xs sm:text-sm">${hybrid.name}</h4>
-                  <div class="text-[10px] text-slate-400 font-mono">Treat: ${hybrid.treatName} (${hybrid.gestationSec}s)</div>
-                </div>
-              </div>
-              <span class="text-[10px] font-mono px-2 py-0.5 rounded ${isHatched ? 'bg-purple-900/80 text-purple-300 border border-purple-700' : 'bg-primal-900 text-slate-400 border border-primal-700'}">
-                +${hybrid.basePower.toLocaleString()} Pwr
-              </span>
-            </div>
-            <p class="text-[11px] text-slate-300 leading-relaxed mt-1">${hybrid.desc}</p>
-          </div>
-          ${actionHtml}
-        `;
-        elements.synthesizerContainer.appendChild(card);
-      });
-
-      elements.forgeHatchedCount.textContent = `${hatchedCount} / 6 Hatched`;
-
-      // Bind brew treat
-      elements.synthesizerContainer.querySelectorAll('.btn-brew-treat').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const hId = btn.getAttribute('data-hybrid-id');
-          const hybrid = HYBRID_CATALOG.find(h => h.id === hId);
-          if (!hybrid || gameState.incubator || gameState.meat < hybrid.treatCost) return;
-
-          sound.playBuy();
-          gameState.meat -= hybrid.treatCost;
-          gameState.incubator = {
-            hybridId: hybrid.id,
-            totalDuration: hybrid.gestationSec,
-            remaining: hybrid.gestationSec
-          };
-          showToast(`Brewed ${hybrid.treatName}! Incubation begun (${hybrid.gestationSec}s).`, 'success');
-          logCombatMessage(`🧬 Begun incubating <strong>${hybrid.name}</strong> egg with ${hybrid.treatName} (${hybrid.gestationSec}s gestation).`, 'relic');
-          renderForge();
-          saveGameToStorage();
-        });
-      });
-
-      // Bind enhance hybrid
-      elements.synthesizerContainer.querySelectorAll('.btn-enhance-hybrid').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const hId = btn.getAttribute('data-hybrid-id');
-          const hybrid = HYBRID_CATALOG.find(h => h.id === hId);
-          if (!hybrid) return;
-          const cost = getHybridLevelCost(hybrid);
-          if (gameState.meat >= cost) {
-            sound.playBuy();
-            gameState.meat -= cost;
-            if (!gameState.hybrids) gameState.hybrids = {};
-            if (!gameState.hybrids[hId]) gameState.hybrids[hId] = { level: 1 };
-            gameState.hybrids[hId].level += 1;
-            renderForge();
-            renderMenagerie();
-            saveGameToStorage();
-          }
-        });
-      });
-    }
-
-    function updateForgeLiveElements() {
-      if (gameState.activeTab !== 'forge') return;
-
-      if (elements.btnUnlockForge && !elements.forgeExcavateView.classList.contains('hidden')) {
-        elements.btnUnlockForge.disabled = gameState.meat < 25000;
-      }
-
-      // Update Nursery buttons disabled status in-place without rebuilding DOM
-      elements.nurseryContainer.querySelectorAll('.nurture-btn, .btn-level-parent').forEach(btn => {
-        const beastId = btn.dataset.beastId || btn.dataset.parentId;
-        if (beastId) {
-          const cost = getParentLevelCost(beastId);
-          btn.disabled = gameState.meat < cost;
-        }
-      });
-
-      // Update Incubator live progress and countdown without rebuilding DOM
-      if (gameState.incubator) {
-        const total = gameState.incubator.totalDuration;
-        const rem = Math.max(0, gameState.incubator.remaining);
-        const pct = Math.min(100, Math.max(0, ((total - rem) / total) * 100));
-
-        const timerEl = document.getElementById('incubator-time-remaining');
-        if (timerEl) timerEl.textContent = `${rem.toFixed(1)}s`;
-
-        const barEl = document.getElementById('incubator-progress-fill');
-        if (barEl) barEl.style.width = `${pct}%`;
-
-        const btnTend = document.getElementById('btn-tend-nest');
-        if (btnTend) btnTend.disabled = gameState.stamina < 2;
-      }
-
-      // Update Synthesizer button disabled states in-place
-      elements.synthesizerContainer.querySelectorAll('.btn-brew-treat').forEach(btn => {
-        const hId = btn.getAttribute('data-hybrid-id');
-        const hybrid = HYBRID_CATALOG.find(h => h.id === hId);
-        if (hybrid) {
-          btn.disabled = gameState.meat < hybrid.treatCost || !!gameState.incubator;
-        }
-      });
-
-      elements.synthesizerContainer.querySelectorAll('.btn-enhance-hybrid').forEach(btn => {
-        const hId = btn.getAttribute('data-hybrid-id');
-        const hybrid = HYBRID_CATALOG.find(h => h.id === hId);
-        if (hybrid) {
-          const cost = getHybridLevelCost(hybrid);
-          btn.disabled = gameState.meat < cost;
-        }
-      });
-    }
-
-    function challengeCurrentBeast() {
-      if (gameState.inCooldown || gameState.isBattling) return;
-
-      const staminaCost = 10;
-      if (gameState.stamina < staminaCost) {
-        showToast(`Not enough stamina! Requires ${staminaCost} Stamina.`, 'warning');
-        return;
-      }
-
-      const beast = BEAST_CATALOG[gameState.selectedBeastIndex];
-      const playerPower = getTotalCombatPower();
-      const { min: effMin } = getEffectiveBossBracket(beast);
-
-      if (playerPower < effMin && !hasRelic('magma_stinger')) {
-        showToast(`Combat Power too low (${playerPower} vs min ${effMin})!`, 'danger');
-        return;
-      }
-
-      gameState.stamina = Math.max(0, gameState.stamina - staminaCost);
-      gameState.isBattling = true;
-      sound.playTone(260, 'square', 0.2, 0.1);
-
-      setTimeout(() => {
-        gameState.isBattling = false;
-        const winChance = calculateWinChance(beast);
-        const roll = Math.random();
-        const isAlreadyTamed = !!gameState.tamedBeasts[beast.id];
-
-        if (roll <= winChance) {
-          sound.playWin();
-
-          // Magma Stinger Relic effect ("Underdog's Fury"): Wins under 25% odds refund 100% stamina + 10m Meat windfall
-          if (hasRelic('magma_stinger') && winChance < 0.25) {
-            gameState.stamina = Math.min(getMaxStamina(), gameState.stamina + 10);
-            const windfall = Math.floor(getMeatRate() * 600);
-            gameState.meat += windfall;
-            logCombatMessage(`🔥 <strong>Underdog's Fury!</strong> Magma Stinger refunded 10 Stamina & awarded a 10m meat windfall (+${windfall.toLocaleString()} Meat)!`, 'relic');
-            showToast(`Underdog's Fury Triggered! Full Stamina refund & +${windfall.toLocaleString()} Meat!`, 'success', true);
-          }
-
-          if (!isAlreadyTamed) {
-            gameState.tamedBeasts[beast.id] = true;
-
-            // Instant full stamina refill & wound clear
-            gameState.stamina = getMaxStamina();
-            gameState.inCooldown = false;
-            gameState.cooldownRemaining = 0;
-
-            logCombatMessage(
-              `⚔️ <strong>GRAND TAMING VICTORY!</strong> Bonded with <strong>${beast.name}</strong>! Gained +${beast.rewardPower.toLocaleString()} Beast Power!`,
-              'win'
-            );
-            logCombatMessage(`✨ <strong>BEAST TAMED! Stamina fully restored!</strong>`, 'unlock');
-            showToast(`BEAST TAMED! Stamina fully restored!`, 'success');
-
-            const nextTier = beast.tier + 1;
-            if (nextTier > gameState.highestTierUnlocked && nextTier <= BEAST_CATALOG.length) {
-              gameState.highestTierUnlocked = nextTier;
-              const nextBeast = BEAST_CATALOG.find(b => b.tier === nextTier);
-              logCombatMessage(`🌟 New Apex Tier Unlocked: Tier ${nextTier} <strong>${nextBeast.name}</strong>!`, 'unlock');
-              showToast(`Unlocked Tier ${nextTier}: ${nextBeast.name}!`, 'success');
-            }
-            updateBeastSelectorOptions();
-            renderMenagerie();
-            renderGeneratorsLadder();
-          } else {
-            logCombatMessage(
-              `🏆 <strong>TROPHY EXPEDITION CONQUERED!</strong> Successfully defeated <strong>${beast.name}</strong>. Searching for relics...`,
-              'win'
-            );
-            rollRelicDrops(beast);
-          }
-        } else {
-          sound.playDefeat();
-          gameState.inCooldown = true;
-          gameState.cooldownRemaining = getWoundedDuration();
-
-          logCombatMessage(
-            `💀 <strong>EXPEDITION FAILED!</strong> Defeated by <strong>${beast.name}</strong> (Roll: ${(roll * 100).toFixed(1)}% vs ${(winChance * 100).toFixed(1)}%). Hunter wounded for ${Math.round(gameState.cooldownRemaining)}s (Stamina recovery halted)!`,
-            'loss'
-          );
-          showToast(`Defeated! Hunter wounded (${Math.round(gameState.cooldownRemaining)}s recovery).`, 'danger');
-        }
-
-        saveGameToStorage();
-      }, 1500);
-    }
-
-    function saveGameToStorage() {
-      try {
-        const data = {
-          meat: gameState.meat,
-          weaponTier: gameState.weaponTier,
-          stamina: gameState.stamina,
-          generators: gameState.generators,
-          campEnduranceLevel: gameState.campEnduranceLevel,
-          campRecoveryLevel: gameState.campRecoveryLevel,
-          bruteConditioningLevel: gameState.bruteConditioningLevel,
-          beastMasteryLevel: gameState.beastMasteryLevel,
-          weakpointAnatomyLevel: gameState.weakpointAnatomyLevel,
-          sparringLevel: gameState.sparringLevel,
-          highestTierUnlocked: gameState.highestTierUnlocked,
-          tamedBeasts: gameState.tamedBeasts,
-          ownedRelics: gameState.ownedRelics,
-          selectedBeastIndex: gameState.selectedBeastIndex,
-          activeTab: gameState.activeTab,
-          // Phase 2 Forge & Nursery Persistence
-          forgeUnlocked: gameState.forgeUnlocked,
-          parentLevels: gameState.parentLevels,
-          incubator: gameState.incubator,
-          hybrids: gameState.hybrids
-        };
-        localStorage.setItem('beast_tamer_savedata', JSON.stringify(data));
-      } catch (err) {
-        console.warn('Could not save game data', err);
-      }
-    }
-
-    function loadGameFromStorage() {
-      try {
-        const raw = localStorage.getItem('beast_tamer_savedata');
-        if (raw) {
-          const data = JSON.parse(raw);
-          if (typeof data.meat === 'number') gameState.meat = Number.isFinite(data.meat) ? data.meat : 0;
-          if (typeof data.weaponTier === 'number') gameState.weaponTier = data.weaponTier;
-          if (typeof data.stamina === 'number') gameState.stamina = Math.min(data.stamina, 200);
-
-          // 6-Tier Generator Ladder migration
-          if (data.generators && typeof data.generators === 'object') {
-            GENERATOR_LADDER.forEach(gen => {
-              if (typeof data.generators[gen.id] === 'number' && Number.isFinite(data.generators[gen.id])) {
-                gameState.generators[gen.id] = data.generators[gen.id];
-              }
-            });
-          } else {
-            // Clean migration from previous save structures
-            if (typeof data.snares === 'number') gameState.generators.snare_lines = data.snares;
-            if (typeof data.hounds === 'number') gameState.generators.hunting_pack = data.hounds;
-            if (typeof data.pitfalls === 'number') gameState.generators.heavy_deadfalls = data.pitfalls;
-          }
-
-          if (typeof data.campEnduranceLevel === 'number') gameState.campEnduranceLevel = data.campEnduranceLevel;
-          if (typeof data.campRecoveryLevel === 'number') gameState.campRecoveryLevel = data.campRecoveryLevel;
-          if (typeof data.bruteConditioningLevel === 'number') {
-            gameState.bruteConditioningLevel = data.bruteConditioningLevel;
-          } else if (typeof data.trainingLevel === 'number') {
-            gameState.bruteConditioningLevel = data.trainingLevel;
-          }
-          if (typeof data.beastMasteryLevel === 'number') gameState.beastMasteryLevel = data.beastMasteryLevel;
-          if (typeof data.weakpointAnatomyLevel === 'number') gameState.weakpointAnatomyLevel = data.weakpointAnatomyLevel;
-          if (typeof data.sparringLevel === 'number') {
-            gameState.sparringLevel = data.sparringLevel;
-          } else if (typeof data.sparringBonusPower === 'number') {
-            gameState.sparringLevel = Math.floor(data.sparringBonusPower / 2);
-          }
-          if (typeof data.adrenalineFocusRemaining === 'number') gameState.adrenalineFocusRemaining = data.adrenalineFocusRemaining;
-
-          if (typeof data.highestTierUnlocked === 'number') gameState.highestTierUnlocked = data.highestTierUnlocked;
-          if (data.tamedBeasts) gameState.tamedBeasts = data.tamedBeasts;
-          if (data.ownedRelics) gameState.ownedRelics = data.ownedRelics;
-          if (typeof data.selectedBeastIndex === 'number') gameState.selectedBeastIndex = data.selectedBeastIndex;
-          if (typeof data.activeTab === 'string') gameState.activeTab = data.activeTab;
-
-          // Phase 2 Forge & Nursery loading
-          if (typeof data.forgeUnlocked === 'boolean') gameState.forgeUnlocked = data.forgeUnlocked;
-          if (data.parentLevels && typeof data.parentLevels === 'object') {
-            gameState.parentLevels = Object.assign(gameState.parentLevels, data.parentLevels);
-          }
-          if (data.incubator && typeof data.incubator === 'object') gameState.incubator = data.incubator;
-          if (data.hybrids && typeof data.hybrids === 'object') gameState.hybrids = data.hybrids;
-        }
-      } catch (err) {
-        console.warn('Could not load save data', err);
-      }
-    }
-
-    function renderFrame(meatRate) {
-      const hunterPower = getHunterPower();
-      const beastPower = getTotalBeastPower();
-      const totalPower = hunterPower + beastPower;
-      const maxStamina = getMaxStamina();
-      const regenInterval = getStaminaRegenInterval();
-
-      // Header HUD
-      elements.hudMeat.textContent = Math.floor(gameState.meat).toLocaleString();
-      elements.hudMeatRate.textContent = meatRate.toFixed(1);
-
-      elements.hudStaminaVal.textContent = Math.floor(gameState.stamina);
-      elements.hudStaminaMax.textContent = maxStamina;
-      const staminaPct = Math.min(100, (gameState.stamina / maxStamina) * 100);
-      elements.hudStaminaBar.style.width = `${staminaPct}%`;
-      elements.hudStaminaInterval.textContent = `+1 per ${regenInterval.toFixed(1)}s`;
-
-      if (gameState.inCooldown) {
-        elements.hudStaminaLabel.textContent = 'Stamina (FROZEN)';
-        elements.hudStaminaLabel.className = 'text-red-400 font-bold';
-      } else {
-        elements.hudStaminaLabel.textContent = 'Stamina';
-        elements.hudStaminaLabel.className = '';
-      }
-
-      elements.hudTotalPower.textContent = totalPower.toLocaleString();
-      elements.hudPowerSplit.textContent = `(Hunter: ${hunterPower.toLocaleString()} + Beasts: ${beastPower.toLocaleString()})`;
-
-      // Buffs bar display
-      if (gameState.adrenalineFocusRemaining > 0) {
-        elements.activeBuffsBar.classList.remove('hidden');
-        elements.buffAdrenalineBadge.classList.remove('hidden');
-        elements.buffAdrenalineTimer.textContent = `${Math.ceil(gameState.adrenalineFocusRemaining)}s`;
-      } else {
-        elements.buffAdrenalineBadge.classList.add('hidden');
-        elements.activeBuffsBar.classList.add('hidden');
-      }
-
-      // Beast Forge tab unlock indicator
-      const isBoarHawkTamed = !!gameState.tamedBeasts['boar_hawk'];
-      if (isBoarHawkTamed) {
-        elements.tabBtnForge.classList.remove('disabled');
-        if (gameState.forgeUnlocked) {
-          elements.tabForgeBadge.textContent = 'Active';
-          elements.tabForgeBadge.className = 'text-[9px] bg-purple-950 text-purple-300 border border-purple-600 px-1.5 py-0.2 rounded font-mono font-bold';
-        } else {
-          elements.tabForgeBadge.textContent = 'Excavate';
-          elements.tabForgeBadge.className = 'text-[9px] bg-amber-950 text-amber-300 border border-amber-600 px-1.5 py-0.2 rounded font-mono font-bold animate-pulse';
-        }
-      } else {
-        elements.tabBtnForge.classList.add('disabled');
-        elements.tabForgeBadge.textContent = 'Locked';
-        elements.tabForgeBadge.className = 'text-[9px] bg-primal-800 text-slate-500 border border-slate-700 px-1.5 py-0.2 rounded font-mono';
-      }
-
-      const clickYield = getClickYield();
-      elements.labelClickYield.textContent = clickYield.toLocaleString();
-      elements.btnForageText.textContent = `FORAGE & HUNT (+${clickYield.toLocaleString()} Meat)`;
-
-      // Armory UI updates
-      const equipped = getEquippedWeapon();
-      const nextWeapon = WEAPONS_CATALOG[gameState.weaponTier];
-
-      if (equipped) {
-        elements.armoryTierBadge.textContent = `Tier ${equipped.tier}: ${equipped.name}`;
-        elements.armoryEquippedName.textContent = equipped.name;
-        const totalPct = Math.round((equipped.percentBonus + (hasRelic('serpents_fang') ? 0.15 * getRelicEffectMultiplier('serpents_fang') : 0)) * 100);
-        elements.armoryEquippedBonus.textContent = `+${equipped.flatBonus + 1} flat, +${totalPct}% passive/click`;
-      } else {
-        elements.armoryTierBadge.textContent = 'Tier 0: Bare Hands';
-        elements.armoryEquippedName.textContent = 'Flint Knife / Bare Hands';
-        const fangPct = hasRelic('serpents_fang') ? Math.round(15 * getRelicEffectMultiplier('serpents_fang')) : 0;
-        elements.armoryEquippedBonus.textContent = `+1 flat, +${fangPct}% passive/click`;
-      }
-
-      if (nextWeapon) {
-        elements.armoryCraftBox.classList.remove('hidden');
-        elements.armoryNextName.textContent = nextWeapon.name;
-        elements.armoryNextBenefit.textContent = nextWeapon.desc;
-        elements.armoryNextCost.textContent = nextWeapon.cost.toLocaleString();
-        elements.btnCraftWeapon.disabled = gameState.meat < nextWeapon.cost;
-      } else {
-        elements.armoryCraftBox.innerHTML = `
-          <div class="w-full text-center py-2 text-xs font-mono text-amber-300 flex items-center justify-center gap-2">
-            <i class="fa-solid fa-crown text-amber-400"></i> Max Arsenal Reached: Apex Beast-Bone Glaive Equipped!
-          </div>
-        `;
-      }
-
-      // Rebalanced Camp Enhancements
-      const endCost = getCampEnduranceCost();
-      const isEndMaxed = maxStamina >= 100;
-      elements.campEnduranceLvl.textContent = gameState.campEnduranceLevel;
-      elements.campEnduranceBonus.textContent = `+${gameState.campEnduranceLevel * 2} Max`;
-      if (isEndMaxed) {
-        elements.btnBuyEnduranceLabel.textContent = 'Max Capacity (100)';
-        elements.btnBuyEnduranceCostWrap.classList.add('hidden');
-        elements.btnBuyEndurance.disabled = true;
-      } else {
-        elements.campEnduranceCost.textContent = endCost.toLocaleString();
-        elements.btnBuyEnduranceLabel.textContent = 'Fortify';
-        elements.btnBuyEnduranceCostWrap.classList.remove('hidden');
-        elements.btnBuyEndurance.disabled = gameState.meat < endCost;
-      }
-
-      const recCost = getCampRecoveryCost();
-      const isRecMaxed = regenInterval <= 6.0;
-      elements.campRecoveryLvl.textContent = gameState.campRecoveryLevel;
-      elements.campRecoveryInterval.textContent = `${regenInterval.toFixed(1)}s`;
-      if (isRecMaxed) {
-        elements.btnBuyRecoveryLabel.textContent = 'Fastest Floor (6.0s)';
-        elements.btnBuyRecoveryCostWrap.classList.add('hidden');
-        elements.btnBuyRecovery.disabled = true;
-      } else {
-        elements.campRecoveryCost.textContent = recCost.toLocaleString();
-        elements.btnBuyRecoveryLabel.textContent = 'Enhance';
-        elements.btnBuyRecoveryCostWrap.classList.remove('hidden');
-        elements.btnBuyRecovery.disabled = gameState.meat < recCost;
-      }
-
-      // Update button afford states in generator ladder
-      elements.generatorsContainer.querySelectorAll('.btn-buy-gen').forEach(btn => {
-        const genId = btn.getAttribute('data-gen-id');
-        const gen = GENERATOR_LADDER.find(g => g.id === genId);
-        if (gen) {
-          btn.disabled = gameState.meat < getGeneratorCost(gen);
-        }
-      });
-
-      // Disciplines
-      const bruteCost = getBruteConditioningCost();
-      elements.trainBruteLvl.textContent = gameState.bruteConditioningLevel;
-      elements.trainBruteYield.textContent = `+${getBrutePowerPerLevel()}`;
-      elements.trainBruteCost.textContent = bruteCost.toLocaleString();
-      elements.btnBuyBrute.disabled = gameState.meat < bruteCost;
-
-      const masteryUnlocked = isBeastMasteryUnlocked();
-      const masteryCost = getBeastMasteryCost();
-      elements.trainMasteryLvl.textContent = gameState.beastMasteryLevel;
-      if (masteryUnlocked) {
-        elements.trainMasteryCard.classList.remove('opacity-50', 'grayscale', 'border-dashed');
-        elements.trainMasteryDesc.innerHTML = 'Increases all Tamed Beast Power contributions by <span class="text-emerald-400 font-bold font-mono">+' + (gameState.beastMasteryLevel * 10) + '%</span>';
-        elements.trainMasteryCostWrap.classList.remove('hidden');
-        elements.trainMasteryCost.textContent = masteryCost.toLocaleString();
-        elements.btnBuyMasteryLabel.textContent = 'Attune';
-        elements.btnBuyMastery.disabled = gameState.meat < masteryCost;
-      } else {
-        elements.trainMasteryCard.classList.add('opacity-50', 'grayscale', 'border-dashed');
-        elements.trainMasteryDesc.innerHTML = '<span class="text-amber-400 font-medium"><i class="fa-solid fa-lock text-xs mr-1"></i>Locked: Tame your first beast to unlock</span>';
-        elements.trainMasteryCostWrap.classList.add('hidden');
-        elements.btnBuyMasteryLabel.textContent = 'Locked (Tame 1)';
-        elements.btnBuyMastery.disabled = true;
-      }
-
-      const anatomyCost = getWeakpointAnatomyCost();
-      const isAnatomyMaxed = gameState.weakpointAnatomyLevel >= 10;
-      elements.trainAnatomyLvl.textContent = gameState.weakpointAnatomyLevel;
-      if (isAnatomyMaxed) {
-        elements.btnBuyAnatomyLabel.textContent = 'Maxed (-25%)';
-        elements.trainAnatomyCostWrap.classList.add('hidden');
-        elements.btnBuyAnatomy.disabled = true;
-      } else {
-        elements.trainAnatomyCost.textContent = anatomyCost.toLocaleString();
-        elements.btnBuyAnatomyLabel.textContent = 'Dissect';
-        elements.trainAnatomyCostWrap.classList.remove('hidden');
-        elements.btnBuyAnatomy.disabled = gameState.meat < anatomyCost;
-      }
-
-      // Sparring Active Ring
-      const sparCost = getSparringCost();
-      const sparStaminaCost = getSparringStaminaCost();
-      const scorpiodrakeLvl = getHybridLevel('scorpiodrake');
-      const sparPct = gameState.sparringLevel * (scorpiodrakeLvl > 0 ? 6 : 2);
-      elements.sparringLevel.textContent = gameState.sparringLevel;
-      elements.sparringCostMeat.textContent = sparCost.toLocaleString();
-      elements.sparringTotalMultiplier.textContent = `+${sparPct}%`;
-
-      if (!gameState.isSparring) {
-        elements.btnSparLabel.textContent = `SPAR WITH PACK (LVL ${gameState.sparringLevel})`;
-      }
-      const canSpar = gameState.meat >= sparCost && gameState.stamina >= sparStaminaCost && !gameState.isSparring;
-      elements.btnSpar.disabled = !canSpar;
-
-      // Active Encounter Details
-      const activeBeast = BEAST_CATALOG[gameState.selectedBeastIndex] || BEAST_CATALOG[0];
-      const isAlreadyTamed = !!gameState.tamedBeasts[activeBeast.id];
-      const { min: effMin, max: effMax } = getEffectiveBossBracket(activeBeast);
-
-      elements.encounterTierBadge.textContent = `Tier ${activeBeast.tier}`;
-      elements.beastName.textContent = activeBeast.name;
-      elements.beastDesc.textContent = activeBeast.desc;
-      elements.beastPowerMin.textContent = effMin.toLocaleString();
-      elements.beastPowerMax.textContent = effMax.toLocaleString();
-
-      if (isAlreadyTamed) {
-        elements.beastRewardPower.textContent = '0 (Relic Hunt)';
-        elements.beastRewardPower.className = 'text-amber-400 font-mono';
-      } else {
-        elements.beastRewardPower.textContent = `+${activeBeast.rewardPower.toLocaleString()} Power`;
-        elements.beastRewardPower.className = 'text-emerald-400 font-mono';
-      }
-
-      // Portrait
-      if (elements.beastPortraitImg.dataset.beastId !== activeBeast.id) {
-        elements.beastPortraitImg.dataset.beastId = activeBeast.id;
-        elements.beastPortraitImg.alt = `${activeBeast.name} Portrait`;
-        elements.beastPortraitImg.onerror = () => {
-          elements.beastPortraitImg.onerror = null;
-          elements.beastPortraitImg.src = activeBeast.fallbackImage;
-        };
-        elements.beastPortraitImg.src = activeBeast.image;
-      }
-
-      if (isAlreadyTamed) {
-        elements.beastStatusRibbon.textContent = 'TAMED • TROPHY EXPEDITION';
-        elements.beastStatusRibbon.className = 'absolute bottom-0 inset-x-0 bg-emerald-950/90 text-[10px] text-center font-mono py-0.5 text-emerald-300 border-t border-emerald-700/60 font-bold';
-      } else {
-        elements.beastStatusRibbon.textContent = 'WILD UNTAMED APEX';
-        elements.beastStatusRibbon.className = 'absolute bottom-0 inset-x-0 bg-primal-900/90 text-[10px] text-center font-mono py-0.5 text-slate-400 border-t border-primal-700';
-      }
-
-      // Win Odds
-      const winChance = calculateWinChance(activeBeast);
-      const winChancePct = (winChance * 100).toFixed(1);
-
-      elements.oddsPercentageText.textContent = `${winChancePct}%`;
-      elements.oddsMeterFill.style.width = `${winChance * 100}%`;
-
-      const hasEnoughStamina = gameState.stamina >= 10;
-      const meetsMinPower = totalPower >= effMin;
-      const canFight = meetsMinPower && hasEnoughStamina && !gameState.inCooldown && !gameState.isBattling;
-
-      elements.btnChallenge.disabled = !canFight;
-
-      if (gameState.isBattling) {
-        elements.btnFightLabel.textContent = 'BATTLING...';
-        elements.btnFightIcon.className = 'fa-solid fa-spinner fa-spin text-lg';
-      } else if (isAlreadyTamed) {
-        elements.btnFightLabel.textContent = 'TROPHY EXPEDITION';
-        elements.btnFightIcon.className = 'fa-solid fa-trophy text-lg text-amber-300';
-      } else {
-        elements.btnFightLabel.textContent = 'TAME BEAST';
-        elements.btnFightIcon.className = 'fa-solid fa-crosshairs text-lg';
-      }
-
-      if (!meetsMinPower) {
-        elements.btnChancePill.textContent = 'Power too low (0%)';
-        elements.btnChancePill.className = 'text-red-400 font-bold';
-      } else {
-        elements.btnChancePill.textContent = `Odds: ${winChancePct}%`;
-        elements.btnChancePill.className = winChance >= 0.7 ? 'text-emerald-300 font-bold' : 'text-amber-300 font-bold';
-      }
-
-      if (gameState.inCooldown) {
-        elements.cooldownContainer.classList.remove('hidden');
-        elements.cooldownTimer.textContent = `${Math.max(0, gameState.cooldownRemaining).toFixed(1)}s`;
-        const totalDuration = getWoundedDuration();
-        const cdPct = (gameState.cooldownRemaining / totalDuration) * 100;
-        elements.cooldownBar.style.width = `${cdPct}%`;
-      } else {
-        elements.cooldownContainer.classList.add('hidden');
-      }
-
-      // Update live elements in Forge without destructive innerHTML repaints
-      if (gameState.activeTab === 'forge') {
-        updateForgeLiveElements();
-      }
-    }
-
-    function spawnFloatingText(x, y, text, colorClass = 'text-amber-400') {
-      const floater = document.createElement('div');
-      floater.className = `floating-text ${colorClass} text-sm`;
-      floater.textContent = text;
-      floater.style.left = `${x}px`;
-      floater.style.top = `${y}px`;
-      document.body.appendChild(floater);
-
-      setTimeout(() => {
-        floater.remove();
-      }, 1100);
-    }
-
-    function showToast(message, type = 'info', isLegendary = false) {
-      if (!elements.toastContainer) return;
-      const toast = document.createElement('div');
-      const bgColors = {
-        info: 'bg-primal-800 border-blue-500/60 text-blue-200',
-        success: 'bg-emerald-950/90 border-emerald-500/80 text-emerald-200',
-        warning: 'bg-amber-950/90 border-amber-500/80 text-amber-200',
-        danger: 'bg-red-950/90 border-red-500/80 text-red-200'
-      };
-
-      const borderClass = isLegendary ? 'border-2 border-amber-400 shadow-lg glow-amber' : 'border shadow-md';
-      toast.className = `${bgColors[type] || bgColors.info} ${borderClass} px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto`;
-      toast.innerHTML = `
-        <i class="fa-solid ${type === 'danger' ? 'fa-skull' : type === 'success' ? 'fa-circle-check' : 'fa-bell'}"></i>
-        <span>${message}</span>
-      `;
-
-      elements.toastContainer.appendChild(toast);
-
-      requestAnimationFrame(() => {
-        toast.classList.remove('translate-y-2', 'opacity-0');
-      });
-
-      setTimeout(() => {
-        toast.classList.add('opacity-0', '-translate-y-2');
-        setTimeout(() => toast.remove(), 300);
-      }, 3500);
-    }
-
-    function logCombatMessage(message, type = 'default') {
-      if (!elements.combatLog) return;
-      const msgEl = document.createElement('div');
-      const typeStyles = {
-        win: 'text-emerald-400 font-semibold',
-        loss: 'text-red-400 font-semibold',
-        relic: 'text-amber-300 font-bold',
-        unlock: 'text-purple-300 font-bold',
-        default: 'text-slate-300'
-      };
-
-      msgEl.className = typeStyles[type] || typeStyles.default;
-      const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      msgEl.innerHTML = `<span class="text-slate-500 mr-1.5">[${time}]</span> ${message}`;
-
-      elements.combatLog.prepend(msgEl);
-
-      while (elements.combatLog.children.length > 60) {
-        elements.combatLog.removeChild(elements.combatLog.lastChild);
-      }
-    }
-
-    function updateBeastSelectorOptions() {
-      if (!elements.selectBeastTier) return;
-      elements.selectBeastTier.innerHTML = '';
-      BEAST_CATALOG.forEach((beast, idx) => {
-        if (beast.tier <= gameState.highestTierUnlocked) {
-          const opt = document.createElement('option');
-          opt.value = idx;
-          const isTamed = !!gameState.tamedBeasts[beast.id];
-          opt.textContent = `T${beast.tier}: ${beast.name} ${isTamed ? '🏆 (Trophy)' : '⚔️ (Untamed)'}`;
-          if (idx === gameState.selectedBeastIndex) {
-            opt.selected = true;
-          }
-          elements.selectBeastTier.appendChild(opt);
-        }
-      });
-    }
-
-    function renderGeneratorsLadder() {
-      if (!elements.generatorsContainer) return;
-      elements.generatorsContainer.innerHTML = '';
-      GENERATOR_LADDER.forEach(gen => {
-        const isUnlocked = isGeneratorUnlocked(gen);
-        const count = gameState.generators[gen.id] || 0;
-        const cost = getGeneratorCost(gen);
-        const canAfford = gameState.meat >= cost;
-
-        const card = document.createElement('div');
-        if (isUnlocked) {
-          card.className = 'bg-primal-800/90 border border-primal-700 rounded-xl p-3 sm:p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-inner hover:border-amber-500/30 transition-colors';
-          card.innerHTML = `
-            <div class="flex items-center space-x-3">
-              <div class="w-10 h-10 rounded-lg bg-amber-950/80 border border-amber-700/60 flex items-center justify-center text-amber-400 text-lg shadow-inner">
-                <i class="fa-solid ${gen.icon}"></i>
-              </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="font-bold text-slate-100 text-sm">${gen.name}</span>
-                  <span class="text-xs bg-primal-700 text-amber-300 font-mono px-2 py-0.5 rounded-full font-bold">
-                    Owned: <span class="gen-count font-bold">${count}</span>
-                  </span>
-                </div>
-                <div class="text-xs text-slate-400 mt-0.5">
-                  ${gen.desc}
-                </div>
-                <div class="text-[11px] text-emerald-400 font-mono mt-0.5">
-                  +${gen.yieldPerSec.toLocaleString()} Meat/s each (Total: +${(count * gen.yieldPerSec).toLocaleString()}/s)
-                </div>
-              </div>
-            </div>
-
-            <button data-gen-id="${gen.id}" class="btn-buy-gen w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg transition-all border border-amber-500/50 flex items-center justify-center gap-2 font-mono cursor-pointer" ${canAfford ? '' : 'disabled'}>
-              <span>Deploy</span>
-              <span class="text-amber-200 flex items-center gap-1 font-bold">
-                <i class="fa-solid fa-drumstick-bite text-[11px]"></i>
-                <span class="gen-cost">${cost.toLocaleString()}</span>
-              </span>
-            </button>
-          `;
-        } else {
-          card.className = 'bg-primal-800/40 border border-dashed border-primal-700/60 rounded-xl p-3 sm:p-3.5 flex items-center justify-between opacity-50 grayscale cursor-not-allowed';
-          card.innerHTML = `
-            <div class="flex items-center space-x-3">
-              <div class="w-10 h-10 rounded-lg bg-primal-900 border border-slate-700 flex items-center justify-center text-slate-600 text-lg">
-                <i class="fa-solid fa-lock"></i>
-              </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="font-bold text-slate-400 text-sm">${gen.name}</span>
-                  <span class="text-[10px] bg-red-950/80 text-red-400 font-mono px-2 py-0.5 rounded border border-red-800/60">
-                    ${gen.reqLabel}
-                  </span>
-                </div>
-                <div class="text-xs text-slate-500 mt-0.5">${gen.desc}</div>
-              </div>
-            </div>
-            <div class="text-xs font-mono text-slate-500 bg-primal-900 px-3 py-1.5 rounded border border-primal-800">
-              Locked
-            </div>
-          `;
-        }
-
-        elements.generatorsContainer.appendChild(card);
-      });
-
-      elements.generatorsContainer.querySelectorAll('.btn-buy-gen').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const genId = btn.getAttribute('data-gen-id');
-          const gen = GENERATOR_LADDER.find(g => g.id === genId);
-          if (!gen) return;
-
-          const cost = getGeneratorCost(gen);
-          if (gameState.meat >= cost) {
-            sound.playBuy();
-            gameState.meat -= cost;
-            gameState.generators[gen.id] = (gameState.generators[gen.id] || 0) + 1;
-            renderGeneratorsLadder();
-            saveGameToStorage();
-          }
-        });
-      });
-    }
-
-    function renderTrophyCabinet() {
-      if (!elements.relicGrid) return;
-      elements.relicGrid.innerHTML = '';
-      const relicKeys = Object.keys(RELIC_REGISTRY);
-      let ownedCount = 0;
-
-      relicKeys.forEach(key => {
-        const relic = RELIC_REGISTRY[key];
-        const isOwned = hasRelic(key);
-        if (isOwned) ownedCount++;
-
-        const sourceBeast = BEAST_CATALOG.find(b => b.id === relic.beastId);
-        const beastName = sourceBeast ? sourceBeast.name : 'Unknown';
-
-        const card = document.createElement('div');
-        if (isOwned) {
-          card.className = `p-4 rounded-xl border flex items-start space-x-3.5 transition-all ${
-            relic.rarity === 'Legendary'
-              ? 'bg-gradient-to-br from-amber-950/50 via-primal-800 to-amber-950/30 border-amber-500/70 glow-amber'
-              : 'bg-primal-800/90 border-emerald-600/60'
-          }`;
-          card.innerHTML = `
-            <div class="w-11 h-11 rounded-xl ${
-              relic.rarity === 'Legendary'
-                ? 'bg-amber-950/90 border border-amber-400 text-amber-300'
-                : 'bg-emerald-950/90 border border-emerald-500 text-emerald-400'
-            } flex items-center justify-center text-xl flex-shrink-0 shadow-md">
-              <i class="fa-solid ${relic.icon}"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between gap-1 mb-1">
-                <h4 class="font-bold text-sm text-slate-100 truncate">${relic.name}</h4>
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
-                  relic.rarity === 'Legendary'
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                }">
-                  ${relic.rarity}
-                </span>
-              </div>
-              <p class="text-xs text-slate-300 leading-snug">${relic.desc}</p>
-              <div class="text-[10px] text-slate-400 font-mono mt-1">Source: ${beastName} Trophy</div>
-            </div>
-          `;
-        } else {
-          card.className = 'bg-primal-900/60 border border-dashed border-primal-800 rounded-xl p-4 flex items-start space-x-3.5 opacity-50 grayscale';
-          card.innerHTML = `
-            <div class="w-11 h-11 rounded-xl bg-primal-950 border border-slate-700 flex items-center justify-center text-slate-600 text-xl flex-shrink-0">
-              <i class="fa-solid fa-lock"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between gap-1 mb-1">
-                <h4 class="font-bold text-sm text-slate-400 truncate">${relic.name}</h4>
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded uppercase bg-primal-800 text-slate-500 border border-slate-700">
-                  ${relic.rarity}
-                </span>
-              </div>
-              <p class="text-xs text-slate-500 leading-snug">${relic.desc}</p>
-              <div class="text-[10px] text-amber-600 font-mono mt-1">Source: Tame & refight ${beastName}</div>
-            </div>
-          `;
-        }
-
-        elements.relicGrid.appendChild(card);
-      });
-
-      if (elements.relicOwnedCount) {
-        elements.relicOwnedCount.textContent = ownedCount;
-      }
-    }
-
-    function renderMenagerie() {
-      if (!elements.menagerieContainer) return;
-      elements.menagerieContainer.innerHTML = '';
-
-      const totalBeastPower = getTotalBeastPower();
-      if (elements.menagerieTotalPower) {
-        elements.menagerieTotalPower.textContent = totalBeastPower.toLocaleString();
-      }
-
-      let count = 0;
-
-      // 1. Render Tamed Milestone Parent Beasts
-      BEAST_CATALOG.forEach(beast => {
-        if (gameState.tamedBeasts[beast.id]) {
-          count++;
-          const pLvl = getParentLevel(beast.id);
-          const levelMult = 1 + ((pLvl - 1) * 0.15);
-          const masteryMultiplier = 1 + (gameState.beastMasteryLevel * 0.10);
-          const effectivePower = Math.floor((beast.rewardPower || 0) * levelMult * masteryMultiplier);
-
-          const card = document.createElement('div');
-          card.className = 'bg-primal-800/90 border border-primal-700/80 rounded-xl p-2.5 flex items-center space-x-3 shadow-inner hover:border-amber-500/40 transition-colors';
-          card.innerHTML = `
-            <img
-              src="${beast.image}"
-              alt="${beast.name}"
-              class="menagerie-thumb"
-              onerror="this.onerror=null; this.src='${beast.fallbackImage}';"
-            />
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between gap-1 mb-0.5">
-                <h4 class="font-bold text-xs text-slate-100 truncate">${beast.name}</h4>
-                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                  Lvl ${pLvl}
-                </span>
-              </div>
-              <div class="flex items-center justify-between text-[11px] font-mono">
-                <span class="text-emerald-400 font-bold">${effectivePower > 0 ? `+${effectivePower.toLocaleString()} Pwr` : 'Apex Ruler'}</span>
-                <span class="text-slate-500 text-[10px]">Tier ${beast.tier}</span>
-              </div>
-            </div>
-          `;
-          elements.menagerieContainer.appendChild(card);
-        }
-      });
-
-      HYBRID_CATALOG.forEach(hybrid => {
-        const hLvl = getHybridLevel(hybrid.id);
-        if (hLvl > 0) {
-          count++;
-          const levelMult = 1 + ((hLvl - 1) * 0.20);
-          const masteryMultiplier = 1 + (gameState.beastMasteryLevel * 0.10);
-          const effectivePower = Math.floor(hybrid.basePower * levelMult * masteryMultiplier);
-
-          const card = document.createElement('div');
-          card.className = 'bg-gradient-to-r from-purple-950/40 to-primal-800 border border-purple-600/50 rounded-xl p-2.5 flex items-center space-x-3 shadow-inner hover:border-purple-400/50 transition-colors';
-          card.innerHTML = `
-            <div class="menagerie-thumb flex items-center justify-center text-purple-400 text-lg bg-purple-950/60 border border-purple-500/40">
-              <i class="fa-solid ${hybrid.icon}"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between gap-1 mb-0.5">
-                <h4 class="font-bold text-xs text-purple-200 truncate">${hybrid.name}</h4>
-                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                  Hybrid Lvl ${hLvl}
-                </span>
-              </div>
-              <div class="flex items-center justify-between text-[11px] font-mono">
-                <span class="text-purple-300 font-bold">+${effectivePower.toLocaleString()} Pwr</span>
-                <span class="text-amber-400 text-[10px]">Chimera</span>
-              </div>
-            </div>
-          `;
-          elements.menagerieContainer.appendChild(card);
-        }
-      });
-
-      if (count === 0) {
-        elements.menagerieContainer.innerHTML = `
-          <div class="col-span-full text-center py-6 text-slate-500 text-xs italic">
-            No beasts tamed yet. Defeat apex beasts in the Hunt zone to bind them to your pack.
-          </div>
-        `;
-      }
-    }
-
-    function rollRelicDrops(beast) {
-      if (!beast || !beast.relics) return;
-      let droppedAny = false;
-
-      beast.relics.forEach(relicId => {
-        const relic = RELIC_REGISTRY[relicId];
-        if (!relic || gameState.ownedRelics[relicId]) return;
-
-        const roll = Math.random();
-        if (roll <= relic.dropRate) {
-          gameState.ownedRelics[relicId] = true;
-          droppedAny = true;
-          sound.playWin();
-
-          const isLegendary = relic.rarity === 'Legendary';
-          if (isLegendary) {
-            showToast(`LEGENDARY DROP: ${relic.name} acquired!`, 'success', true);
-            logCombatMessage(`✨ <strong>LEGENDARY DROP!</strong> Found [<strong>${relic.name}</strong>]! ${relic.desc}`, 'relic');
-          } else {
-            showToast(`RELIC DROP: ${relic.name} acquired!`, 'success');
-            logCombatMessage(`🏆 <strong>RELIC ACQUIRED!</strong> Found [<strong>${relic.name}</strong>]! ${relic.desc}`, 'relic');
-          }
-        }
-      });
-
-      if (!droppedAny) {
-        logCombatMessage(`No new relics discovered on this expedition. Refight the boss to roll again!`, 'default');
-      }
-
-      renderTrophyCabinet();
-      saveGameToStorage();
-    }
-
-    /**
-     * Accurate Delta-Time requestAnimationFrame Game Loop
-     */
-    function gameLoop(now) {
-      const dt = Math.max(0, Math.min(1.0, (now - gameState.lastTick) / 1000));
-      gameState.lastTick = now;
-
-      // 1. Meat production calculation
-      const meatRate = getMeatRate();
-      gameState.meat += meatRate * dt;
-
-      // 2. Stamina regeneration (halted if wounded in cooldown)
-      const maxStamina = getMaxStamina();
-      if (!gameState.inCooldown && gameState.stamina < maxStamina) {
-        const staminaGain = getStaminaRegenRate() * dt;
-        gameState.stamina = Math.min(maxStamina, gameState.stamina + staminaGain);
-      }
-
-      // 3. Wounded cooldown progression
-      if (gameState.inCooldown) {
-        gameState.cooldownRemaining = Math.max(0, gameState.cooldownRemaining - dt);
-        if (gameState.cooldownRemaining <= 0) {
-          gameState.inCooldown = false;
-          showToast('Hunter has recovered and is ready to hunt!', 'info');
-          logCombatMessage('Hunter wounds have healed. Expeditions and stamina recovery resumed.', 'default');
-        }
-      }
-
-      // 4. Temporary buffs countdown
-      if (gameState.adrenalineFocusRemaining > 0) {
-        gameState.adrenalineFocusRemaining = Math.max(0, gameState.adrenalineFocusRemaining - dt);
-      }
-
-      // 5. Incubation Nest Gestation Progression
-      if (gameState.incubator) {
-        gameState.incubator.remaining -= dt;
-        checkIncubatorHatch();
-      }
-
-      // 6. Update UI components
-      renderFrame(meatRate);
-
-      requestAnimationFrame(gameLoop);
-    }
-
-    // Attach User Action & Upgrade Event Listeners
-    elements.btnForage.addEventListener('click', (e) => {
-      let earned = getClickYield();
-      let isCrit = false;
-
-      // Serpent's Fang (10%), Magma Stinger (+15%), and Venompincer (+2%/lvl) crit chance
-      let critChance = 0;
-      if (hasRelic('serpents_fang')) critChance += 0.10;
-      if (hasRelic('magma_stinger')) critChance += 0.15;
-
-      const venompincerLvl = getHybridLevel('venompincer');
-      if (venompincerLvl > 0) {
-        critChance += (0.02 * venompincerLvl);
-      }
-
-      if (critChance > 0 && Math.random() < critChance) {
-        isCrit = true;
-        const critMultiplier = 5 * (1 + (0.15 * venompincerLvl));
-        earned = Math.floor(earned * critMultiplier);
-      }
-
-      gameState.meat += earned;
-      sound.playClick();
-
-      // Active Incubation Acceleration: Main Hunt button shaves 1 second per click
-      if (gameState.incubator) {
-        gameState.incubator.remaining = Math.max(0, gameState.incubator.remaining - 1);
-        checkIncubatorHatch();
-      }
-
-      // Floating text effect
-      const rect = elements.btnForage.getBoundingClientRect();
-      const clickX = e.clientX || (rect.left + rect.width / 2);
-      const clickY = e.clientY || (rect.top + rect.height / 2);
-      spawnFloatingText(
-        clickX,
-        clickY,
-        `+${earned.toLocaleString()}${isCrit ? ' CRIT!' : ''}`,
-        isCrit ? 'text-amber-300 font-extrabold text-base' : 'text-amber-400'
-      );
-    });
-
-    elements.btnCraftWeapon.addEventListener('click', () => {
-      const nextWeapon = WEAPONS_CATALOG[gameState.weaponTier];
-      if (!nextWeapon) return;
-
-      if (gameState.meat >= nextWeapon.cost) {
-        sound.playBuy();
-        gameState.meat -= nextWeapon.cost;
-        gameState.weaponTier += 1;
-        showToast(`Crafted weapon: ${nextWeapon.name}!`, 'success');
-        saveGameToStorage();
-      }
-    });
-
-    elements.btnBuyEndurance.addEventListener('click', () => {
-      const cost = getCampEnduranceCost();
-      if (gameState.meat >= cost && getMaxStamina() < 100) {
-        sound.playBuy();
-        gameState.meat -= cost;
-        gameState.campEnduranceLevel += 1;
-        saveGameToStorage();
-      }
-    });
-
-    elements.btnBuyRecovery.addEventListener('click', () => {
-      const cost = getCampRecoveryCost();
-      if (gameState.meat >= cost && getStaminaRegenInterval() > 6.0) {
-        sound.playBuy();
-        gameState.meat -= cost;
-        gameState.campRecoveryLevel += 1;
-        saveGameToStorage();
-      }
-    });
-
-    elements.btnBuyBrute.addEventListener('click', () => {
-      const cost = getBruteConditioningCost();
-      if (gameState.meat >= cost) {
-        sound.playBuy();
-        gameState.meat -= cost;
-        gameState.bruteConditioningLevel += 1;
-        saveGameToStorage();
-      }
-    });
-
-    elements.btnBuyMastery.addEventListener('click', () => {
-      if (!isBeastMasteryUnlocked()) return;
-      const cost = getBeastMasteryCost();
-      if (gameState.meat >= cost) {
-        sound.playBuy();
-        gameState.meat -= cost;
-        gameState.beastMasteryLevel += 1;
-        saveGameToStorage();
-      }
-    });
-
-    elements.btnBuyAnatomy.addEventListener('click', () => {
-      const cost = getWeakpointAnatomyCost();
-      if (gameState.meat >= cost && gameState.weakpointAnatomyLevel < 10) {
-        sound.playBuy();
-        gameState.meat -= cost;
-        gameState.weakpointAnatomyLevel += 1;
-        saveGameToStorage();
-      }
-    });
-
-    elements.btnSpar.addEventListener('click', () => {
-      const sparMeatCost = getSparringCost();
-      const sparStaminaCost = getSparringStaminaCost();
-      if (gameState.meat < sparMeatCost || gameState.stamina < sparStaminaCost || gameState.isSparring) return;
-
-      gameState.meat -= sparMeatCost;
-      gameState.stamina -= sparStaminaCost;
-      gameState.isSparring = true;
-      elements.btnSparLabel.textContent = 'SPARRING...';
-      sound.playSpar();
-
-      setTimeout(() => {
-        gameState.isSparring = false;
-        gameState.sparringLevel += 1;
-
-        // Hybrid Tuskpion: +10% Sparring success rate per level
-        const tuskpionLvl = getHybridLevel('tuskpion');
-        const breakthroughChance = 0.20 + (tuskpionLvl * 0.10);
-
-        const isBreakthrough = Math.random() < breakthroughChance;
-        const scorpiodrakeLvl = getHybridLevel('scorpiodrake');
-        const sparPct = gameState.sparringLevel * (scorpiodrakeLvl > 0 ? 6 : 2);
-
-        if (isBreakthrough) {
-          gameState.adrenalineFocusRemaining = 60;
-          logCombatMessage(`💥 <strong>CRITICAL BREAKTHROUGH!</strong> Sparring level increased to ${gameState.sparringLevel} (+${sparPct}% Hunter Power) & gained <strong>Adrenaline Focus</strong>!`, 'unlock');
-          showToast(`Critical Breakthrough! Adrenaline Focus triggered!`, 'success');
-        } else {
-          logCombatMessage(`🥋 Sparring complete. Sparring mastery level increased to ${gameState.sparringLevel} (+${sparPct}% Hunter Power).`, 'default');
-          showToast(`Sparring Complete: Level ${gameState.sparringLevel}!`, 'info');
-        }
-        saveGameToStorage();
-      }, 1000);
-    });
-
-    elements.btnChallenge.addEventListener('click', challengeCurrentBeast);
-
-    elements.selectBeastTier.addEventListener('change', (e) => {
-      gameState.selectedBeastIndex = parseInt(e.target.value, 10);
-      saveGameToStorage();
-    });
-
-    elements.btnClearLog.addEventListener('click', () => {
-      elements.combatLog.innerHTML = '<div class="text-slate-500 italic">Combat log cleared.</div>';
-    });
-
-    elements.btnToggleSound.addEventListener('click', () => {
-      sound.enabled = !sound.enabled;
-      elements.soundStatus.textContent = sound.enabled ? 'ON' : 'OFF';
-      elements.soundIcon.className = sound.enabled ? 'fa-solid fa-volume-high text-amber-400' : 'fa-solid fa-volume-xmark text-slate-500';
-    });
-
-    elements.btnUnlockForge.addEventListener('click', () => {
-      if (gameState.meat >= 25000 && !gameState.forgeUnlocked) {
-        sound.playBuy();
-        gameState.meat -= 25000;
-        gameState.forgeUnlocked = true;
-        showToast('The Beast Forge has been restored!', 'success', true);
-        logCombatMessage('🧬 <strong>BEAST FORGE EXCAVATED!</strong> The primeval nursery and chimera vats are fully operational!', 'unlock');
-        renderForge();
-        saveGameToStorage();
-      }
-    });
-
-    if (elements.tabBtnCamp) elements.tabBtnCamp.addEventListener('click', () => switchTab('camp'));
-    if (elements.tabBtnHunt) elements.tabBtnHunt.addEventListener('click', () => switchTab('hunt'));
-    if (elements.tabBtnForge) elements.tabBtnForge.addEventListener('click', () => switchTab('forge'));
-    if (elements.tabBtnRelics) elements.tabBtnRelics.addEventListener('click', () => switchTab('relics'));
-
-    // Robust event delegation for Parent Beast Nursery
-    if (elements.nurseryContainer) {
-      elements.nurseryContainer.addEventListener('click', (e) => {
-        const btn = e.target.closest('.nurture-btn, .btn-level-parent');
-        if (!btn) return;
-        const beastId = btn.dataset.beastId || btn.dataset.parentId;
-        if (beastId) {
-          nurtureParent(beastId);
-        }
-      });
-    }
-
-    // Reset Confirmation Modal handlers
-    elements.btnResetGame.addEventListener('click', () => {
-      elements.resetModal.classList.remove('hidden');
-    });
-
-    elements.btnCancelReset.addEventListener('click', () => {
-      elements.resetModal.classList.add('hidden');
-    });
-
-    elements.btnConfirmReset.addEventListener('click', () => {
-      localStorage.removeItem('beast_tamer_savedata');
-      window.location.reload();
-    });
-
-    // Periodic auto-save every 10 seconds
-    setInterval(saveGameToStorage, 10000);
-
-    window.addEventListener('DOMContentLoaded', () => {
-      loadGameFromStorage();
-      updateBeastSelectorOptions();
-      renderGeneratorsLadder();
-      renderTrophyCabinet();
-      renderMenagerie();
-      switchTab(gameState.activeTab || 'camp');
-      gameState.lastTick = performance.now();
-      requestAnimationFrame(gameLoop);
-      logCombatMessage("Camp initialized. Ready for primal hunts and trophy expeditions.", "default");
-    });
-  </script>
+  <!-- Modular Scripts: Data -> Engine -> UI -->
+  <script src="data.js"></script>
+  <script src="engine.js"></script>
+  <script src="ui.js"></script>
 </body>
 </html>
