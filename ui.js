@@ -514,6 +514,22 @@ function getParentPassiveAt(id, lvl) {
 }
 
 /** Passive effect of a hybrid at a given level */
+/** Explains when a parent's passive stops helping (Boar-Hawk 3s interval floor, Grizzly-Scorpion 5s wound floor) */
+function getParentFloorNote(id, lvl) {
+  if (id === 'boar_hawk') {
+    const base = Math.max(CAMP_RECOVERY_FLOOR_SEC, gameState.staminaIntervalSec - gameState.campRecoveryLevel * CAMP_RECOVERY_PER_RANK);
+    const capLvl = Math.ceil((base - 3) / 0.25 - 1e-9);
+    return lvl >= capLvl
+      ? 'Floor reached: this passive can\'t push the interval below 3s. More levels only add Beast Power.'
+      : 'Floor: this passive stops at a 3s interval (Lvl ' + capLvl + ' with your camp ranks).';
+  }
+  if (id === 'grizzly_scorpion') {
+    const atFloor = BEAST_CATALOG.filter(b => (b.woundedSec || 30) - lvl * 2 <= 5).map(b => b.name);
+    return 'Floor: wounds can\'t drop below 5s from this passive' + (atFloor.length ? ' (already reached vs ' + atFloor.join(', ') + ').' : '.');
+  }
+  return '';
+}
+
 function getHybridPassiveAt(id, lvl) {
   switch (id) {
     case 'viperhawk': return '+' + fmtPct(lvl * 15) + ' base click Meat, +' + fmtPct(lvl * 5) + ' Stamina regen';
@@ -601,7 +617,7 @@ function renderForge() {
       const bpMult = getBeastMasteryMultiplier() * getLegacyMult('beast_bond');
       const cpGain = combatPowerDelta(() => { gameState.parentLevels[parent.id] = lvl + 1; }, () => { gameState.parentLevels[parent.id] = lvl; });
       const parentStats = forgeStatsHtml(rawAt(lvl) * bpMult, rawAt(lvl + 1) * bpMult, cpGain,
-        getParentPassiveAt(parent.id, lvl), getParentPassiveAt(parent.id, lvl + 1), lvl, '');
+        getParentPassiveAt(parent.id, lvl), getParentPassiveAt(parent.id, lvl + 1), lvl, getParentFloorNote(parent.id, lvl));
 
       row.className = 'bg-primal-800/80 border border-primal-700 rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3';
       row.innerHTML =
@@ -939,6 +955,7 @@ function renderFrame(meatRate) {
 
   // Keep the Menagerie in sync with Beast Mastery, nursery levels and hybrids waking up
   if (beastPower !== lastMenageriePower) renderMenagerie();
+  renderPowerBreakdown();
   elements.hudPowerSplit.textContent = '(Hunter: ' + formatNumber(hunterPower) + ' + Beasts: ' + formatNumber(beastPower) + ')' +
     (fishPowerMult > 1.0005 ? ' ×' + fishPowerMult.toFixed(2) + ' Bonuses' : '');
 
@@ -1046,7 +1063,7 @@ function renderFrame(meatRate) {
     const genId = btn.getAttribute('data-gen-id');
     const gen = GENERATOR_LADDER.find(g => g.id === genId);
     if (gen) {
-      btn.disabled = gameState.meat < getGeneratorCost(gen);
+      btn.disabled = gameState.meat < getGeneratorBulk(gen).cost;
     }
   });
 
@@ -1329,7 +1346,8 @@ function renderGeneratorsLadder() {
   GENERATOR_LADDER.forEach(gen => {
     const isUnlocked = isGeneratorUnlocked(gen);
     const count = gameState.generators[gen.id] || 0;
-    const cost = getGeneratorCost(gen);
+    const bulk = getGeneratorBulk(gen);
+    const cost = bulk.cost;
     const canAfford = gameState.meat >= cost;
 
     const card = document.createElement('div');
@@ -1376,7 +1394,7 @@ function renderGeneratorsLadder() {
           '</div>' +
         '</div>' +
         '<button data-gen-id="' + gen.id + '" class="btn-buy-gen w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg transition-all border border-amber-500/50 flex items-center justify-center gap-2 font-mono cursor-pointer" ' + disabledAttr + '>' +
-          '<span>Deploy</span>' +
+          '<span>Deploy' + (bulk.qty > 1 ? ' x' + bulk.qty : '') + '</span>' +
           '<span class="text-amber-200 flex items-center gap-1 font-bold">' +
             '<i class="fa-solid fa-drumstick-bite text-[11px]"></i>' +
             '<span class="gen-cost">' + formatNumber(cost) + '</span>' +
@@ -1411,11 +1429,8 @@ function renderGeneratorsLadder() {
       const gen = GENERATOR_LADDER.find(g => g.id === genId);
       if (!gen) return;
 
-      const cost = getGeneratorCost(gen);
-      if (gameState.meat >= cost) {
+      if (buyGeneratorBulk(gen) > 0) {
         sound.playBuy();
-        gameState.meat -= cost;
-        gameState.generators[gen.id] = (gameState.generators[gen.id] || 0) + 1;
         renderGeneratorsLadder();
         saveGameToStorage();
       }
@@ -2615,6 +2630,66 @@ if (legacyEls.respecBtn) {
     saveGameToStorage();
   });
 }
+
+/**
+ * Combat Power breakdown popover (click / tap the Combat Power HUD)
+ */
+let lastPowerBreakdownAt = 0;
+function renderPowerBreakdown(force) {
+  const box = document.getElementById('power-breakdown');
+  if (!box || box.classList.contains('hidden')) return;
+  if (!force && Date.now() - lastPowerBreakdownAt < 500) return;
+  lastPowerBreakdownAt = Date.now();
+  const b = getCombatPowerBreakdown();
+  const row = (label, val, cls) => '<div class="flex justify-between gap-4"><span class="text-slate-400 truncate">' + label + '</span><span class="font-mono ' + (cls || 'text-slate-200') + '">' + val + '</span></div>';
+  const head = (t, val) => '<div class="flex justify-between gap-4 mt-2 pt-2 border-t border-primal-700 font-bold"><span class="text-amber-300">' + t + '</span><span class="font-mono text-amber-300">' + val + '</span></div>';
+  const x = m => 'x' + (Math.round(m * 100) / 100);
+  let html = '<div class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Where your Combat Power comes from</div>';
+  html += head('Hunter', formatNumber(b.hunterTotal));
+  b.hunter.forEach(r => { html += row(r.label, '+' + formatNumber(r.value)); });
+  if (b.sparLevel > 0) html += row('Sparring Lvl ' + b.sparLevel, x(b.sparMult), 'text-emerald-300');
+  html += head('Beasts', formatNumber(b.beastTotal));
+  if (!b.beasts.length) html += row('No beasts tamed this run', '0');
+  b.beasts.forEach(r => { html += row(r.label, '+' + formatNumber(r.value)); });
+  b.beastMults.forEach(r => { html += row(r.label, x(r.mult), 'text-emerald-300'); });
+  html += head('Multipliers', b.mults.length ? x(b.mults.reduce((a, r) => a * r.mult, 1)) : 'x1');
+  b.mults.forEach(r => { html += row(r.label, x(r.mult), 'text-emerald-300'); });
+  html += head('Total', formatNumber(b.total));
+  box.innerHTML = html;
+}
+
+(function initPowerBreakdown() {
+  const card = document.getElementById('hud-power-card');
+  const box = document.getElementById('power-breakdown');
+  if (!card || !box) return;
+  card.addEventListener('click', (e) => {
+    e.stopPropagation();
+    box.classList.toggle('hidden');
+    renderPowerBreakdown(true);
+  });
+  box.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', () => box.classList.add('hidden'));
+})();
+
+/**
+ * Generator buy amount toggle (x1 / x10 / Next milestone)
+ */
+function updateGenBuyModeButtons() {
+  document.querySelectorAll('[data-gen-mode]').forEach(btn => {
+    const on = (gameState.genBuyMode || 'x1') === btn.getAttribute('data-gen-mode');
+    btn.className = 'px-2 py-1 rounded font-mono text-[11px] font-bold cursor-pointer border ' +
+      (on ? 'bg-amber-600 text-white border-amber-400' : 'bg-primal-800 text-slate-300 border-primal-700 hover:text-amber-300');
+  });
+}
+document.querySelectorAll('[data-gen-mode]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    gameState.genBuyMode = btn.getAttribute('data-gen-mode');
+    updateGenBuyModeButtons();
+    renderGeneratorsLadder();
+    saveGameToStorage();
+  });
+});
+updateGenBuyModeButtons();
 
 setInterval(saveGameToStorage, 10000);
 

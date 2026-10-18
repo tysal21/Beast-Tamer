@@ -101,8 +101,9 @@
           </div>
         </div>
 
-        <!-- Total Power HUD -->
-        <div class="bg-primal-800/90 border border-primal-700 rounded-lg px-3 py-1.5 flex items-center space-x-2.5 shadow-inner">
+        <!-- Total Power HUD (click for breakdown) -->
+        <div class="relative">
+        <div id="hud-power-card" title="Click to see where your Combat Power comes from" class="bg-primal-800/90 border border-primal-700 hover:border-amber-500/60 cursor-pointer rounded-lg px-3 py-1.5 flex items-center space-x-2.5 shadow-inner">
           <div class="w-8 h-8 rounded-full bg-amber-950/80 border border-amber-600/60 flex items-center justify-center text-amber-400">
             <i class="fa-solid fa-hand-fist"></i>
           </div>
@@ -111,8 +112,11 @@
             <div class="flex items-baseline space-x-1.5">
               <span id="hud-total-power" class="text-base sm:text-lg font-bold text-amber-300 font-mono">5</span>
               <span class="text-[11px] text-slate-400 font-mono" id="hud-power-split">(Hunter: 5 + Beasts: 0)</span>
+              <i class="fa-solid fa-circle-info text-[11px] text-slate-500"></i>
             </div>
           </div>
+        </div>
+        <div id="power-breakdown" class="hidden absolute z-50 left-0 top-full mt-2 w-[min(22rem,calc(100vw-2rem))] max-h-[70vh] overflow-y-auto bg-primal-900 border border-amber-700/60 rounded-xl p-3 shadow-2xl text-xs"></div>
         </div>
 
         <!-- Primal Bloodstones HUD (Phase 3 Prestige Currency) -->
@@ -361,9 +365,12 @@
               </h2>
               <p class="text-xs text-slate-400">Hit <strong class="text-amber-300">10, 25, 50, and 100</strong> owned in any tier to unlock massive Milestone Overdrives (2x, 6x, 24x, 240x). Past 25 and 50 owned, that generator's price also climbs more slowly.</p>
             </div>
-            <span class="text-xs font-mono bg-primal-800 text-amber-300 px-2.5 py-1 rounded border border-primal-700">
-              Milestones Active
-            </span>
+            <div class="flex items-center gap-1 shrink-0" title="How many to buy per click">
+              <span class="text-[10px] uppercase text-slate-500 mr-1">Buy</span>
+              <button data-gen-mode="x1">x1</button>
+              <button data-gen-mode="x10">x10</button>
+              <button data-gen-mode="next">Next &#9733;</button>
+            </div>
           </div>
 
           <!-- Dynamic 6-tier generator container -->

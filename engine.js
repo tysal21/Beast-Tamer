@@ -182,6 +182,9 @@ const gameState = {
   // Fight counter per boss / guardian (kept forever; taming tries reset each run)
   fightStats: {},
 
+  // Generator buy amount toggle: 'x1', 'x10' or 'next'
+  genBuyMode: 'x1',
+
   lastWallTime: Date.now()
 };
 
@@ -692,6 +695,77 @@ function getCombatPowerVs(beast) {
 /** Totem damage from one Forage click */
 function getTotemClickDamage() {
   return getTotalCombatPower() * TOTEM_CONFIG.clickPct * getLegacyMult('totem_breaker');
+}
+
+/**
+ * Generator buy amount: 'x1', 'x10' or 'next' (up to the next Overdrive milestone)
+ */
+function getGeneratorBulk(gen, mode = gameState.genBuyMode || 'x1') {
+  const count = gameState.generators[gen.id] || 0;
+  let qty = 1;
+  if (mode === 'x10') qty = 10;
+  else if (mode === 'next') {
+    const nm = GENERATOR_MILESTONES.find(m => count < m.count);
+    qty = nm ? nm.count - count : 1;
+  }
+  let cost = 0;
+  for (let i = 0; i < qty; i++) {
+    cost += getGeneratorCost(gen);
+    gameState.generators[gen.id] = count + i + 1;
+  }
+  gameState.generators[gen.id] = count;
+  return { qty, cost };
+}
+
+function buyGeneratorBulk(gen) {
+  const { qty, cost } = getGeneratorBulk(gen);
+  if (gameState.meat < cost) return 0;
+  gameState.meat -= cost;
+  gameState.generators[gen.id] = (gameState.generators[gen.id] || 0) + qty;
+  return qty;
+}
+
+/**
+ * Where Combat Power comes from, line by line (same math as getHunterPower / getTotalBeastPower / getTotalCombatPower)
+ */
+function getCombatPowerBreakdown() {
+  const hunter = [];
+  hunter.push({ label: 'Base hunter', value: gameState.baseHunterPower });
+  const vigor = getAscensionPerkLevel('primal_vigor') * 25;
+  if (vigor > 0) hunter.push({ label: 'Primal Vigor perk', value: vigor });
+  const w = getEquippedWeapon();
+  if (w) hunter.push({ label: w.name, value: w.combatPower || 0 });
+  const brute = gameState.bruteConditioningLevel * getBrutePowerPerLevel();
+  if (brute > 0) hunter.push({ label: 'Brute Conditioning Lvl ' + gameState.bruteConditioningLevel, value: brute });
+  const sparPer = getActiveHybridLevel('scorpiodrake') > 0 ? 0.05 : 0.02;
+  const sparMult = 1 + gameState.sparringLevel * sparPer;
+
+  const beasts = [];
+  for (const beast of BEAST_CATALOG) {
+    if (!gameState.tamedBeasts[beast.id]) continue;
+    const l = getParentLevel(beast.id);
+    beasts.push({ label: beast.name + ' Lvl ' + l, value: Math.floor(beast.rewardPower * (1 + (l - 1) * 0.15)) });
+  }
+  for (const h of HYBRID_CATALOG) {
+    const p = getHybridRawPower(h);
+    if (p > 0) beasts.push({ label: h.name + ' Lvl ' + getHybridLevel(h.id) + (isHybridAwake(h) ? '' : ' (Pack Alpha 25%)'), value: p });
+  }
+  const beastMults = [];
+  if (gameState.beastMasteryLevel > 0) beastMults.push({ label: 'Beast Mastery Lvl ' + gameState.beastMasteryLevel, mult: getBeastMasteryMultiplier() });
+  if (getLegacyRank('beast_bond') > 0) beastMults.push({ label: 'Beast Bond (Legacy)', mult: getLegacyMult('beast_bond') });
+
+  const mults = [];
+  const add = (label, m) => { if (m > 1.0001) mults.push({ label, mult: m }); };
+  add('Fish Codex', 1 + getFishCodexBonus('power'));
+  add('Abyssal Fervor meal', getFishBuffMult('power'));
+  add('Totem blessings and Seals', 1 + getTotemBonus('power'));
+  add('Keen Instincts (Legacy)', getLegacyMult('keen_instincts'));
+
+  return {
+    hunter, sparLevel: gameState.sparringLevel, sparMult, hunterTotal: getHunterPower(),
+    beasts, beastMults, beastTotal: getTotalBeastPower(),
+    mults, total: getTotalCombatPower()
+  };
 }
 
 /**
@@ -1605,6 +1679,7 @@ function saveGameToStorage() {
       totem: gameState.totem,
       legacy: gameState.legacy,
       fightStats: gameState.fightStats,
+      genBuyMode: gameState.genBuyMode,
       lastSavedAt: Date.now()
     };
     localStorage.setItem('beast_tamer_savedata', JSON.stringify(data));
@@ -1686,6 +1761,7 @@ function loadGameFromStorage() {
         gameState.legacy.insight = data.legacy.insight || {};
       }
       if (data.fightStats && typeof data.fightStats === 'object') gameState.fightStats = data.fightStats;
+      if (['x1', 'x10', 'next'].includes(data.genBuyMode)) gameState.genBuyMode = data.genBuyMode;
       // Saves that already tamed the Wyrm or Ascended get the Totem right away
       checkTotemUnlock();
 
