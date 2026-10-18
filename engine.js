@@ -995,6 +995,23 @@ function getSparringStaminaCost() {
 const BOAR_REGEN_PER_LEVEL = 0.04; // Boar-Hawk Keen Eye: regen speed per level
 const GRIZZLY_WOUND_PER_LEVEL = 0.05; // Grizzly-Scorpion Chitin Bulwark: wound shortening per level
 
+/**
+ * Soft limits: the closer a time gets to its limit, the less each new bonus shaves off,
+ * so it can never actually reach the limit, but every upgrade still helps a little.
+ * (Far from the limit this changes almost nothing: 3s stays ~3.05s, 2s becomes ~2.14s.)
+ */
+const STAMINA_SOFT_MIN_SEC = 1.0; // regen can approach 1 Stamina per second, never faster
+const WOUND_SOFT_MIN_SEC = 3.0;   // a lost fight always wounds you for at least ~3s
+function softLimit(sec, min) {
+  return sec + min * Math.exp(-sec / min);
+}
+
+/** Nursery parents stop at this level */
+const NURSERY_MAX_LEVEL = 25;
+function isParentMaxed(beastId) {
+  return getParentLevel(beastId) >= NURSERY_MAX_LEVEL;
+}
+
 function getStaminaRegenInterval(withAdrenalineOverride = null) {
   let interval = gameState.staminaIntervalSec - (gameState.campRecoveryLevel * CAMP_RECOVERY_PER_RANK);
   interval = Math.max(CAMP_RECOVERY_FLOOR_SEC, interval);
@@ -1031,8 +1048,7 @@ function getStaminaRegenInterval(withAdrenalineOverride = null) {
   interval /= getFishBuffMult('regen');
   interval /= (1 + getTotemBonus('regen'));
 
-  // Safety minimum only; normal play never gets near it
-  return Math.max(0.2, interval);
+  return softLimit(interval, STAMINA_SOFT_MIN_SEC);
 }
 
 function getStaminaRegenRate(withAdrenalineOverride = null) {
@@ -1053,7 +1069,7 @@ function getWoundedDuration(beast = getSelectedFightTarget()) {
   }
   const mult = getRelicEffectMultiplier('chitin_carapace');
   const relicDur = hasRelic('chitin_carapace') ? baseDur / (1 + mult) : baseDur;
-  return relicDur * (1 - Math.min(0.5, getFishCodexBonus('wound'))) * getLegacyReduction('thick_hide');
+  return softLimit(relicDur * (1 - Math.min(0.5, getFishCodexBonus('wound'))) * getLegacyReduction('thick_hide'), WOUND_SOFT_MIN_SEC);
 }
 
 function getBrutePowerPerLevel() {

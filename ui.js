@@ -450,6 +450,7 @@ window.nurtureParent = function(rawBeastId) {
   }
 
   const currentLvl = getParentLevel(beastId);
+  if (isParentMaxed(beastId)) { showToast('Already at the max Nursery level (' + NURSERY_MAX_LEVEL + ').', 'info'); return; }
   const cost = getParentLevelCost(beastId);
 
   if (gameState.meat < cost) {
@@ -620,7 +621,11 @@ function renderForge() {
       const rawAt = l => Math.floor((beastDef ? beastDef.rewardPower : 0) * (1 + (l - 1) * 0.15));
       const bpMult = getBeastMasteryMultiplier() * getLegacyMult('beast_bond');
       const cpGain = combatPowerDelta(() => { gameState.parentLevels[parent.id] = lvl + 1; }, () => { gameState.parentLevels[parent.id] = lvl; });
-      const parentStats = forgeStatsHtml(rawAt(lvl) * bpMult, rawAt(lvl + 1) * bpMult, cpGain,
+      const pMaxed = isParentMaxed(parent.id);
+      const parentStats = pMaxed
+        ? '<div class="mt-1.5 text-[11px] font-mono"><div class="text-slate-300">Beast Power: <span class="text-white font-bold">' + formatNumber(rawAt(lvl) * bpMult) + '</span></div>' +
+          '<div class="text-emerald-300">Lvl ' + lvl + ': ' + getParentPassiveAt(parent.id, lvl) + '</div><div class="text-amber-300 font-bold">Max level reached</div></div>'
+        : forgeStatsHtml(rawAt(lvl) * bpMult, rawAt(lvl + 1) * bpMult, cpGain,
         getParentPassiveAt(parent.id, lvl), getParentPassiveAt(parent.id, lvl + 1), lvl, getParentFloorNote(parent.id, lvl));
 
       row.className = 'bg-primal-800/80 border border-primal-700 rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3';
@@ -632,19 +637,20 @@ function renderForge() {
           '<div>' +
             '<div class="flex items-center gap-2">' +
               '<span class="font-bold text-slate-100 text-sm">' + parent.name + '</span>' +
-              '<span class="text-xs bg-purple-950 text-purple-300 border border-purple-700/60 font-mono px-2 py-0.2 rounded-full font-bold">Lvl ' + lvl + '</span>' +
+              '<span class="text-xs bg-purple-950 text-purple-300 border border-purple-700/60 font-mono px-2 py-0.2 rounded-full font-bold">Lvl ' + lvl + '/' + NURSERY_MAX_LEVEL + '</span>' +
               '<span class="text-[10px] font-mono px-1.5 py-0.2 rounded ' + readyClass + '">' + readyLabel + '</span>' +
             '</div>' +
             '<div class="text-[11px] text-slate-400 mt-0.5">' + parent.passive.split(' (')[0] + '</div>' +
             parentStats +
           '</div>' +
         '</div>' +
+        (pMaxed ? '<div class="w-full sm:w-auto px-3.5 py-2 text-xs font-mono font-bold text-amber-300 border border-amber-600/60 bg-amber-950/40 rounded-lg text-center">MAX Lvl ' + NURSERY_MAX_LEVEL + '</div>' :
         '<button data-beast-id="' + parent.id + '" data-parent-id="' + parent.id + '" class="nurture-btn btn-level-parent w-full sm:w-auto px-3.5 py-2 bg-gradient-to-r from-purple-800 to-purple-700 hover:from-purple-700 hover:to-purple-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg border border-purple-500/50 flex items-center justify-center gap-2 font-mono cursor-pointer" ' + disabledAttr + '>' +
           '<span>Nurture (Lvl ' + (lvl + 1) + ')</span>' +
           '<span class="text-amber-300 flex items-center gap-1 font-bold">' +
             '<i class="fa-solid fa-drumstick-bite text-[11px]"></i> ' + formatNumber(cost) +
           '</span>' +
-        '</button>';
+        '</button>');
     } else {
       row.className = 'bg-primal-800/40 border border-dashed border-primal-700/60 rounded-xl p-3 flex items-center justify-between opacity-50 grayscale';
       row.innerHTML =
