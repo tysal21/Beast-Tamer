@@ -1540,6 +1540,7 @@ function renderTrophyCabinet() {
   if (elements.relicOwnedCount) {
     elements.relicOwnedCount.textContent = ownedCount;
   }
+  if (typeof renderBestiary === 'function') renderBestiary();
 }
 
 /**
@@ -3190,7 +3191,7 @@ function closeArena() {
     clearArenaTimers();
     finishPendingFightNow();
   });
-  arena.cont.addEventListener('click', closeArena);
+  arena.cont.addEventListener('click', () => { closeArena(); if (gameState.activeTab === 'relics') renderBestiary(); });
   arena.overlay.addEventListener('click', e => { if (e.target === arena.overlay && !arena.result.classList.contains('hidden')) closeArena(); });
   document.addEventListener('keydown', e => {
     if (!arena.active) return;
@@ -3217,6 +3218,79 @@ function closeArena() {
     lb.addEventListener('click', () => lb.classList.add('hidden'));
   }
 })();
+
+/**
+ * ================= BESTIARY =================
+ * Every beast you've met, big. Ones you haven't met yet are silhouettes.
+ */
+function getBestiaryEntries() {
+  const list = [];
+  const bestTier = gameState.highestTierUnlocked || 1;
+  BEAST_CATALOG.forEach(b => {
+    list.push({ beast: b, group: 'Milestone Beasts', label: 'Tier ' + b.tier, seen: b.tier <= bestTier || !!getBestiaryRecord(b.id).firstTamed });
+  });
+  if (gameState.totem && gameState.totem.unlocked) {
+    // A guardian is discovered once you've reached its Seal
+    const sealsShown = (gameState.totem.sealsBroken || 0) + (isTotemSealLayer(gameState.totem.layer) ? 1 : 0);
+    for (let k = 1; k <= Math.max(sealsShown + 1, 4); k++) {
+      list.push({ beast: getGuardianAt(k), group: 'Totem Guardians', label: 'Seal ' + k, seen: k <= sealsShown });
+    }
+  }
+  if ((gameState.bestApexDepth || 0) > 0 || isApexUnlocked()) {
+    const shown = (gameState.bestApexDepth || 0) + 1;
+    for (let k = 1; k <= Math.max(shown, 8); k++) {
+      list.push({ beast: getApexBossAt(k), group: 'Apex Ladder', label: 'Apex Tier ' + (4 + k), seen: k <= shown });
+    }
+  }
+  return list;
+}
+
+function getBestiaryRecord(id) {
+  return (gameState.bestiary && gameState.bestiary[id]) || {};
+}
+
+function renderBestiary() {
+  const grid = document.getElementById('bestiary-grid');
+  if (!grid) return;
+  const entries = getBestiaryEntries();
+  let seen = 0;
+  let html = '';
+  let group = '';
+  entries.forEach((e, i) => {
+    if (e.group !== group) {
+      group = e.group;
+      html += '<div class="col-span-full text-[11px] uppercase tracking-wider text-slate-400 font-semibold pt-2">' + group + '</div>';
+    }
+    const b = e.beast;
+    const rec = getBestiaryRecord(b.id);
+    const fights = rec.fights || 0;
+    if (e.seen) seen++;
+    const filter = e.seen ? (b.imageFilter || '') : 'brightness(0) opacity(0.55)';
+    const stats = e.seen
+      ? (rec.firstTamed ? '<span class="text-emerald-300"><i class="fa-solid fa-check mr-1"></i>Tamed ' + new Date(rec.firstTamed).toLocaleDateString() + '</span>' : '<span class="text-slate-500">Not tamed yet</span>') +
+        '<br>' + (rec.wins || 0) + ' wins · ' + Math.max(0, fights) + ' fights' + (rec.bestOdds ? ' · best odds ' + (rec.bestOdds * 100).toFixed(0) + '%' : '')
+      : '<span class="text-slate-600">Not discovered</span>';
+    html += '<button data-bestiary="' + i + '" class="text-left p-2.5 rounded-xl border ' + (e.seen ? 'bg-primal-800/90 border-primal-600 hover:border-amber-500/60 cursor-zoom-in' : 'bg-primal-900/60 border-primal-800 cursor-default') + ' flex flex-col gap-1.5">' +
+      '<div class="monster-portrait-frame !w-full !h-32"><img class="monster-portrait-img" src="' + b.image + '" style="filter:' + filter + '" alt=""></div>' +
+      '<div class="text-[10px] font-mono uppercase text-amber-400">' + e.label + '</div>' +
+      '<div class="text-xs font-bold ' + (e.seen ? 'text-slate-100' : 'text-slate-600') + ' leading-tight">' + (e.seen ? b.name : '???') + '</div>' +
+      (e.seen ? '<div class="text-[10px] text-slate-400 italic leading-snug">' + (b.isApex || b.isGuardian ? BEAST_CATALOG.find(x => x.id === b.baseId).desc : b.desc) + '</div>' : '') +
+      '<div class="text-[10px] font-mono text-slate-400 leading-snug">' + stats + '</div>' +
+    '</button>';
+  });
+  grid.innerHTML = html;
+  const c = document.getElementById('bestiary-count');
+  if (c) c.textContent = seen + '/' + entries.length;
+  grid.querySelectorAll('[data-bestiary]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const e = entries[Number(btn.dataset.bestiary)];
+      if (!e || !e.seen) return;
+      applyBeastImage(document.getElementById('lightbox-img'), e.beast);
+      document.getElementById('lightbox-name').textContent = e.beast.name;
+      document.getElementById('portrait-lightbox').classList.remove('hidden');
+    });
+  });
+}
 
 setInterval(saveGameToStorage, 10000);
 

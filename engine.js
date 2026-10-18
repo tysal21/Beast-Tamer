@@ -512,7 +512,11 @@ function getTotemDepthName(layer) {
 /** The guardian of the current Seal, shaped like a BEAST_CATALOG entry so the normal fight code can use it */
 function getTotemGuardian() {
   if (!isTotemUnlocked() || !isTotemSealLayer(gameState.totem.layer)) return null;
-  const k = gameState.totem.layer / TOTEM_CONFIG.sealEvery;
+  return getGuardianAt(gameState.totem.layer / TOTEM_CONFIG.sealEvery);
+}
+
+/** The guardian of Seal k (used by the Totem and the Bestiary) */
+function getGuardianAt(k) {
   const base = BEAST_CATALOG[(k - 1) % BEAST_CATALOG.length];
   const min = Math.floor(TOTEM_CONFIG.sealBaseMin * Math.pow(TOTEM_CONFIG.sealGrowth, k - 1));
   return {
@@ -855,7 +859,11 @@ function getApexBaseMin(k) {
 /** The next Apex boss to fight, shaped like a BEAST_CATALOG entry */
 function getApexBoss() {
   if (!isApexUnlocked()) return null;
-  const k = getApexDepth() + 1;
+  return getApexBossAt(getApexDepth() + 1);
+}
+
+/** Apex tier k as a boss (used by the ladder and the Bestiary) */
+function getApexBossAt(k) {
   const base = BEAST_CATALOG[(k - 1) % BEAST_CATALOG.length];
   const lap = Math.floor((k - 1) / BEAST_CATALOG.length);
   const title = APEX_TITLES[Math.min(lap, APEX_TITLES.length - 1)] + (lap >= APEX_TITLES.length ? ' ' + toRomanNumeral(lap - APEX_TITLES.length + 2) : '');
@@ -1721,8 +1729,17 @@ function getFightStats(id) {
   return gameState.fightStats[id];
 }
 
-function recordFight(beast, won, wasTrophy, gotRelic) {
+function recordFight(beast, won, wasTrophy, gotRelic, winChance) {
   const st = getFightStats(beast.id);
+  // Bestiary record (kept forever)
+  if (!gameState.bestiary) gameState.bestiary = {};
+  const rec = gameState.bestiary[beast.id] || (gameState.bestiary[beast.id] = { wins: 0, bestOdds: 0, firstTamed: null });
+  rec.fights = (rec.fights || 0) + 1;
+  if (typeof winChance === 'number') rec.bestOdds = Math.max(rec.bestOdds || 0, winChance);
+  if (won) {
+    rec.wins = (rec.wins || 0) + 1;
+    if (!rec.firstTamed) rec.firstTamed = Date.now();
+  }
   if (wasTrophy) {
     st.trophyFights++;
     if (won) st.trophyWins++;
@@ -1845,7 +1862,7 @@ function challengeCurrentBeast() {
       showToast(`Defeated! Hunter wounded (${Math.round(gameState.cooldownRemaining)}s recovery).`, 'danger');
     }
 
-    recordFight(beast, roll <= winChance, isAlreadyTamed, gotRelic);
+    recordFight(beast, roll <= winChance, isAlreadyTamed, gotRelic, winChance);
 
     if (roll <= winChance && isTotemUnlocked()) {
       dealTotemDamage(getTotemDps() * TOTEM_CONFIG.bossWinSec);
@@ -1926,6 +1943,7 @@ function saveGameToStorage() {
       legacy: gameState.legacy,
       fightStats: gameState.fightStats,
       fightAnim: gameState.fightAnim || 'full',
+      bestiary: gameState.bestiary || {},
       genBuyMode: gameState.genBuyMode,
       lastSavedAt: Date.now()
     };
@@ -2018,6 +2036,10 @@ function loadGameFromStorage() {
       }
       if (data.fightStats && typeof data.fightStats === 'object') gameState.fightStats = data.fightStats;
       if (['full', 'quick', 'skip'].includes(data.fightAnim)) gameState.fightAnim = data.fightAnim;
+      if (data.bestiary && typeof data.bestiary === 'object') gameState.bestiary = data.bestiary;
+      // Older saves: beasts already tamed count as discovered and tamed in the Bestiary
+      if (!gameState.bestiary) gameState.bestiary = {};
+      Object.keys(gameState.tamedBeasts || {}).forEach(id => { if (!gameState.bestiary[id]) gameState.bestiary[id] = { wins: 1, bestOdds: 0, firstTamed: Date.now() }; });
       if (typeof data.apexDepth === 'number') gameState.apexDepth = data.apexDepth;
       if (data.trophy && typeof data.trophy === 'object') gameState.trophy = { fangs: data.trophy.fangs || 0, level: data.trophy.level || 0 };
       if (typeof data.bestApexDepth === 'number') gameState.bestApexDepth = data.bestApexDepth;
