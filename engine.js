@@ -767,7 +767,7 @@ function performAscension() {
   gameState.stamina = getMaxStamina();
 
   logCombatMessage(
-    `🔥 <strong>PRIMAL ASCENSION #${gameState.ascensionCount} COMPLETE!</strong> Claimed <strong>+${formatNumber(claimed)} Primal Bloodstones</strong>! Relics, Forge, and Hybrids retained.`,
+    `🔥 <strong>PRIMAL ASCENSION #${gameState.ascensionCount} COMPLETE!</strong> Claimed <strong>+${formatNumber(claimed)} Primal Bloodstones</strong>! Relics, Forge, and Hybrids retained (they sleep until you re-tame their bosses). Bosses grow stronger.`,
     'unlock'
   );
   showToast(`Ascended! Claimed +${formatNumber(claimed)} Primal Bloodstones!`, 'success', true);
@@ -822,8 +822,16 @@ function getNextGeneratorMilestone(genId) {
 /**
  * Core Stat & Economy Helpers
  */
-function hasRelic(id) {
+/** Owned at all (kept forever) */
+function isRelicOwned(id) {
   return !!gameState.ownedRelics[id];
+}
+
+/** A relic only works once its boss has been tamed again this run (same rule as hybrids) */
+function hasRelic(id) {
+  if (!gameState.ownedRelics[id]) return false;
+  const relic = RELIC_REGISTRY[id];
+  return !relic || !relic.beastId || !!gameState.tamedBeasts[relic.beastId];
 }
 
 function getRelicEffectMultiplier(id) {
@@ -1215,11 +1223,19 @@ function getClickYield() {
   return Math.max(1, totalYield);
 }
 
+/** Bosses grow stronger with every Ascension (Totem guardians use their own scaling) */
+const BOSS_ASCENSION_GROWTH = 0.25; // +this much boss power per Ascension (linear)
+function getBossAscensionMult(beast) {
+  if (!beast || beast.isGuardian) return 1;
+  return 1 + BOSS_ASCENSION_GROWTH * (gameState.ascensionCount || 0);
+}
+
 function getEffectiveBossBracket(beast) {
   const reduction = getWeakpointAnatomyReduction();
+  const grow = getBossAscensionMult(beast);
   return {
-    min: Math.floor(beast.minPower * (1 - reduction)),
-    max: Math.floor(beast.maxPower * (1 - reduction))
+    min: Math.floor(beast.minPower * grow * (1 - reduction)),
+    max: Math.floor(beast.maxPower * grow * (1 - reduction))
   };
 }
 
@@ -1486,6 +1502,7 @@ function challengeCurrentBeast() {
         renderMenagerie();
         renderGeneratorsLadder();
         renderAscensionAltar();
+        renderTrophyCabinet(); // this boss's relics wake up
       } else {
         logCombatMessage(
           `🏆 <strong>TROPHY EXPEDITION CONQUERED!</strong> Successfully defeated <strong>${beast.name}</strong>. Searching for relics...`,

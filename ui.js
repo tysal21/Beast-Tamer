@@ -1049,7 +1049,8 @@ function renderFrame(meatRate) {
 
   elements.encounterTierBadge.textContent = isGuardianFight ? 'Totem Seal ' + activeBeast.sealNumber : 'Tier ' + activeBeast.tier;
   elements.beastName.textContent = activeBeast.name;
-  elements.beastDesc.textContent = activeBeast.desc;
+  const ascGrow = getBossAscensionMult(activeBeast);
+  elements.beastDesc.textContent = activeBeast.desc + (ascGrow > 1 ? ' Strengthened x' + (Math.round(ascGrow * 100) / 100) + ' by your Ascensions.' : '');
   elements.beastPowerMin.textContent = formatNumber(effMin);
   elements.beastPowerMax.textContent = formatNumber(effMax);
 
@@ -1344,7 +1345,8 @@ function renderTrophyCabinet() {
 
   relicKeys.forEach(key => {
     const relic = RELIC_REGISTRY[key];
-    const isOwned = hasRelic(key);
+    const isOwned = isRelicOwned(key);
+    const isAwake = hasRelic(key);
     if (isOwned) ownedCount++;
 
     const sourceBeast = BEAST_CATALOG.find(b => b.id === relic.beastId);
@@ -1363,7 +1365,7 @@ function renderTrophyCabinet() {
         ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
         : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
 
-      card.className = 'p-4 rounded-xl border flex items-start space-x-3.5 transition-all ' + cardBorder;
+      card.className = 'p-4 rounded-xl border flex items-start space-x-3.5 transition-all ' + cardBorder + (isAwake ? '' : ' opacity-60');
       card.innerHTML =
         '<div class="w-11 h-11 rounded-xl ' + iconBoxStyle + ' flex items-center justify-center text-xl flex-shrink-0 shadow-md">' +
           '<i class="fa-solid ' + relic.icon + '"></i>' +
@@ -1374,7 +1376,9 @@ function renderTrophyCabinet() {
             '<span class="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ' + badgeStyle + '">' + relic.rarity + '</span>' +
           '</div>' +
           '<p class="text-xs text-slate-300 leading-snug">' + relic.desc + '</p>' +
-          '<div class="text-[10px] text-slate-400 font-mono mt-1">Source: ' + beastName + ' Trophy</div>' +
+          (isAwake
+            ? '<div class="text-[10px] text-slate-400 font-mono mt-1">Source: ' + beastName + ' Trophy</div>'
+            : '<div class="text-[10px] text-sky-300 font-mono mt-1"><i class="fa-solid fa-moon mr-1"></i>Asleep: tame the ' + beastName + ' this run to wake it</div>') +
         '</div>';
     } else {
       card.className = 'bg-primal-900/60 border border-dashed border-primal-800 rounded-xl p-4 flex items-start space-x-3.5 opacity-50 grayscale';
