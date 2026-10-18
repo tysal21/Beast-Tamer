@@ -1094,6 +1094,10 @@
           <i id="sound-icon" class="fa-solid fa-volume-high text-amber-400"></i>
           <span>Audio Effects: <span id="sound-status">ON</span></span>
         </button>
+        <button id="btn-save-code" class="hover:text-amber-400 transition-colors flex items-center gap-1 cursor-pointer">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span>Export / Import Save</span>
+        </button>
         <button id="btn-reset-game" class="hover:text-red-400 transition-colors flex items-center gap-1 cursor-pointer">
           <i class="fa-solid fa-rotate-left"></i>
           <span>Reset Progress</span>
@@ -1120,6 +1124,37 @@
       <div class="flex items-center justify-center gap-3 pt-2">
         <button id="btn-cancel-ascend" class="px-4 py-2 bg-primal-700 hover:bg-primal-600 text-slate-200 text-xs font-semibold rounded-lg cursor-pointer">Cancel</button>
         <button id="btn-confirm-ascend" class="px-5 py-2 bg-gradient-to-r from-rose-700 to-amber-600 hover:brightness-110 text-white text-xs font-bold rounded-lg cursor-pointer">Confirm Ascension</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Dialog for Save Code export / import -->
+  <div id="save-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-primal-850 border border-amber-700/60 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <h3 class="font-cinzel text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-floppy-disk text-amber-400"></i> Save Code</h3>
+        <button id="btn-close-save" class="text-slate-400 hover:text-white cursor-pointer text-lg" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="space-y-2">
+        <div class="text-xs font-bold text-amber-300 uppercase tracking-wider">Export</div>
+        <p class="text-[11px] text-slate-400">Copy this code (or download it) to back up your game or move it to another browser or device.</p>
+        <textarea id="save-export-text" readonly class="w-full h-20 bg-primal-900 border border-primal-700 rounded-lg p-2 text-[10px] font-mono text-slate-300 break-all resize-none"></textarea>
+        <div class="flex flex-wrap gap-2">
+          <button id="btn-copy-save" class="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white text-xs font-semibold rounded-lg cursor-pointer"><i class="fa-solid fa-copy mr-1"></i>Copy code</button>
+          <button id="btn-download-save" class="px-3 py-1.5 bg-primal-700 hover:bg-primal-600 text-slate-200 text-xs font-semibold rounded-lg cursor-pointer"><i class="fa-solid fa-download mr-1"></i>Download file</button>
+        </div>
+      </div>
+
+      <div class="space-y-2 pt-3 border-t border-primal-700">
+        <div class="text-xs font-bold text-rose-300 uppercase tracking-wider">Import</div>
+        <p class="text-[11px] text-slate-400">Paste a save code (or open a save file). This <strong class="text-rose-300">replaces your current progress</strong> on this device, so export first if you want to keep it.</p>
+        <textarea id="save-import-text" placeholder="Paste a save code here" class="w-full h-20 bg-primal-900 border border-primal-700 rounded-lg p-2 text-[10px] font-mono text-slate-300 break-all resize-none"></textarea>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btn-import-save" class="px-3 py-1.5 bg-rose-700 hover:bg-rose-600 text-white text-xs font-semibold rounded-lg cursor-pointer"><i class="fa-solid fa-upload mr-1"></i>Load this save</button>
+          <label class="px-3 py-1.5 bg-primal-700 hover:bg-primal-600 text-slate-200 text-xs font-semibold rounded-lg cursor-pointer"><i class="fa-solid fa-file-import mr-1"></i>Open save file<input id="save-import-file" type="file" accept=".txt,text/plain" class="hidden"></label>
+          <span id="save-import-msg" class="text-[11px] font-mono"></span>
+        </div>
       </div>
     </div>
   </div>

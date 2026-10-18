@@ -2691,6 +2691,111 @@ document.querySelectorAll('[data-gen-mode]').forEach(btn => {
 });
 updateGenBuyModeButtons();
 
+/**
+ * ================= SAVE CODE: export / import =================
+ * Code = "BT1:" + base64 of the same JSON the game keeps in localStorage.
+ */
+const SAVE_CODE_PREFIX = 'BT1:';
+const SAVE_STORAGE_KEY = 'beast_tamer_savedata';
+let importArmedUntil = 0;
+
+function makeSaveCode() {
+  saveGameToStorage();
+  const raw = localStorage.getItem(SAVE_STORAGE_KEY) || '{}';
+  return SAVE_CODE_PREFIX + btoa(unescape(encodeURIComponent(raw)));
+}
+
+/** Returns the save object, or throws with a readable message */
+function readSaveCode(code) {
+  const text = (code || '').trim();
+  if (!text) throw new Error('Paste a save code first.');
+  let json;
+  if (text.startsWith('{')) json = text; // raw JSON also works
+  else {
+    const body = text.startsWith(SAVE_CODE_PREFIX) ? text.slice(SAVE_CODE_PREFIX.length) : text;
+    try { json = decodeURIComponent(escape(atob(body.replace(/\s+/g, '')))); }
+    catch (e) { throw new Error('That is not a valid save code.'); }
+  }
+  let data;
+  try { data = JSON.parse(json); } catch (e) { throw new Error('That save code is damaged.'); }
+  if (!data || typeof data !== 'object' || typeof data.meat !== 'number' || !data.generators) {
+    throw new Error('That code is not a Beast Tamer save.');
+  }
+  return data;
+}
+
+function setImportMsg(text, ok) {
+  const el = document.getElementById('save-import-msg');
+  if (el) { el.textContent = text; el.className = 'text-[11px] font-mono ' + (ok ? 'text-emerald-300' : 'text-rose-300'); }
+}
+
+function openSaveModal() {
+  const modal = document.getElementById('save-modal');
+  if (!modal) return;
+  document.getElementById('save-export-text').value = makeSaveCode();
+  setImportMsg('', true);
+  importArmedUntil = 0;
+  document.getElementById('btn-import-save').innerHTML = '<i class="fa-solid fa-upload mr-1"></i>Load this save';
+  modal.classList.remove('hidden');
+}
+
+(function initSaveCode() {
+  const modal = document.getElementById('save-modal');
+  if (!modal) return;
+  const openBtn = document.getElementById('btn-save-code');
+  if (openBtn) openBtn.addEventListener('click', openSaveModal);
+  document.getElementById('btn-close-save').addEventListener('click', () => modal.classList.add('hidden'));
+  modal.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden'); });
+
+  document.getElementById('btn-copy-save').addEventListener('click', () => {
+    const ta = document.getElementById('save-export-text');
+    ta.value = makeSaveCode();
+    const done = () => showToast('Save code copied!', 'success');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(ta.value).then(done, () => { ta.select(); document.execCommand('copy'); done(); });
+    } else { ta.select(); document.execCommand('copy'); done(); }
+  });
+
+  document.getElementById('btn-download-save').addEventListener('click', () => {
+    const code = makeSaveCode();
+    const blob = new Blob([code], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'beast-tamer-save-' + new Date().toISOString().slice(0, 10) + '.txt';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+
+  document.getElementById('save-import-file').addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => { document.getElementById('save-import-text').value = String(reader.result || ''); setImportMsg('File loaded. Click "Load this save".', true); };
+    reader.readAsText(f);
+    e.target.value = '';
+  });
+
+  const importBtn = document.getElementById('btn-import-save');
+  importBtn.addEventListener('click', () => {
+    let data;
+    try { data = readSaveCode(document.getElementById('save-import-text').value); }
+    catch (err) { setImportMsg(err.message, false); return; }
+    if (importArmedUntil < Date.now()) {
+      // Two-step confirm instead of a browser dialog
+      importArmedUntil = Date.now() + 5000;
+      importBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i>Click again to replace your progress';
+      setImportMsg('Valid save: ' + formatNumber(data.meat) + ' Meat, ' + (data.ascensionCount || 0) + ' Ascensions.', true);
+      setTimeout(() => { if (importArmedUntil <= Date.now()) importBtn.innerHTML = '<i class="fa-solid fa-upload mr-1"></i>Load this save'; }, 5100);
+      return;
+    }
+    // No offline Meat for the time the code sat in a clipboard
+    data.lastSavedAt = Date.now();
+    isResetting = true; // stop the page from saving over the import while it reloads
+    localStorage.setItem(SAVE_STORAGE_KEY, JSON.stringify(data));
+    window.location.reload();
+  });
+})();
+
 setInterval(saveGameToStorage, 10000);
 
 window.addEventListener('DOMContentLoaded', () => {
