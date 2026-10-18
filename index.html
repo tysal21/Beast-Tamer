@@ -173,6 +173,11 @@
             <span>Fishing Dock</span>
             <span id="tab-fish-badge" class="hidden text-[9px] bg-cyan-950 text-cyan-300 border border-cyan-700 px-1.5 py-0.2 rounded font-mono">0</span>
           </button>
+          <button id="tab-btn-totem" class="nav-tab-btn hidden px-3.5 py-2 rounded-lg border border-transparent text-slate-300 hover:text-amber-300 flex items-center gap-2 whitespace-nowrap cursor-pointer">
+            <i class="fa-solid fa-monument text-amber-400"></i>
+            <span>Primal Totem</span>
+            <span id="tab-totem-badge" class="text-[9px] bg-amber-950 text-amber-300 border border-amber-700 px-1.5 py-0.2 rounded font-mono">L1</span>
+          </button>
           <button id="tab-btn-ascend" class="nav-tab-btn disabled px-3.5 py-2 rounded-lg border border-transparent text-slate-400 flex items-center gap-2 whitespace-nowrap">
             <i class="fa-solid fa-skull-crossbones text-rose-500"></i>
             <span>Ascension Altar</span>
@@ -746,7 +751,7 @@
               <h3 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2">
                 <i class="fa-solid fa-dna text-purple-400"></i> Chimera Synthesizer (6 Apex Hybrids)
               </h3>
-              <p class="text-xs text-slate-400">Brew specialized breeding treats once both parent beasts reach Level 5. Hatched hybrids persist through Ascension, but stay dormant (no Beast Power) until both parents are tamed again.</p>
+              <p class="text-xs text-slate-400">Brew specialized breeding treats once both parent beasts reach Level 5. Hatched hybrids persist through Ascension, but stay dormant (no Beast Power and no bonuses) until both parents are tamed again.</p>
             </div>
             <span class="text-xs font-mono bg-primal-800 text-purple-300 px-3 py-1 rounded border border-primal-700 font-bold" id="forge-hatched-count">
               0 / 6 Hatched
@@ -778,6 +783,75 @@
 
         <div id="relic-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3.5">
           <!-- Dynamically populated relics -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= TAB: PRIMAL TOTEM (post-Wyrm) ================= -->
+    <div id="panel-totem" class="tab-panel hidden max-w-6xl mx-auto w-full space-y-6">
+
+      <!-- Totem Banner + HP -->
+      <div class="bg-gradient-to-br from-amber-950/50 via-primal-850 to-primal-900 border border-amber-700/50 rounded-2xl p-5 sm:p-6 shadow-xl">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/90 border border-amber-600/50 text-amber-300 text-xs font-mono font-bold">
+              <i class="fa-solid fa-monument"></i> <span id="totem-depth-name">Primordial Depths</span>
+            </div>
+            <h2 class="font-cinzel text-2xl sm:text-3xl font-bold text-white tracking-wide">Primal Totem &middot; Layer <span id="totem-layer">1</span></h2>
+            <p class="text-xs text-slate-400 max-w-xl">Carved by the first hunters and bound by Seals. Your Combat Power wears it down every second, even while you're away. Every layer you shatter grants a permanent bonus.</p>
+          </div>
+          <div class="flex flex-wrap gap-2 text-xs font-mono">
+            <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">Totem Shards: <span id="totem-shards" class="text-amber-300 font-bold">0</span></div>
+            <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">Seals broken: <span id="totem-seals" class="text-rose-300 font-bold">0</span></div>
+          </div>
+        </div>
+
+        <!-- Normal layer: HP bar + Strike -->
+        <div id="totem-hp-view" class="mt-5 space-y-3">
+          <div class="flex flex-wrap items-baseline justify-between gap-2 text-xs font-mono">
+            <span class="text-slate-300">HP <span id="totem-hp-text" class="text-white font-bold">0 / 0</span></span>
+            <span class="text-slate-400"><span id="totem-dps" class="text-amber-300 font-bold">0</span> dmg/sec &middot; <span id="totem-eta">--</span></span>
+          </div>
+          <div class="h-6 rounded-lg bg-primal-900/90 border border-amber-800/60 overflow-hidden relative">
+            <div id="totem-hp-bar" class="h-full bg-gradient-to-r from-amber-700 via-amber-500 to-orange-400 transition-[width] duration-200" style="width:100%"></div>
+            <div id="totem-hp-pct" class="absolute inset-0 flex items-center justify-center text-[11px] font-mono font-bold text-white drop-shadow">100%</div>
+          </div>
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <button id="btn-totem-strike" class="flex-1 py-3 px-4 rounded-xl font-cinzel font-bold text-sm text-white border border-amber-400/50 shadow-lg cursor-pointer transition-all active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-amber-700 via-orange-600 to-amber-700 hover:brightness-110">
+              STRIKE THE TOTEM (<span id="totem-strike-cost">10</span> Stamina &middot; <span id="totem-strike-dmg">0</span> dmg)
+            </button>
+            <div class="text-[11px] text-slate-400 sm:max-w-xs leading-snug">Forage clicks and every boss win (trophy fights too) also damage the Totem.</div>
+          </div>
+        </div>
+
+        <!-- Seal layer: guardian -->
+        <div id="totem-seal-view" class="hidden mt-5 p-4 rounded-xl border border-rose-700/60 bg-rose-950/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-rose-950/80 border border-rose-600/60 flex items-center justify-center text-rose-300 text-xl"><i class="fa-solid fa-lock"></i></div>
+            <div>
+              <div class="font-cinzel font-bold text-rose-200">Seal <span id="totem-seal-number">1</span> blocks the way</div>
+              <div class="text-xs text-slate-300">Guarded by the <strong id="totem-guardian-name" class="text-white">Primordial Viper-Hound</strong> &middot; Power <span id="totem-guardian-range" class="font-mono text-amber-300">300K - 1.5M</span></div>
+              <div class="text-[11px] text-slate-400 mt-0.5">Reward: <span id="totem-seal-reward" class="text-emerald-300"></span></div>
+            </div>
+          </div>
+          <button id="btn-totem-fight" class="px-4 py-2.5 bg-gradient-to-r from-rose-700 to-red-700 hover:brightness-110 text-white text-sm font-cinzel font-bold rounded-xl border border-rose-400/50 cursor-pointer">Challenge on the Hunt tab</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Permanent bonuses -->
+        <div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl space-y-3">
+          <h3 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2"><i class="fa-solid fa-mountain text-amber-400"></i> Totem Blessings</h3>
+          <p class="text-[11px] text-slate-400">Permanent, never reset by Ascension.</p>
+          <div id="totem-bonuses" class="grid grid-cols-2 gap-2"></div>
+          <div class="text-xs text-slate-300 border-t border-primal-700/60 pt-3">Next layer grants: <span id="totem-next-reward" class="text-emerald-300 font-semibold"></span></div>
+        </div>
+
+        <!-- Seal unlocks -->
+        <div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl space-y-3">
+          <h3 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2"><i class="fa-solid fa-key text-rose-400"></i> Secrets Behind the Seals</h3>
+          <p class="text-[11px] text-slate-400">Totem Shards will be spent in the Hunter's Legacy skill tree once it arrives.</p>
+          <div id="totem-unlocks" class="space-y-2"></div>
         </div>
       </div>
     </div>

@@ -158,7 +158,12 @@ const elements = {
   // Expansion I: Fishing Dock
   tabBtnFish: document.getElementById('tab-btn-fish'),
   tabFishBadge: document.getElementById('tab-fish-badge'),
-  panelFish: document.getElementById('panel-fish')
+  panelFish: document.getElementById('panel-fish'),
+
+  // Primal Totem
+  tabBtnTotem: document.getElementById('tab-btn-totem'),
+  tabTotemBadge: document.getElementById('tab-totem-badge'),
+  panelTotem: document.getElementById('panel-totem')
 };
 
 /**
@@ -182,6 +187,10 @@ function switchTab(tabId) {
     return;
   }
 
+  if (tabId === 'totem' && !isTotemUnlocked()) {
+    showToast('The Primal Totem rises after you tame the Chimera-Wyrm.', 'warning');
+    return;
+  }
   if (tabId === 'fish' && !isFishingUnlocked()) {
     showToast('The Fishing Dock is a Realm Expansion. Unlock it at the Ascension Altar!', 'warning');
     return;
@@ -195,6 +204,7 @@ function switchTab(tabId) {
     { id: 'forge', btn: elements.tabBtnForge, panel: elements.panelForge },
     { id: 'relics', btn: elements.tabBtnRelics, panel: elements.panelRelics },
     { id: 'fish', btn: elements.tabBtnFish, panel: elements.panelFish },
+    { id: 'totem', btn: elements.tabBtnTotem, panel: elements.panelTotem },
     { id: 'ascend', btn: elements.tabBtnAscend, panel: elements.panelAscend }
   ];
 
@@ -217,6 +227,9 @@ function switchTab(tabId) {
   }
   if (tabId === 'fish') {
     renderFishingDock();
+  }
+  if (tabId === 'totem') {
+    renderTotemStatic();
   }
 }
 
@@ -842,7 +855,7 @@ function renderFrame(meatRate) {
   // Keep the Menagerie in sync with Beast Mastery, nursery levels and hybrids waking up
   if (beastPower !== lastMenageriePower) renderMenagerie();
   elements.hudPowerSplit.textContent = '(Hunter: ' + formatNumber(hunterPower) + ' + Beasts: ' + formatNumber(beastPower) + ')' +
-    (fishPowerMult > 1.0005 ? ' ×' + fishPowerMult.toFixed(2) + ' Fishing' : '');
+    (fishPowerMult > 1.0005 ? ' ×' + fishPowerMult.toFixed(2) + ' Bonuses' : '');
 
   // Buffs bar display (Adrenaline + Fishing meals)
   const anyMealBuff = updateFishBuffBadges();
@@ -856,6 +869,9 @@ function renderFrame(meatRate) {
 
   // Expansion I: Fishing Dock live updates
   updateFishingLive();
+
+  // Primal Totem live updates
+  updateTotemLive();
 
   // Phase 3: Bloodstones HUD, Altar tab badge & live Altar stats
   updateAscensionLiveElements();
@@ -991,7 +1007,7 @@ function renderFrame(meatRate) {
   // Sparring Active Ring
   const sparCost = getSparringCost();
   const sparStaminaCost = getSparringStaminaCost();
-  const scorpiodrakeLvl = getHybridLevel('scorpiodrake');
+  const scorpiodrakeLvl = getActiveHybridLevel('scorpiodrake');
   const sparPct = gameState.sparringLevel * (scorpiodrakeLvl > 0 ? 5 : 2);
   elements.sparringLevel.textContent = gameState.sparringLevel;
   elements.sparringCostMeat.textContent = formatNumber(sparCost);
@@ -1004,19 +1020,23 @@ function renderFrame(meatRate) {
   elements.btnSpar.disabled = !canSpar;
 
   // Active Encounter Details
-  const activeBeast = BEAST_CATALOG[gameState.selectedBeastIndex] || BEAST_CATALOG[0];
-  const isAlreadyTamed = !!gameState.tamedBeasts[activeBeast.id];
+  const activeBeast = getSelectedFightTarget();
+  const isGuardianFight = !!activeBeast.isGuardian;
+  const isAlreadyTamed = !isGuardianFight && !!gameState.tamedBeasts[activeBeast.id];
   const bracket = getEffectiveBossBracket(activeBeast);
   const effMin = bracket.min;
   const effMax = bracket.max;
 
-  elements.encounterTierBadge.textContent = 'Tier ' + activeBeast.tier;
+  elements.encounterTierBadge.textContent = isGuardianFight ? 'Totem Seal ' + activeBeast.sealNumber : 'Tier ' + activeBeast.tier;
   elements.beastName.textContent = activeBeast.name;
   elements.beastDesc.textContent = activeBeast.desc;
   elements.beastPowerMin.textContent = formatNumber(effMin);
   elements.beastPowerMax.textContent = formatNumber(effMax);
 
-  if (isAlreadyTamed) {
+  if (isGuardianFight) {
+    elements.beastRewardPower.textContent = 'Breaks Seal ' + activeBeast.sealNumber;
+    elements.beastRewardPower.className = 'text-rose-300 font-mono';
+  } else if (isAlreadyTamed) {
     elements.beastRewardPower.textContent = '0 (Relic Hunt)';
     elements.beastRewardPower.className = 'text-amber-400 font-mono';
   } else {
@@ -1034,7 +1054,10 @@ function renderFrame(meatRate) {
     elements.beastPortraitImg.src = activeBeast.image;
   }
 
-  if (isAlreadyTamed) {
+  if (isGuardianFight) {
+    elements.beastStatusRibbon.textContent = 'TOTEM GUARDIAN';
+    elements.beastStatusRibbon.className = 'absolute bottom-0 inset-x-0 bg-rose-950/90 text-[10px] text-center font-mono py-0.5 text-rose-300 border-t border-rose-700/60 font-bold';
+  } else if (isAlreadyTamed) {
     elements.beastStatusRibbon.textContent = 'TAMED • TROPHY EXPEDITION';
     elements.beastStatusRibbon.className = 'absolute bottom-0 inset-x-0 bg-emerald-950/90 text-[10px] text-center font-mono py-0.5 text-emerald-300 border-t border-emerald-700/60 font-bold';
   } else {
@@ -1062,6 +1085,9 @@ function renderFrame(meatRate) {
   if (gameState.isBattling) {
     elements.btnFightLabel.textContent = 'BATTLING...';
     elements.btnFightIcon.className = 'fa-solid fa-spinner fa-spin text-lg';
+  } else if (isGuardianFight) {
+    elements.btnFightLabel.textContent = 'BREAK THE SEAL';
+    elements.btnFightIcon.className = 'fa-solid fa-lock-open text-lg text-rose-200';
   } else if (isAlreadyTamed) {
     elements.btnFightLabel.textContent = 'TROPHY EXPEDITION';
     elements.btnFightIcon.className = 'fa-solid fa-trophy text-lg text-amber-300';
@@ -1174,6 +1200,14 @@ function updateBeastSelectorOptions() {
       elements.selectBeastTier.appendChild(opt);
     }
   });
+  const guardian = (typeof getTotemGuardian === 'function') ? getTotemGuardian() : null;
+  if (guardian) {
+    const opt = document.createElement('option');
+    opt.value = TOTEM_GUARDIAN_SLOT;
+    opt.textContent = '🗿 Seal ' + guardian.sealNumber + ': ' + guardian.name + ' (Totem Guardian)';
+    if (gameState.selectedBeastIndex === TOTEM_GUARDIAN_SLOT) opt.selected = true;
+    elements.selectBeastTier.appendChild(opt);
+  }
 }
 
 /**
@@ -1441,7 +1475,7 @@ elements.btnForage.addEventListener('click', (e) => {
   if (hasRelic('serpents_fang')) critChance += 0.10;
   if (hasRelic('magma_stinger')) critChance += 0.15;
 
-  const venompincerLvl = getHybridLevel('venompincer');
+  const venompincerLvl = getActiveHybridLevel('venompincer');
   if (venompincerLvl > 0) {
     critChance += (0.02 * venompincerLvl);
   }
@@ -1454,6 +1488,7 @@ elements.btnForage.addEventListener('click', (e) => {
 
   addMeat(earned);
   sound.playClick();
+  if (isTotemUnlocked()) dealTotemDamage(getTotalCombatPower() * TOTEM_CONFIG.clickPct);
 
   if (gameState.incubator) {
     gameState.incubator.remaining = Math.max(0, gameState.incubator.remaining - 1);
@@ -1550,11 +1585,11 @@ elements.btnSpar.addEventListener('click', () => {
     gameState.isSparring = false;
     gameState.sparringLevel += 1;
 
-    const tuskpionLvl = getHybridLevel('tuskpion');
+    const tuskpionLvl = getActiveHybridLevel('tuskpion');
     const breakthroughChance = 0.20 + (tuskpionLvl * 0.10);
 
     const isBreakthrough = Math.random() < breakthroughChance;
-    const scorpiodrakeLvl = getHybridLevel('scorpiodrake');
+    const scorpiodrakeLvl = getActiveHybridLevel('scorpiodrake');
     const sparPct = gameState.sparringLevel * (scorpiodrakeLvl > 0 ? 5 : 2);
 
     if (isBreakthrough) {
@@ -2110,6 +2145,156 @@ if (fishEls.recipes) {
   });
 }
 
+/**
+ * ================= PRIMAL TOTEM UI =================
+ */
+const totemEls = {
+  depthName: document.getElementById('totem-depth-name'),
+  layer: document.getElementById('totem-layer'),
+  shards: document.getElementById('totem-shards'),
+  seals: document.getElementById('totem-seals'),
+  hpView: document.getElementById('totem-hp-view'),
+  hpText: document.getElementById('totem-hp-text'),
+  dps: document.getElementById('totem-dps'),
+  eta: document.getElementById('totem-eta'),
+  hpBar: document.getElementById('totem-hp-bar'),
+  hpPct: document.getElementById('totem-hp-pct'),
+  strikeBtn: document.getElementById('btn-totem-strike'),
+  strikeCost: document.getElementById('totem-strike-cost'),
+  strikeDmg: document.getElementById('totem-strike-dmg'),
+  sealView: document.getElementById('totem-seal-view'),
+  sealNumber: document.getElementById('totem-seal-number'),
+  guardianName: document.getElementById('totem-guardian-name'),
+  guardianRange: document.getElementById('totem-guardian-range'),
+  sealReward: document.getElementById('totem-seal-reward'),
+  fightBtn: document.getElementById('btn-totem-fight'),
+  bonuses: document.getElementById('totem-bonuses'),
+  nextReward: document.getElementById('totem-next-reward'),
+  unlocks: document.getElementById('totem-unlocks')
+};
+let totemStaticSignature = '';
+
+function formatTotemEta(sec) {
+  if (!isFinite(sec) || sec <= 0) return '--';
+  if (sec < 60) return Math.ceil(sec) + 's left';
+  if (sec < 3600) return Math.floor(sec / 60) + 'm ' + String(Math.floor(sec % 60)).padStart(2, '0') + 's left';
+  if (sec < 86400 * 3) return Math.floor(sec / 3600) + 'h ' + String(Math.floor((sec % 3600) / 60)).padStart(2, '0') + 'm left';
+  return Math.floor(sec / 86400) + 'd left (idle)';
+}
+
+/** Rebuild the parts that only change when a layer or Seal breaks */
+function renderTotemStatic() {
+  if (!totemEls.bonuses || !gameState.totem) return;
+  const t = gameState.totem;
+  const b = t.bonuses;
+  const rows = [
+    { icon: 'fa-drumstick-bite', label: 'Meat/sec', value: '+' + Math.round(b.meat * 100) + '%' },
+    { icon: 'fa-hand-fist', label: 'Combat Power', value: '+' + Math.round(b.power * 100) + '%' },
+    { icon: 'fa-bolt', label: 'Max Stamina', value: '+' + b.stamina },
+    { icon: 'fa-heart-pulse', label: 'Stamina Regen', value: '+' + Math.round(b.regen * 100) + '%' }
+  ];
+  totemEls.bonuses.innerHTML = rows.map(r =>
+    '<div class="p-2.5 rounded-lg bg-primal-800/90 border border-primal-700 flex items-center gap-2">' +
+      '<i class="fa-solid ' + r.icon + ' text-amber-400 w-4 text-center"></i>' +
+      '<div><div class="text-[10px] uppercase tracking-wider text-slate-400">' + r.label + '</div>' +
+      '<div class="text-sm font-mono font-bold text-emerald-300">' + r.value + '</div></div>' +
+    '</div>').join('');
+
+  // Next reward preview
+  if (isTotemSealLayer(t.layer)) {
+    totemEls.nextReward.textContent = 'Defeat the Seal guardian to continue';
+  } else {
+    totemEls.nextReward.textContent = getTotemLayerBonus(t.layer).label + ' and ' + formatNumber(TOTEM_CONFIG.shardsPerLayer * t.layer) + ' Totem Shards';
+  }
+
+  // Seal unlock list
+  totemEls.unlocks.innerHTML = TOTEM_UNLOCKS.map(u => {
+    const reached = t.sealsBroken >= u.seal;
+    return '<div class="p-3 rounded-lg border flex items-center gap-3 ' + (reached ? 'bg-amber-950/30 border-amber-600/50' : 'bg-primal-800/70 border-primal-700') + '">' +
+      '<div class="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center ' + (reached ? 'bg-amber-900/60 text-amber-300' : 'bg-primal-900 text-slate-500') + '"><i class="fa-solid ' + (reached ? u.icon : 'fa-lock') + '"></i></div>' +
+      '<div class="min-w-0"><div class="text-xs font-bold ' + (reached ? 'text-amber-200' : 'text-slate-300') + '">Seal ' + u.seal + ': ' + u.name + '</div>' +
+      '<div class="text-[11px] text-slate-400">' + u.desc + ' <span class="font-mono ' + (reached ? 'text-amber-300' : 'text-slate-500') + '">' + (reached ? 'Revealed, coming soon' : 'Coming soon') + '</span></div></div>' +
+    '</div>';
+  }).join('');
+
+  totemEls.shards.textContent = formatNumber(t.shards);
+  totemEls.seals.textContent = t.sealsBroken;
+  totemStaticSignature = getTotemStaticSignature();
+}
+
+function getTotemStaticSignature() {
+  const t = gameState.totem;
+  return t.layer + '|' + t.sealsBroken + '|' + t.shards;
+}
+
+/** Per-frame updates: tab visibility, HP bar, DPS, Strike button, Seal view */
+function updateTotemLive() {
+  const unlocked = isTotemUnlocked();
+  if (elements.tabBtnTotem) {
+    elements.tabBtnTotem.classList.toggle('hidden', !unlocked);
+    if (unlocked && elements.tabTotemBadge) {
+      const seal = isTotemSealLayer(gameState.totem.layer);
+      elements.tabTotemBadge.textContent = seal ? 'SEAL' : 'L' + gameState.totem.layer;
+      elements.tabTotemBadge.className = seal
+        ? 'text-[9px] bg-rose-950 text-rose-300 border border-rose-600 px-1.5 py-0.2 rounded font-mono font-bold animate-pulse'
+        : 'text-[9px] bg-amber-950 text-amber-300 border border-amber-700 px-1.5 py-0.2 rounded font-mono';
+    }
+  }
+  if (!unlocked || gameState.activeTab !== 'totem') return;
+
+  const t = gameState.totem;
+  if (getTotemStaticSignature() !== totemStaticSignature) renderTotemStatic();
+  totemEls.layer.textContent = t.layer;
+  totemEls.depthName.textContent = getTotemDepthName(t.layer);
+
+  const guardian = getTotemGuardian();
+  totemEls.hpView.classList.toggle('hidden', !!guardian);
+  totemEls.sealView.classList.toggle('hidden', !guardian);
+
+  if (guardian) {
+    totemEls.sealNumber.textContent = guardian.sealNumber;
+    totemEls.guardianName.textContent = guardian.name;
+    totemEls.guardianRange.textContent = formatNumber(guardian.minPower) + ' - ' + formatNumber(guardian.maxPower);
+    totemEls.sealReward.textContent = '+' + formatNumber(TOTEM_CONFIG.sealStones * guardian.sealNumber) + ' Bloodstones, +' +
+      formatNumber(TOTEM_CONFIG.sealShards * guardian.sealNumber) + ' Totem Shards, permanent +' + Math.round(TOTEM_CONFIG.sealPowerBonus * 100) + '% Combat Power';
+    return;
+  }
+
+  const maxHp = getTotemLayerHp(t.layer);
+  const hp = Math.max(0, t.hpLeft === null ? maxHp : t.hpLeft);
+  const pct = maxHp > 0 ? (hp / maxHp) * 100 : 0;
+  const dps = getTotemDps();
+  totemEls.hpText.textContent = formatNumber(Math.ceil(hp)) + ' / ' + formatNumber(maxHp);
+  totemEls.hpBar.style.width = pct.toFixed(2) + '%';
+  totemEls.hpPct.textContent = pct.toFixed(1) + '%';
+  totemEls.dps.textContent = formatNumber(dps);
+  totemEls.eta.textContent = formatTotemEta(dps > 0 ? hp / dps : Infinity);
+  totemEls.strikeCost.textContent = TOTEM_CONFIG.strikeStamina;
+  totemEls.strikeDmg.textContent = formatNumber(dps * TOTEM_CONFIG.strikeSec);
+  totemEls.strikeBtn.disabled = gameState.stamina < TOTEM_CONFIG.strikeStamina;
+}
+
+if (elements.tabBtnTotem) elements.tabBtnTotem.addEventListener('click', () => switchTab('totem'));
+
+if (totemEls.strikeBtn) {
+  totemEls.strikeBtn.addEventListener('click', () => {
+    if (strikeTotem()) {
+      sound.playTone(140, 'sawtooth', 0.18, 0.12);
+      renderTotemStatic();
+      saveGameToStorage();
+    }
+  });
+}
+
+if (totemEls.fightBtn) {
+  totemEls.fightBtn.addEventListener('click', () => {
+    if (!getTotemGuardian()) return;
+    gameState.selectedBeastIndex = TOTEM_GUARDIAN_SLOT;
+    updateBeastSelectorOptions();
+    switchTab('hunt');
+  });
+}
+
 // Background Tab Visibility & Unload Sync
 document.addEventListener('visibilitychange', () => {
   if (isResetting) return;
@@ -2144,6 +2329,7 @@ window.addEventListener('DOMContentLoaded', () => {
   renderMenagerie();
   renderAscensionAltar();
   renderFishingDock();
+  renderTotemStatic();
   switchTab(gameState.activeTab || 'camp');
 
   gameState.lastWallTime = Date.now();

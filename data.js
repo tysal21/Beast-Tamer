@@ -159,7 +159,7 @@ const RELIC_REGISTRY = {
     name: 'Dragon Scale',
     rarity: 'Common',
     dropRate: 0.20,
-    desc: '+100% global Meat production.',
+    desc: '+50% global Meat production.',
     icon: 'fa-gem'
   },
   eldritch_crown: {
@@ -168,7 +168,7 @@ const RELIC_REGISTRY = {
     name: 'Eldritch Crown',
     rarity: 'Legendary',
     dropRate: 0.02,
-    desc: 'Doubles Max Stamina. Cuts stamina regen interval in half. Boosts all other relics by +50%.',
+    desc: 'Doubles Max Stamina. Cuts stamina regen interval in half. Boosts all other relics by +25%.',
     icon: 'fa-crown'
   }
 };
@@ -275,7 +275,7 @@ const PARENT_DEFINITIONS = [
     name: 'Chimera-Wyrm',
     tier: 4,
     nurseryBaseCost: 600000000,
-    costScale: 1.45,
+    costScale: 1.75,
     passive: 'Apex Dominance (+10% Meat/sec/lvl)',
     icon: 'fa-dragon'
   }
@@ -619,4 +619,53 @@ const FISH_RECIPES = [
     needs: { rare: 1, common: 2 }, buffs: ['power'], durationSec: 900 },
   { id: 'leviathan_feast', name: 'Leviathan Feast', icon: 'fa-crown',
     needs: { legendary: 1 }, buffs: ['meat', 'regen', 'power'], durationSec: 1200 }
+];
+
+/**
+ * ================= PRIMAL TOTEM (post-Wyrm endless goal) =================
+ * Unlocks the first time you tame the Chimera-Wyrm and is never reset by Ascension.
+ * Normal layers have HP and fall to damage from your Combat Power.
+ * Every `sealEvery`-th layer is a Seal: no HP, beaten by winning a guardian fight on the Hunt tab.
+ */
+const TOTEM_CONFIG = {
+  layer1Hp: 15000000,       // HP of layer 1
+  hpGrowth: 1.8,            // each normal layer has this many times the HP of the previous one
+  sealEvery: 5,             // layers 5, 10, 15, ... are Seals
+
+  passivePct: 0.02,         // passive damage per second = 2% of Combat Power (offline too)
+  clickPct: 0.0025,         // each Forage click = 0.25% of Combat Power
+  strikeStamina: 10,        // Strike button stamina cost
+  strikeSec: 60,            // a Strike deals this many seconds of passive damage
+  bossWinSec: 300,          // any boss win slams the Totem for this many seconds of passive damage
+
+  shardsPerLayer: 10,       // normal layer reward: 10 x layer number Totem Shards
+
+  // Seal guardians: Seal k needs min = sealBaseMin x sealGrowth^(k-1), max = min x sealMaxMult
+  sealBaseMin: 300000,
+  sealGrowth: 2.5,
+  sealMaxMult: 5,
+  sealStamina: 25,
+  sealWoundSec: 300,
+  sealStones: 40,           // Seal reward: 40 x Seal number Bloodstones
+  sealShards: 100,          // Seal reward: 100 x Seal number Totem Shards
+  sealPowerBonus: 0.10      // Seal reward: +10% Combat Power, permanent
+};
+
+/** Permanent bonus for each normal layer, rotating in this order */
+const TOTEM_LAYER_BONUSES = [
+  { type: 'meat',    value: 0.05, label: '+5% Meat/sec',        icon: 'fa-drumstick-bite' },
+  { type: 'power',   value: 0.03, label: '+3% Combat Power',    icon: 'fa-hand-fist' },
+  { type: 'stamina', value: 2,    label: '+2 Max Stamina',      icon: 'fa-bolt' },
+  { type: 'regen',   value: 0.05, label: '+5% Stamina Regen',   icon: 'fa-heart-pulse' }
+];
+
+/** Guardian / depth titles, one per lap of four Seals. After the last: Eternal II, III, ... */
+const TOTEM_TITLES = ['Primordial', 'Ancient', 'Elder', 'Mythic', 'Eternal'];
+
+/** Features that future updates attach to Seals (shown as "coming soon" until built) */
+const TOTEM_UNLOCKS = [
+  { seal: 1, name: "Hunter's Legacy skill tree", desc: 'Spend Totem Shards on a permanent skill tree.', icon: 'fa-sitemap' },
+  { seal: 2, name: 'Trophy Weapons', desc: 'Forge weapons beyond the Glaive from boss parts.', icon: 'fa-hammer' },
+  { seal: 3, name: 'Packmaster automation', desc: 'Auto-buy generators, auto-tend the nest, auto trophy fights.', icon: 'fa-robot' },
+  { seal: 4, name: 'Primordial Relics', desc: 'Guardians drop a new tier of relics.', icon: 'fa-gem' }
 ];

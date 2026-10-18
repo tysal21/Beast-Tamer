@@ -80,6 +80,7 @@ const FORGE_EXCAVATE_COST = 20000000; // Meat to excavate Beast Forge
 const BEAST_MASTERY_PER_LEVEL = 0.1; // +Beast Power % per Beast Mastery level
 const ANATOMY_MAX_RANK = 25; // Weakpoint Anatomy max rank
 const ANATOMY_REDUCTION_PER_RANK = 0.012; // Boss bracket reduction per rank
+const HYBRID_ENHANCE_COST_SCALE = 2.2; // each hybrid level costs this many times the last
 const WIN_CHANCE_FLOOR = 0.01; // Lowest possible odds once you meet a boss's minimum power
 let isResetting = false;
 
@@ -168,6 +169,9 @@ const gameState = {
 
   // Expansion I: Primal Fishing Dock (persists through Ascension)
   fishing: defaultFishingState(),
+
+  // Primal Totem (post-Wyrm, never reset by Ascension)
+  totem: defaultTotemState(),
 
   lastWallTime: Date.now()
 };
@@ -368,6 +372,191 @@ function tickFishingLines(dt) {
 }
 
 /**
+ * ================= PRIMAL TOTEM =================
+ */
+const TOTEM_GUARDIAN_SLOT = 99; // selectedBeastIndex value that means "the current Seal guardian"
+
+function defaultTotemState() {
+  return {
+    unlocked: false,
+    layer: 1,
+    hpLeft: null,
+    shards: 0,
+    sealsBroken: 0,
+    bonuses: { meat: 0, power: 0, stamina: 0, regen: 0 },
+    totalDamage: 0
+  };
+}
+
+function isTotemUnlocked() {
+  return !!(gameState.totem && gameState.totem.unlocked);
+}
+
+/** Unlocks the Totem the first time the Wyrm is tamed (or for saves that already passed it). Returns true if it just unlocked. */
+function checkTotemUnlock() {
+  if (!gameState.totem) gameState.totem = defaultTotemState();
+  const t = gameState.totem;
+  if (t.unlocked) return false;
+  if (!gameState.tamedBeasts['chimera_wyrm'] && !(gameState.ascensionCount > 0)) return false;
+  t.unlocked = true;
+  if (t.hpLeft === null || t.hpLeft === undefined) t.hpLeft = getTotemLayerHp(t.layer);
+  return true;
+}
+
+function isTotemSealLayer(layer) {
+  return layer % TOTEM_CONFIG.sealEvery === 0;
+}
+
+/** Normal layers counted so far (Seals don't count): layer 6 is the 5th normal layer */
+function getTotemNormalIndex(layer) {
+  return layer - Math.floor(layer / TOTEM_CONFIG.sealEvery);
+}
+
+function getTotemLayerHp(layer) {
+  if (isTotemSealLayer(layer)) return 0;
+  return Math.floor(TOTEM_CONFIG.layer1Hp * Math.pow(TOTEM_CONFIG.hpGrowth, getTotemNormalIndex(layer) - 1));
+}
+
+function getTotemLayerBonus(layer) {
+  return TOTEM_LAYER_BONUSES[(getTotemNormalIndex(layer) - 1) % TOTEM_LAYER_BONUSES.length];
+}
+
+function toRomanNumeral(n) {
+  const map = [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+  let out = '';
+  for (const [v, s] of map) { while (n >= v) { out += s; n -= v; } }
+  return out;
+}
+
+/** Title for a Seal number: Primordial (1-4), Ancient (5-8), Elder, Mythic, Eternal, then Eternal II, III, ... */
+function getTotemTitle(sealNumber) {
+  const lap = Math.floor((sealNumber - 1) / 4);
+  if (lap < TOTEM_TITLES.length) return TOTEM_TITLES[lap];
+  return TOTEM_TITLES[TOTEM_TITLES.length - 1] + ' ' + toRomanNumeral(lap - TOTEM_TITLES.length + 2);
+}
+
+/** Depth name for any layer, e.g. "Elder Depths" */
+function getTotemDepthName(layer) {
+  return getTotemTitle(Math.ceil(layer / TOTEM_CONFIG.sealEvery)) + ' Depths';
+}
+
+/** The guardian of the current Seal, shaped like a BEAST_CATALOG entry so the normal fight code can use it */
+function getTotemGuardian() {
+  if (!isTotemUnlocked() || !isTotemSealLayer(gameState.totem.layer)) return null;
+  const k = gameState.totem.layer / TOTEM_CONFIG.sealEvery;
+  const base = BEAST_CATALOG[(k - 1) % BEAST_CATALOG.length];
+  const min = Math.floor(TOTEM_CONFIG.sealBaseMin * Math.pow(TOTEM_CONFIG.sealGrowth, k - 1));
+  return {
+    id: 'totem_guardian_' + k,
+    isGuardian: true,
+    sealNumber: k,
+    baseId: base.id,
+    tier: base.tier,
+    name: getTotemTitle(k) + ' ' + base.name,
+    image: base.image,
+    fallbackImage: base.fallbackImage,
+    minPower: min,
+    maxPower: min * TOTEM_CONFIG.sealMaxMult,
+    rewardPower: 0,
+    accentColor: base.accentColor,
+    desc: 'Guardian of Seal ' + k + ' on the Primal Totem. Defeat it to break the Seal.',
+    relics: [],
+    staminaCost: TOTEM_CONFIG.sealStamina,
+    woundedSec: TOTEM_CONFIG.sealWoundSec
+  };
+}
+
+/** What the Hunt tab is currently set to fight: a boss, or the Seal guardian */
+function getSelectedFightTarget() {
+  if (gameState.selectedBeastIndex === TOTEM_GUARDIAN_SLOT) {
+    const guardian = getTotemGuardian();
+    if (guardian) return guardian;
+  }
+  return BEAST_CATALOG[gameState.selectedBeastIndex] || BEAST_CATALOG[0];
+}
+
+function getTotemBonus(type) {
+  return (gameState.totem && gameState.totem.bonuses && gameState.totem.bonuses[type]) || 0;
+}
+
+/** Passive Totem damage per second */
+function getTotemDps() {
+  if (!isTotemUnlocked()) return 0;
+  return getTotalCombatPower() * TOTEM_CONFIG.passivePct;
+}
+
+function breakTotemLayer(quiet) {
+  const t = gameState.totem;
+  const layer = t.layer;
+  const bonus = getTotemLayerBonus(layer);
+  const shards = TOTEM_CONFIG.shardsPerLayer * layer;
+  t.bonuses[bonus.type] = (t.bonuses[bonus.type] || 0) + bonus.value;
+  t.shards += shards;
+  t.layer += 1;
+  t.hpLeft = getTotemLayerHp(t.layer);
+  if (!quiet) {
+    sound.playWin();
+    showToast('Totem Layer ' + layer + ' shattered! ' + bonus.label, 'success', true);
+  }
+  logCombatMessage('🗿 <strong>TOTEM LAYER ' + layer + ' SHATTERED!</strong> Permanent ' + bonus.label + ' and +' + formatNumber(shards) + ' Totem Shards.', 'unlock');
+  if (isTotemSealLayer(t.layer)) {
+    const g = getTotemGuardian();
+    logCombatMessage('🔒 <strong>SEAL ' + g.sealNumber + ' REACHED.</strong> The <strong>' + g.name + '</strong> guards it. Challenge it on the Hunt tab.', 'relic');
+  }
+}
+
+/** Apply damage to the Totem; overflow carries into the next layer but stops at a Seal. Returns layers broken. */
+function dealTotemDamage(amount, quiet = false) {
+  if (!isTotemUnlocked() || !(amount > 0)) return 0;
+  const t = gameState.totem;
+  let broken = 0;
+  while (amount > 0 && !isTotemSealLayer(t.layer) && broken < 50) {
+    if (t.hpLeft === null || t.hpLeft === undefined) t.hpLeft = getTotemLayerHp(t.layer);
+    const dealt = Math.min(amount, t.hpLeft);
+    t.hpLeft -= dealt;
+    t.totalDamage += dealt;
+    amount -= dealt;
+    if (t.hpLeft <= 0) {
+      breakTotemLayer(quiet);
+      broken++;
+    }
+  }
+  return broken;
+}
+
+/** Strike button: spend stamina for a burst of damage */
+function strikeTotem() {
+  if (!isTotemUnlocked() || isTotemSealLayer(gameState.totem.layer)) return false;
+  if (gameState.stamina < TOTEM_CONFIG.strikeStamina) return false;
+  gameState.stamina -= TOTEM_CONFIG.strikeStamina;
+  dealTotemDamage(getTotemDps() * TOTEM_CONFIG.strikeSec);
+  return true;
+}
+
+/** Called after a winning fight against the current Seal guardian */
+function breakTotemSeal(guardian) {
+  const t = gameState.totem;
+  const k = guardian.sealNumber;
+  const stones = TOTEM_CONFIG.sealStones * k;
+  const shards = TOTEM_CONFIG.sealShards * k;
+  t.sealsBroken += 1;
+  t.shards += shards;
+  t.bonuses.power += TOTEM_CONFIG.sealPowerBonus;
+  gameState.bloodstones += stones;
+  t.layer += 1;
+  t.hpLeft = getTotemLayerHp(t.layer);
+  if (gameState.selectedBeastIndex === TOTEM_GUARDIAN_SLOT) {
+    gameState.selectedBeastIndex = Math.max(0, Math.min(BEAST_CATALOG.length, gameState.highestTierUnlocked) - 1);
+  }
+  logCombatMessage('⛓️ <strong>SEAL ' + k + ' BROKEN!</strong> The ' + guardian.name + ' falls. +' + formatNumber(stones) + ' Bloodstones, +' + formatNumber(shards) + ' Totem Shards, permanent +' + Math.round(TOTEM_CONFIG.sealPowerBonus * 100) + '% Combat Power.', 'relic');
+  showToast('SEAL ' + k + ' BROKEN! +' + formatNumber(stones) + ' Bloodstones', 'success', true);
+  const unlock = TOTEM_UNLOCKS.find(u => u.seal === k);
+  if (unlock) {
+    logCombatMessage('🧭 Seal ' + k + ' reveals: <strong>' + unlock.name + '</strong> (coming in a future update).', 'unlock');
+  }
+}
+
+/**
  * Ascension & Perk Helpers
  */
 function getAscensionPerkLevel(perkId) {
@@ -390,9 +579,10 @@ function canAscendNow() {
 
 function calculatePendingBloodstones() {
   if (!gameState.tamedBeasts['chimera_wyrm']) return 0;
-  const meatFactor = Math.pow(Math.max(1, gameState.runMeatEarned / 25000000), 0.25);
+  // Log curves: a normal run pays about the same as before, but very long runs can't explode the payout
+  const meatFactor = Math.pow(1 + Math.log10(Math.max(1, gameState.runMeatEarned / 25000000)), 1.0);
   // Square-root curve so late-run power stacking can't explode the payout
-  const powerFactor = Math.sqrt(1 + (getTotalCombatPower() / 100000));
+  const powerFactor = 1 + 1.6 * Math.log10(1 + (getTotalCombatPower() / 100000));
   const soulLvl = getAscensionPerkLevel('primordial_soul');
   const soulMult = 1 + (soulLvl * 0.20);
   return Math.max(10, Math.floor(10 * meatFactor * powerFactor * soulMult));
@@ -501,7 +691,7 @@ function getRelicEffectMultiplier(id) {
   if (!hasRelic(id)) return 0;
   let mult = 1.0;
   if (id !== 'eldritch_crown' && hasRelic('eldritch_crown')) {
-    mult *= 1.5;
+    mult *= 1.25;
   }
   const resonanceLvl = getAscensionPerkLevel('trophy_resonance');
   if (resonanceLvl > 0) {
@@ -517,6 +707,7 @@ function getMaxStamina() {
     maxCap *= 2;
   }
   maxCap += getFishCodexBonus('maxStamina');
+  maxCap += getTotemBonus('stamina');
   return maxCap;
 }
 
@@ -550,11 +741,11 @@ function getHybridLevel(hybridId) {
 
 function getHybridLevelCost(hybrid) {
   const lvl = getHybridLevel(hybrid.id);
-  return Math.floor(hybrid.treatCost * Math.pow(1.6, lvl));
+  return Math.floor(hybrid.treatCost * Math.pow(HYBRID_ENHANCE_COST_SCALE, lvl));
 }
 
 function getSparringStaminaCost() {
-  const tuskpionLvl = getHybridLevel('tuskpion');
+  const tuskpionLvl = getActiveHybridLevel('tuskpion');
   return tuskpionLvl > 0 ? 3 : 4;
 }
 
@@ -583,7 +774,7 @@ function getStaminaRegenInterval(withAdrenalineOverride = null) {
     interval /= 1.20;
   }
 
-  const viperhawkLvl = getHybridLevel('viperhawk');
+  const viperhawkLvl = getActiveHybridLevel('viperhawk');
   if (viperhawkLvl > 0) {
     interval /= (1 + (viperhawkLvl * 0.05));
   }
@@ -591,6 +782,7 @@ function getStaminaRegenInterval(withAdrenalineOverride = null) {
   // Fishing: Codex regen bonus and Kelp Vigor meal
   interval /= (1 + getFishCodexBonus('regen'));
   interval /= getFishBuffMult('regen');
+  interval /= (1 + getTotemBonus('regen'));
 
   return Math.max(1.0, interval);
 }
@@ -600,11 +792,11 @@ function getStaminaRegenRate(withAdrenalineOverride = null) {
   return 1 / interval;
 }
 
-function getBossStaminaCost(beast = BEAST_CATALOG[gameState.selectedBeastIndex]) {
+function getBossStaminaCost(beast = getSelectedFightTarget()) {
   return (beast && beast.staminaCost) || 10;
 }
 
-function getWoundedDuration(beast = BEAST_CATALOG[gameState.selectedBeastIndex]) {
+function getWoundedDuration(beast = getSelectedFightTarget()) {
   let baseDur = (beast && beast.woundedSec) || gameState.cooldownDurationBase;
   if (gameState.tamedBeasts['grizzly_scorpion']) {
     const gLvl = getParentLevel('grizzly_scorpion');
@@ -680,7 +872,7 @@ function getHunterPower() {
   const equippedWeapon = getEquippedWeapon();
   const weaponPower = equippedWeapon ? (equippedWeapon.combatPower || 0) : 0;
   const rawPower = gameState.baseHunterPower + vigorBonus + weaponPower + (gameState.bruteConditioningLevel * getBrutePowerPerLevel());
-  const scorpiodrakeLvl = getHybridLevel('scorpiodrake');
+  const scorpiodrakeLvl = getActiveHybridLevel('scorpiodrake');
   const perLevelMult = scorpiodrakeLvl > 0 ? 0.05 : 0.02;
   const sparringMultiplier = 1 + (gameState.sparringLevel * perLevelMult);
   return Math.floor(rawPower * sparringMultiplier);
@@ -695,6 +887,13 @@ function getHybridRawPower(hybrid) {
   const hLvl = getHybridLevel(hybrid.id);
   if (hLvl <= 0 || !isHybridAwake(hybrid)) return 0;
   return Math.floor(hybrid.basePower * (1 + ((hLvl - 1) * 0.20)));
+}
+
+/** Level that a hybrid's passive bonuses use: 0 while it is dormant (both parents must be tamed this run) */
+function getActiveHybridLevel(hybridId) {
+  const hybrid = HYBRID_CATALOG.find(h => h.id === hybridId);
+  if (!hybrid || !isHybridAwake(hybrid)) return 0;
+  return getHybridLevel(hybridId);
 }
 
 function getBeastMasteryMultiplier() {
@@ -719,7 +918,7 @@ function getTotalBeastPower() {
 function getTotalCombatPower() {
   const base = getHunterPower() + getTotalBeastPower();
   // Fishing: Codex power bonus and Abyssal Fervor meal
-  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power'));
+  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')));
 }
 
 function getBaseMeatRate() {
@@ -738,7 +937,7 @@ function getMeatRate(withAdrenalineOverride = null) {
     rate *= (1 + 0.15 * getRelicEffectMultiplier('venom_vial'));
   }
   if (hasRelic('dragon_scale')) {
-    rate *= (1 + 1.0 * getRelicEffectMultiplier('dragon_scale'));
+    rate *= (1 + 0.5 * getRelicEffectMultiplier('dragon_scale'));
   }
 
   const hasAdrenaline = withAdrenalineOverride !== null
@@ -752,11 +951,11 @@ function getMeatRate(withAdrenalineOverride = null) {
     const cLvl = getParentLevel('chimera_wyrm');
     rate *= (1 + (cLvl * 0.10));
   }
-  const gryphoLvl = getHybridLevel('gryphowyrm');
+  const gryphoLvl = getActiveHybridLevel('gryphowyrm');
   if (gryphoLvl > 0) {
     rate *= (1 + (gryphoLvl * 0.15));
   }
-  const scorpioLvl = getHybridLevel('scorpiodrake');
+  const scorpioLvl = getActiveHybridLevel('scorpiodrake');
   if (scorpioLvl > 0) {
     rate *= (1 + (scorpioLvl * 0.25));
   }
@@ -770,6 +969,7 @@ function getMeatRate(withAdrenalineOverride = null) {
   // Fishing: Codex bonuses and Smoked Feast meal
   rate *= (1 + getFishCodexBonus('meat'));
   rate *= getFishBuffMult('meat');
+  rate *= (1 + getTotemBonus('meat'));
 
   return rate;
 }
@@ -807,14 +1007,14 @@ function getClickYield() {
     totalYield = Math.floor(totalYield * (1 + (vLvl * 0.10)));
   }
 
-  const viperhawkLvl = getHybridLevel('viperhawk');
+  const viperhawkLvl = getActiveHybridLevel('viperhawk');
   if (viperhawkLvl > 0) {
     totalYield = Math.floor(totalYield * (1 + (viperhawkLvl * 0.15)));
   }
 
   totalYield += Math.floor(passiveRate * percentBonus);
 
-  const viperwyrmLvl = getHybridLevel('viperwyrm');
+  const viperwyrmLvl = getActiveHybridLevel('viperwyrm');
   if (viperwyrmLvl > 0) {
     const bankedBonus = Math.floor(gameState.meat * (0.01 * viperwyrmLvl));
     const maxBankBonus = totalYield * (2 * viperwyrmLvl);
@@ -938,6 +1138,7 @@ function advanceSimulation(rawDt, isBulkCatchup = false) {
   const startStamina = gameState.stamina;
   let hatchedDuringCatchup = false;
   let fishCaught = 0;
+  let totemLayersBroken = 0;
 
   // Split the step wherever a meal buff runs out, so offline catch-up only applies each buff while it lasted
   let remaining = dt;
@@ -947,13 +1148,14 @@ function advanceSimulation(rawDt, isBulkCatchup = false) {
     if (advanceSimulationCore(step, isBulkCatchup)) hatchedDuringCatchup = true;
     tickFishBuffs(step);
     fishCaught += tickFishingLines(step);
+    totemLayersBroken += dealTotemDamage(getTotemDps() * step, isBulkCatchup);
     remaining -= step;
   }
 
   if (isBulkCatchup && dt >= 15) {
     const meatEarned = Math.floor(gameState.meat - startMeat);
     const staminaEarned = Math.floor(gameState.stamina - startStamina);
-    if (meatEarned > 0 || staminaEarned > 0 || hatchedDuringCatchup || fishCaught > 0) {
+    if (meatEarned > 0 || staminaEarned > 0 || hatchedDuringCatchup || fishCaught > 0 || totemLayersBroken > 0) {
       const timeLabel = dt >= 3600
         ? `${(dt / 3600).toFixed(1)}h`
         : dt >= 60
@@ -961,7 +1163,7 @@ function advanceSimulation(rawDt, isBulkCatchup = false) {
         : `${Math.floor(dt)}s`;
 
       logCombatMessage(
-        `⏳ <strong>Camp Report (${timeLabel} away):</strong> Harvested +${formatNumber(meatEarned)} Meat${staminaEarned > 0 ? ` & recovered +${staminaEarned} Stamina` : ''}${fishCaught > 0 ? ` & your lines caught ${fishCaught} fish` : ''}.`,
+        `⏳ <strong>Camp Report (${timeLabel} away):</strong> Harvested +${formatNumber(meatEarned)} Meat${staminaEarned > 0 ? ` & recovered +${staminaEarned} Stamina` : ''}${fishCaught > 0 ? ` & your lines caught ${fishCaught} fish` : ''}${totemLayersBroken > 0 ? ` & shattered ${totemLayersBroken} Totem layer${totemLayersBroken === 1 ? '' : 's'}` : ''}.`,
         'default'
       );
       if (dt >= 60 && meatEarned > 0) {
@@ -1022,7 +1224,7 @@ function rollRelicDrops(beast) {
 function challengeCurrentBeast() {
   if (gameState.inCooldown || gameState.isBattling) return;
 
-  const beast = BEAST_CATALOG[gameState.selectedBeastIndex];
+  const beast = getSelectedFightTarget();
   const staminaCost = getBossStaminaCost(beast);
   if (gameState.stamina < staminaCost) {
     showToast(`Not enough stamina! Requires ${staminaCost} Stamina.`, 'warning');
@@ -1053,11 +1255,14 @@ function challengeCurrentBeast() {
         gameState.stamina = Math.min(getMaxStamina(), gameState.stamina + staminaCost);
         const windfall = Math.floor(getMeatRate() * 600);
         addMeat(windfall);
-        logCombatMessage(`🔥 <strong>Underdog's Fury!</strong> Magma Stinger refunded 10 Stamina & awarded a 10m meat windfall (+${formatNumber(windfall)} Meat)!`, 'relic');
+        logCombatMessage(`🔥 <strong>Underdog's Fury!</strong> Magma Stinger refunded ${staminaCost} Stamina & awarded a 10m meat windfall (+${formatNumber(windfall)} Meat)!`, 'relic');
         showToast(`Underdog's Fury Triggered! Full Stamina refund & +${formatNumber(windfall)} Meat!`, 'success', true);
       }
 
-      if (!isAlreadyTamed) {
+      if (beast.isGuardian) {
+        breakTotemSeal(beast);
+        updateBeastSelectorOptions();
+      } else if (!isAlreadyTamed) {
         gameState.tamedBeasts[beast.id] = true;
 
         gameState.stamina = getMaxStamina();
@@ -1074,6 +1279,10 @@ function challengeCurrentBeast() {
         if (beast.id === 'chimera_wyrm') {
           logCombatMessage(`🔥 <strong>THE ASCENSION ALTAR HAS AWAKENED!</strong> You may now Ascend for Primal Bloodstones!`, 'relic');
           showToast(`Ascension Altar Unlocked!`, 'success', true);
+          if (checkTotemUnlock()) {
+            logCombatMessage(`🗿 <strong>THE GROUND SPLITS!</strong> The <strong>Primal Totem</strong> rises beside the Altar. Your Combat Power now wears it down, even while you're away.`, 'relic');
+            showToast(`The Primal Totem has risen!`, 'success', true);
+          }
         }
 
         const nextTier = beast.tier + 1;
@@ -1105,6 +1314,10 @@ function challengeCurrentBeast() {
         'loss'
       );
       showToast(`Defeated! Hunter wounded (${Math.round(gameState.cooldownRemaining)}s recovery).`, 'danger');
+    }
+
+    if (roll <= winChance && isTotemUnlocked()) {
+      dealTotemDamage(getTotemDps() * TOTEM_CONFIG.bossWinSec);
     }
 
     saveGameToStorage();
@@ -1148,6 +1361,7 @@ function saveGameToStorage() {
       ascensionPerks: gameState.ascensionPerks,
       unlockedExpansions: gameState.unlockedExpansions,
       fishing: gameState.fishing,
+      totem: gameState.totem,
       lastSavedAt: Date.now()
     };
     localStorage.setItem('beast_tamer_savedata', JSON.stringify(data));
@@ -1219,6 +1433,12 @@ function loadGameFromStorage() {
         gameState.fishing.basket = data.fishing.basket || {};
         gameState.fishing.codex = data.fishing.codex || {};
       }
+      if (data.totem && typeof data.totem === 'object') {
+        gameState.totem = Object.assign(defaultTotemState(), data.totem);
+        gameState.totem.bonuses = Object.assign(defaultTotemState().bonuses, data.totem.bonuses || {});
+      }
+      // Saves that already tamed the Wyrm or Ascended get the Totem right away
+      checkTotemUnlock();
 
       if (typeof data.lastSavedAt === 'number') savedTimestamp = data.lastSavedAt;
     }
