@@ -1302,7 +1302,8 @@ function renderFrame(meatRate) {
   }
 
   if (!meetsMinPower) {
-    elements.btnChancePill.textContent = canUnderdog ? 'Underdog odds: ' + winChancePct + '%' : 'Power too low (0%)';
+    const titanUnder = canUnderdog && typeof isTitanUnderdog === 'function' && isTitanUnderdog(activeBeast);
+    elements.btnChancePill.textContent = canUnderdog ? (titanUnder ? 'Titan underdog: ' + winChancePct + '% · 4x wounds' : 'Underdog odds: ' + winChancePct + '%') : 'Power too low (0%)';
     elements.btnChancePill.className = canUnderdog ? 'text-orange-400 font-bold' : 'text-red-400 font-bold';
   } else {
     elements.btnChancePill.textContent = 'Odds: ' + winChancePct + '%';
@@ -2650,7 +2651,7 @@ function renderLegacyTree() {
         const on = ready && isAutomationOn(p.id);
         const right = ready
           ? '<button data-automation="' + p.id + '" class="shrink-0 px-3 py-1 rounded-full text-[11px] font-mono font-bold border cursor-pointer ' + (on ? 'bg-emerald-700 text-white border-emerald-400' : 'bg-primal-900 text-slate-300 border-primal-600') + '">' + (on ? 'ON' : 'OFF') + '</button>'
-          : '<span class="shrink-0 text-[10px] font-mono text-slate-500"><i class="fa-solid fa-lock mr-1"></i>' + (p.unlock === 'seal3' ? 'Seal 3' : 'World 2') + '</span>';
+          : '<span class="shrink-0 text-[10px] font-mono text-slate-500"><i class="fa-solid fa-lock mr-1"></i>' + (p.unlock === 'seal3' ? 'Seal 3' : 'Region 2') + '</span>';
         return '<div class="p-3 rounded-xl border ' + (ready ? 'border-sky-700/60 bg-sky-950/20' : 'border-dashed border-slate-700 bg-primal-900/40') + ' flex items-start gap-2.5">' +
           '<div class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center bg-primal-900 ' + (ready ? 'text-sky-300' : 'text-slate-600') + '"><i class="fa-solid ' + p.icon + '"></i></div>' +
           '<div class="min-w-0 flex-1"><div class="text-sm font-bold ' + (ready ? 'text-slate-100' : 'text-slate-500') + '">' + p.name + '</div><div class="text-[11px] ' + (ready ? 'text-slate-400' : 'text-slate-500') + '">' + p.desc + '</div></div>' + right +
@@ -3227,7 +3228,7 @@ function fightPresenterEnd(s) {
   // Banner + subtitle
   let banner, color, sub;
   if (!win) { banner = 'DEFEATED'; color = 'text-red-500'; sub = 'The ' + beast.name + ' drove you off. Wounded for ' + Math.round(s.after.wound) + 's.'; }
-  else if (titanWin) { banner = 'TITAN SLAIN!'; color = 'text-amber-300'; sub = 'The ' + beast.name + ' falls. The Rift to the next world is open: see the World tab.'; }
+  else if (titanWin) { banner = 'TITAN SLAIN!'; color = 'text-amber-300'; sub = 'The ' + beast.name + ' falls and its thread is severed. The Rift to the next region is open: see the Regions tab.'; }
   else if (sealBroken) { banner = 'SEAL ' + beast.sealNumber + ' BROKEN!'; color = 'text-rose-300'; sub = 'The ' + beast.name + ' falls and the Totem opens deeper.'; }
   else if (apexWin) { banner = 'APEX TAMED!'; color = 'text-fuchsia-300'; sub = beast.name + ' joins your pack.'; }
   else if (firstTame) { banner = 'TAMED!'; color = 'text-emerald-300'; sub = beast.name + ' bonds with you.'; }
@@ -3423,7 +3424,7 @@ function updateAutoBuyBadge() {
  */
 function getFightTierLabel(b) {
   if (b.isGuardian) return 'Totem Seal ' + b.sealNumber;
-  if (b.isTitan) return 'World Titan';
+  if (b.isTitan) return 'Region Titan';
   return (b.isApex ? 'Apex Tier ' : 'Tier ') + b.tier;
 }
 
@@ -3476,7 +3477,7 @@ function renderWorldTab() {
 
   let migrateHtml;
   if (!next) {
-    migrateHtml = '<div class="text-slate-400 text-sm">You have reached the farthest known world.</div>';
+    migrateHtml = '<div class="text-slate-400 text-sm">You have reached the farthest known region.</div>';
   } else if (next.comingSoon) {
     migrateHtml = '<div class="text-slate-400 text-sm"><i class="fa-solid fa-hourglass-half mr-1"></i>The ' + next.name + ' is coming in a future update. Keep climbing: everything here still counts.</div>';
   } else {
@@ -3487,9 +3488,9 @@ function renderWorldTab() {
         '<div class="p-3 rounded-lg border border-rose-800/60 bg-rose-950/20"><div class="font-bold text-rose-300 mb-1">Resets</div><div class="text-slate-300 leading-relaxed">Everything an Ascension resets, plus Bloodstones, Bloodstone Perks, Ascension count, Hybrids, the Nest egg, and your deepest Apex.</div></div>' +
         '<div class="p-3 rounded-lg border border-emerald-800/60 bg-emerald-950/20"><div class="font-bold text-emerald-300 mb-1">Keeps</div><div class="text-slate-300 leading-relaxed">Relics, Beast Forge, Primal Totem, Hunter\'s Legacy (with a free respec), Trophy Weapon, Fishing and the Bestiary.</div></div>' +
       '</div>' +
-      '<div class="text-xs text-slate-300 mt-3">New World Bonus: <strong class="text-amber-300">Meat/s x' + formatNumber(nextMeat) + '</strong> and <strong class="text-amber-300">Combat Power x' + nextPow.toFixed(1) + '</strong>, forever. Unlocks <strong class="text-sky-300">Auto-Trophy</strong> and <strong class="text-sky-300">Auto-Strike</strong>.</div>' +
+      '<div class="text-xs text-slate-300 mt-3">New Region Bonus: <strong class="text-amber-300">Meat/s x' + formatNumber(nextMeat) + '</strong> and <strong class="text-amber-300">Combat Power x' + nextPow.toFixed(1) + '</strong>, forever. Unlocks <strong class="text-sky-300">Auto-Trophy</strong> and <strong class="text-sky-300">Auto-Strike</strong>.</div>' +
       '<button data-world-action="migrate" ' + (canMigrate() ? '' : 'disabled') + ' class="mt-3 w-full py-3 rounded-xl font-cinzel font-bold text-sm border cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ' + (armed ? 'bg-rose-700 border-rose-400 text-white' : 'bg-gradient-to-r from-sky-800 via-indigo-700 to-sky-800 border-sky-400/50 text-white') + '">' +
-        (armed ? 'CLICK AGAIN TO MIGRATE TO THE ' + next.name.toUpperCase() : (gameState.riftOpen ? 'STEP THROUGH THE RIFT' : 'Slay the Titan to open the Rift')) + '</button>';
+        (armed ? 'CLICK AGAIN TO CROSS INTO THE ' + next.name.toUpperCase() : (gameState.riftOpen ? 'CROSS THE RIFT' : 'Slay the Titan to open the Rift')) + '</button>';
   }
 
   const mapHtml = WORLDS.map((x, i) => {
@@ -3504,7 +3505,7 @@ function renderWorldTab() {
       ? '<div class="w-14 h-14 rounded-xl bg-primal-900 border border-primal-700 flex items-center justify-center text-slate-600 text-2xl"><i class="fa-solid ' + x.icon + '"></i></div>'
       : '<img src="' + img.image + '" class="w-14 h-14 rounded-xl object-cover border border-primal-600" style="filter:' + (x.filter || 'none') + '" alt="">';
     return '<div class="flex items-center gap-3 p-3 rounded-xl border ' + (st === 'current' ? 'border-amber-500/60 bg-amber-950/20' : 'border-primal-700 bg-primal-900/50') + '">' + art +
-      '<div class="min-w-0 flex-1"><div class="flex items-center justify-between gap-2"><div class="font-cinzel font-bold text-slate-100"><i class="fa-solid ' + x.icon + ' mr-1 text-slate-400"></i>World ' + (i + 1) + ': ' + x.name + '</div><div class="text-[11px] font-mono">' + badge + '</div></div>' +
+      '<div class="min-w-0 flex-1"><div class="flex items-center justify-between gap-2"><div class="font-cinzel font-bold text-slate-100"><i class="fa-solid ' + x.icon + ' mr-1 text-slate-400"></i>Region ' + (i + 1) + ': ' + x.name + '</div><div class="text-[11px] font-mono">' + badge + '</div></div>' +
       '<div class="text-[11px] text-slate-400">' + x.blurb + '</div>' + (recLine ? '<div class="text-[10px] font-mono text-slate-500 mt-0.5">' + recLine + '</div>' : '') + '</div></div>';
   }).join('');
 
@@ -3517,16 +3518,16 @@ function renderWorldTab() {
 
   root.innerHTML =
     '<div class="bg-gradient-to-br from-sky-950/40 via-primal-850 to-primal-900 border border-sky-700/50 rounded-2xl p-5 sm:p-6 shadow-xl">' +
-      '<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-950/90 border border-sky-600/50 text-sky-300 text-xs font-mono font-bold"><i class="fa-solid ' + w.icon + '"></i> World ' + (getWorldIndex() + 1) + '</div>' +
+      '<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-950/90 border border-sky-600/50 text-sky-300 text-xs font-mono font-bold"><i class="fa-solid ' + w.icon + '"></i> Earth · Region ' + (getWorldIndex() + 1) + '</div>' +
       '<h2 class="font-cinzel text-2xl sm:text-3xl font-bold text-white tracking-wide mt-1">' + w.name + '</h2>' +
       '<p class="text-xs text-slate-400 max-w-2xl">' + w.blurb + '</p>' + twistHtml + (w.twist === 'eruption' ? eruptionTwistHtml() : '') +
-      (getWorldIndex() > 0 ? '<div class="text-xs text-amber-200 mt-2"><i class="fa-solid fa-star mr-1"></i>World Bonus: Meat/s x' + formatNumber(getWorldMeatMult()) + ', Combat Power x' + getWorldPowerMult().toFixed(1) + '</div>' : '') +
+      (getWorldIndex() > 0 ? '<div class="text-xs text-amber-200 mt-2"><i class="fa-solid fa-star mr-1"></i>Region Bonus: Meat/s x' + formatNumber(getWorldMeatMult()) + ', Combat Power x' + getWorldPowerMult().toFixed(1) + '</div>' : '') +
     '</div>' +
     '<div class="grid lg:grid-cols-2 gap-6">' +
       '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl space-y-2"><div class="font-cinzel font-bold text-slate-100"><i class="fa-solid fa-mountain mr-1 text-amber-400"></i>The Titan</div>' + titanHtml + '</div>' +
-      '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl"><div class="font-cinzel font-bold text-slate-100 mb-2"><i class="fa-solid fa-hurricane mr-1 text-sky-400"></i>Migration' + (next ? ' to the ' + next.name : '') + '</div>' + migrateHtml + '</div>' +
+      '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl"><div class="font-cinzel font-bold text-slate-100 mb-2"><i class="fa-solid fa-hurricane mr-1 text-sky-400"></i>Cross the Rift' + (next ? ' to the ' + next.name : '') + '</div>' + migrateHtml + '</div>' +
     '</div>' +
-    '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl space-y-3"><div class="font-cinzel font-bold text-slate-100"><i class="fa-solid fa-map mr-1 text-emerald-400"></i>World Map</div>' + mapHtml + '</div>';
+    '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl space-y-3"><div class="font-cinzel font-bold text-slate-100"><i class="fa-solid fa-map mr-1 text-emerald-400"></i>Map of Earth</div>' + mapHtml + '</div>';
 }
 
 function formatDuration(sec) {
@@ -3948,7 +3949,7 @@ function renderExpeditionTab() {
   const lvl = getHoningLevel();
   const honing =
     '<div class="text-sm text-slate-300">Level <strong class="text-amber-300">' + lvl + '</strong> / ' + HONING_CONFIG.maxLevel + ' · Hunter Power <strong class="text-emerald-300">x' + getHoningPowerMult().toFixed(2) + '</strong></div>' +
-    '<div class="text-xs text-slate-400 mt-1">Each level: +' + Math.round(HONING_CONFIG.powerPerLevel * 100) + '% Hunter Power (which also raises Leadership). Kept through Ascension and Migration.</div>' +
+    '<div class="text-xs text-slate-400 mt-1">Each level: +' + Math.round(HONING_CONFIG.powerPerLevel * 100) + '% Hunter Power (which also raises Leadership). Kept through Ascension and Rift crossings.</div>' +
     (cost ? '<div class="text-xs uppercase tracking-wider text-slate-500 mt-3 mb-1.5">Next level needs</div><div class="flex flex-wrap gap-2">' + Object.keys(cost).map(m => matChip(m, getMaterial(m), cost[m])).join('') + '</div>' +
       '<button data-exp-action="hone" ' + (canHone() ? '' : 'disabled') + ' class="mt-3 w-full py-2.5 rounded-lg bt-btn-seal text-base cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Hone to level ' + (lvl + 1) + ' (' + formatPowerGain(previewPowerGain(() => { gameState.expedition.honing++; }, () => { gameState.expedition.honing--; })) + ')</button>'
       : '<div class="mt-3 text-center font-mono font-bold text-amber-300">FULLY HONED</div>');

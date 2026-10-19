@@ -846,20 +846,20 @@ const WORLD_CONFIG = {
 const WORLDS = [
   {
     id: 'wilds', name: 'Primal Wilds', icon: 'fa-tree', color: 'emerald',
-    blurb: 'Where it all began: jungle chimeras and primeval swamps.',
+    blurb: 'Where the Loom\'s Core came down. Its first crude splices of Earth\'s animals still stalk the jungle.',
     hardness: 1, filter: '', twist: null,
     titan: { name: 'Primeval Behemoth', baseIndex: 3, filter: 'saturate(1.8) contrast(1.3) brightness(0.9) drop-shadow(0 0 12px #f59e0b)',
-             desc: 'The first Titan, woken by your climb up the Apex Ladder. Beat it to tear open the Rift.' }
+             desc: 'The Core\'s warden. Its thread is older than the forest it sleeps under. Sever it to tear open the Rift.' }
   },
   {
     id: 'tundra', name: 'Frozen Tundra', icon: 'fa-snowflake', color: 'sky',
-    blurb: 'Ice fields under an endless aurora. Blizzards roll in and freeze your camp.',
+    blurb: 'The Archive fell here: the Loom\'s frozen gene library. Blizzards roll in and freeze your camp.',
     hardness: 6, filter: 'hue-rotate(185deg) saturate(0.7) brightness(1.15)', twist: 'blizzard',
     beasts: [
-      { name: 'Frostfang Hound', desc: 'A pale hunting beast whose bite leaves frostbite.' },
-      { name: 'Rime Talon', desc: 'A tusked sky-brute coated in jagged ice.' },
-      { name: 'Glacier Scorpion', desc: 'Its carapace is a living glacier; its sting freezes blood.' },
-      { name: 'Aurora Wyrm', desc: 'A serpent of shifting northern light, ruler of the ice.' }
+      { name: 'Hoarwolf', desc: 'Arctic wolf and snowy owl: a silent pack hunter with a feathered ruff and eyes that see through blizzards.' },
+      { name: 'Tuskram', desc: 'Walrus and bighorn ram: a charging brute of tusks, curled horns and blubber.' },
+      { name: 'Rimeclaw', desc: 'Wolverine and king crab: a furious armored digger with frost-crusted pincers.' },
+      { name: 'Lumen Mammoth', desc: 'A long-extinct mammoth the Archive remembered, fused with glowing tissue from no world we know.' }
     ],
     gens: [
       { name: 'Ice Snares', desc: 'Frozen wire loops buried in the snow.' },
@@ -870,17 +870,17 @@ const WORLDS = [
       { name: 'Glacier Harpoons', desc: 'Harpoon rigs that pin mammoths to the ice.' }
     ],
     titan: { name: 'Glacial Colossus', baseIndex: 2, mult: 7.5, filter: 'hue-rotate(185deg) saturate(0.6) brightness(1.3) drop-shadow(0 0 12px #7dd3fc)',
-             desc: 'A mountain of living ice. Beat it to open the way onward.' }
+             desc: 'It guards the Archive. Inside the ice, the Loom\'s memories wait to thaw.' }
   },
   {
     id: 'volcano', name: 'Ashen Volcano', icon: 'fa-volcano', color: 'orange',
-    blurb: 'Lava flats and ash storms. The volcano builds pressure while you are away: ride its eruptions for huge hauls.',
+    blurb: 'The Furnace, the Loom\'s power source, buried itself in this volcano. It builds pressure while you are away: ride its eruptions for huge hauls.',
     hardness: 12, filter: 'hue-rotate(-25deg) saturate(1.8) contrast(1.15)', twist: 'eruption',
     beasts: [
-      { name: 'Cinder Hound', desc: 'A soot-black hound with embers for eyes; its breath scorches the trail.' },
-      { name: 'Ashwing Boar', desc: 'A tusked flier that rides the hot updrafts above the lava flats.' },
-      { name: 'Magma Scorpion', desc: 'Its shell is cooled basalt; molten rock glows through every crack.' },
-      { name: 'Obsidian Wyrm', desc: 'Three glassy heads rise from the caldera, each one hotter than the last.' }
+      { name: 'Cinderjackal', desc: 'Jackal and bombardier beetle: a scavenger that sprays scalding bursts from its flanks.' },
+      { name: 'Ashback', desc: 'Vulture and giant tortoise: a slow fortress with a huge wingspan, nesting on lava rock.' },
+      { name: 'Burrowmaw', desc: 'Komodo dragon and mole: it tunnels through cooled lava tubes and strikes with a venomous bite.' },
+      { name: 'Pyre Drake', desc: 'A salamander fused with a flame lineage from the Loom\'s library. It burns, falls to ash, and rises again.' }
     ],
     gens: [
       { name: 'Ember Snares', desc: 'Wire loops strung over warm vents where small game gathers.' },
@@ -891,11 +891,11 @@ const WORLDS = [
       { name: 'Basalt Harpoon Rigs', desc: 'Stone harpoons that pin drakes to the cooling rock.' }
     ],
     titan: { name: 'Magma Sovereign', baseIndex: 1, mult: 7.5, filter: 'hue-rotate(-30deg) saturate(2.2) contrast(1.3) brightness(0.95) drop-shadow(0 0 14px #f97316)',
-             desc: 'A living eruption with wings of ash. Beat it to open the way to the deep.' }
+             desc: 'Born in the Furnace\'s overload. Every eruption is its heartbeat. Sever its thread to open the way to the deep.' }
   },
   {
     id: 'abyss', name: 'Sunken Abyss', icon: 'fa-water', color: 'indigo', comingSoon: true,
-    blurb: 'Drowned ruins, krakens and a leviathan king. Coming in a future update.',
+    blurb: 'The Helm, the Loom\'s navigation core, sank into the deep ocean. Coming in a future update.',
     hardness: 250, filter: 'hue-rotate(210deg) brightness(0.8) saturate(1.4)', twist: null
   }
 ];

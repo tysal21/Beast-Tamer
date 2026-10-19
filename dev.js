@@ -57,9 +57,9 @@
         const st = (typeof getExpeditionState === 'function') ? getExpeditionState() : null;
         if (!st || !st.active) return toast('no expedition out');
         st.active.endAt = Date.now() - 1000; toast('expedition is back'); } },
-    { label: 'Travel to the next world', run: () => {
+    { label: 'Cross to the next region', run: () => {
         gameState.riftOpen = true;
-        if (!performMigration()) { gameState.riftOpen = false; return toast('no world to travel to'); }
+        if (!performMigration()) { gameState.riftOpen = false; return toast('no region to cross to'); }
         if (typeof applyWorldText === 'function') applyWorldText();
         toast('welcome to ' + getWorld().name); } },
     { label: 'Fill eruption charges', run: () => {

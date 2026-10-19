@@ -82,6 +82,11 @@ const ANATOMY_MAX_RANK = 25; // Weakpoint Anatomy max rank
 const ANATOMY_REDUCTION_PER_RANK = 0.012; // Boss bracket reduction per rank
 const HYBRID_ENHANCE_COST_SCALE = 2.2; // each hybrid level costs this many times the last
 const WIN_CHANCE_FLOOR = 0.01; // Lowest possible odds once you meet a boss's minimum power
+// Titans shrug off underdog gambling: below their minimum power the Magma Stinger only gives this,
+// charms can't raise it, Underdog's Fury never triggers, and a loss wounds you far longer
+const TITAN_UNDERDOG_ODDS = 0.001;
+const TITAN_UNDERDOG_WOUND_MULT = 4;
+const TITAN_UNDERDOG_WOUND_MIN_SEC = 900;
 let isResetting = false;
 
 function formatNumber(num, forceDecimals = false) {
@@ -497,7 +502,7 @@ const FEATURE_UNLOCKS = [
   { id: 'totem', tab: 'totem', check: () => gameState.ascensionCount > 0 || getWorldIndex() > 0 || isTotemUnlocked(),
     intro: 'The Primal Totem has risen: your Combat Power wears it down, even while you are away.' },
   { id: 'world', tab: 'world', check: () => (gameState.bestApexDepth || 0) >= 4 || getWorldIndex() > 0 || gameState.riftOpen,
-    intro: 'The World tab is open: a Titan sleeps beyond Apex Tier 12.' }
+    intro: 'The Regions tab is open: a Titan sleeps beyond Apex Tier 12.' }
 ];
 
 function isFeatureUnlocked(id) {
@@ -970,7 +975,7 @@ function getCombatPowerBreakdown() {
   add('Keen Instincts (Legacy)', getLegacyMult('keen_instincts'));
   add('Trophy Weapon', getTrophyPowerMult());
   add('Apex Ladder (' + getApexDepth() + ' tamed this run)', getApexPowerMult());
-  add('World Bonus', getWorldPowerMult());
+  add('Region Bonus', getWorldPowerMult());
   add('Molten Heart', getMoltenHeartMult());
   add('Adrenaline', getAdrenalinePowerMult());
 
@@ -1400,7 +1405,7 @@ function slayTitan(boss) {
   const rec = gameState.worldRecords[w.id] || (gameState.worldRecords[w.id] = {});
   rec.titanAt = Date.now();
   rec.bestApex = Math.max(rec.bestApex || 0, gameState.bestApexDepth || 0);
-  logCombatMessage('🌋 <strong>TITAN SLAIN!</strong> ' + boss.name + ' falls. <strong>The Rift is open</strong>: see the World tab.', 'relic');
+  logCombatMessage('🌋 <strong>TITAN SLAIN!</strong> ' + boss.name + ' falls, its thread severed. <strong>The Rift is open</strong>: see the Regions tab.', 'relic');
   showToast('TITAN SLAIN! The Rift is open.', 'success', true);
 }
 
@@ -1436,7 +1441,7 @@ function performMigration() {
   applyWorld();
   const to = getWorld();
   gameState.worldRecords[to.id] = gameState.worldRecords[to.id] || { arrivedAt: Date.now() };
-  logCombatMessage('🌀 <strong>MIGRATION COMPLETE.</strong> Welcome to the <strong>' + to.name + '</strong>. World Bonus: Meat/s x' + formatNumber(getWorldMeatMult()) + ', Combat Power x' + getWorldPowerMult().toFixed(1) + '.', 'unlock');
+  logCombatMessage('🌀 <strong>RIFT CROSSED.</strong> Welcome to the <strong>' + to.name + '</strong>. Region Bonus: Meat/s x' + formatNumber(getWorldMeatMult()) + ', Combat Power x' + getWorldPowerMult().toFixed(1) + '.', 'unlock');
   showToast('Welcome to the ' + to.name + '!', 'success', true);
   renderAfterReset();
   return true;
@@ -1818,7 +1823,10 @@ function getWoundedDuration(beast = getSelectedFightTarget()) {
   }
   const mult = getRelicEffectMultiplier('chitin_carapace');
   const relicDur = hasRelic('chitin_carapace') ? baseDur / (1 + mult) : baseDur;
-  return softLimit(relicDur * (1 - Math.min(0.5, getFishCodexBonus('wound'))) * getLegacyReduction('thick_hide') * (1 - getArmorWoundCut()), WOUND_SOFT_MIN_SEC);
+  const dur = softLimit(relicDur * (1 - Math.min(0.5, getFishCodexBonus('wound'))) * getLegacyReduction('thick_hide') * (1 - getArmorWoundCut()), WOUND_SOFT_MIN_SEC);
+  // A desperate swing at a Titan you're too weak for leaves a deep wound
+  if (isTitanUnderdog(beast)) return Math.max(TITAN_UNDERDOG_WOUND_MIN_SEC, dur * TITAN_UNDERDOG_WOUND_MULT);
+  return dur;
 }
 
 function getBrutePowerPerLevel() {
@@ -2406,7 +2414,13 @@ function getEffectiveBossBracket(beast) {
 function calculateWinChance(beast) {
   const base = calculateBaseWinChance(beast);
   // Hunter's Eye charm: flat bonus to odds you already have (never turns 0% into a chance)
+  if (isTitanUnderdog(beast)) return base;
   return base > 0 ? Math.min(0.98, base + getCharmBonus('odds')) : 0;
+}
+
+/** Fighting a Titan below its minimum power (only possible with the Magma Stinger) */
+function isTitanUnderdog(beast) {
+  return !!(beast && beast.isTitan && getCombatPowerVs(beast) < getEffectiveBossBracket(beast).min);
 }
 
 function calculateBaseWinChance(beast) {
@@ -2415,7 +2429,8 @@ function calculateBaseWinChance(beast) {
 
   if (power < min) {
     // Magma Stinger lets desperate hunters gamble below the bracket at the floor odds
-    return hasRelic('magma_stinger') ? WIN_CHANCE_FLOOR : 0.0;
+    if (!hasRelic('magma_stinger')) return 0.0;
+    return beast && beast.isTitan ? TITAN_UNDERDOG_ODDS : WIN_CHANCE_FLOOR;
   }
 
   if (power >= max) {
@@ -2666,7 +2681,7 @@ function challengeCurrentBeast() {
       sound.playWin();
       clearBattleInsight(beast);
 
-      if (hasRelic('magma_stinger') && winChance < 0.25) {
+      if (hasRelic('magma_stinger') && winChance < 0.25 && !beast.isTitan) {
         gameState.stamina = Math.min(getMaxStamina(), gameState.stamina + staminaCost);
         const windfall = Math.floor(getMeatRate() * 600);
         addMeat(windfall);
@@ -2837,6 +2852,8 @@ function saveGameToStorage() {
       tundra: gameState.tundra || null,
       volcano: gameState.volcano || null,
       tutorial: gameState.tutorial || null,
+      hunterName: gameState.hunterName || '',
+      hunterTitle: gameState.hunterTitle || '',
       expedition: gameState.expedition || null,
       gear: gameState.gear || null,
       unlocks: gameState.unlocks || {},
@@ -2947,6 +2964,8 @@ function loadGameFromStorage() {
       gameState.riftOpen = !!data.riftOpen;
       if (data.gear && typeof data.gear === 'object') gameState.gear = { pieces: data.gear.pieces || {} };
       if (data.expedition && typeof data.expedition === 'object') gameState.expedition = Object.assign({ active: null, materials: {}, honing: 0, trips: 0 }, data.expedition);
+      if (typeof data.hunterName === 'string') gameState.hunterName = data.hunterName.slice(0, 20);
+      if (typeof data.hunterTitle === 'string') gameState.hunterTitle = data.hunterTitle;
       // Tutorial: older saves already know the game, so every tab they have counts as seen
       if (data.tutorial && typeof data.tutorial === 'object') gameState.tutorial = { done: data.tutorial.done || {}, off: !!data.tutorial.off };
       else { const seen = { camp: true }; Object.keys(data.unlocks || {}).forEach(k => { const f = FEATURE_UNLOCKS.find(x => x.id === k); if (f) seen[f.tab] = true; }); gameState.tutorial = { done: seen, off: false }; }
