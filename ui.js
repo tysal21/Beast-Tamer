@@ -3591,7 +3591,7 @@ function updateWorldLive() {
   const badge = document.getElementById('tab-world-badge');
   if (badge) {
     const awake = !!getTitanBoss();
-    badge.textContent = gameState.riftOpen ? 'Rift' : (awake ? 'Titan!' : 'W' + (getWorldIndex() + 1));
+    badge.textContent = gameState.riftOpen ? 'Rift' : (awake ? 'Titan!' : 'R' + (getWorldIndex() + 1));
     badge.className = 'text-[9px] px-1.5 py-0.2 rounded font-mono border ' + (gameState.riftOpen || awake ? 'bg-amber-900 text-amber-200 border-amber-500 font-bold' : 'bg-sky-950 text-sky-300 border-sky-700');
   }
   tickTundra(1);

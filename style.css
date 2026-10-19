@@ -608,3 +608,37 @@ body.stealth .tut-spot { box-shadow: none !important; }
 #intro-card input { width: 100%; padding: 8px 10px; border: 1px solid var(--paper-shade); border-radius: 6px; background: #fffaf0; color: var(--ink); font-size: 16px; }
 #intro-card button { margin-top: 14px; width: 100%; padding: 10px; border: 0; border-radius: 6px; background: rgb(var(--accent)); color: #fff; font-weight: 800; cursor: pointer; }
 body.stealth #intro-card { display: none !important; }
+
+/* ================= NAVIGATION HUBS ================= */
+#hub-bar { padding-bottom: 2px; }
+.hub-btn { position: relative; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; cursor: pointer;
+  padding: 8px 16px; border-radius: 10px; border: 1px solid transparent; background: transparent;
+  color: rgb(var(--s300)); font-weight: 700; font-size: 14px; }
+.hub-btn i { color: rgb(var(--accent)); }
+.hub-btn:hover { color: rgb(var(--accent)); }
+.hub-btn.active { color: rgb(var(--s50)); background: rgb(var(--p800)); border-color: rgb(var(--accent) / 0.55); }
+.hub-btn .hub-dot { display: none; width: 7px; height: 7px; border-radius: 50%; background: #f87171; box-shadow: 0 0 6px #f87171; }
+.hub-btn.hub-alert .hub-dot { display: inline-block; }
+.hub-btn.hub-new { border-color: rgb(var(--accent) / 0.8); animation: featureGlow 1.6s ease-in-out infinite; }
+.hub-btn.hub-new::before { content: 'NEW'; position: absolute; top: 1px; right: 2px; padding: 0 5px; border-radius: 6px;
+  background: rgb(var(--accent)); color: rgb(var(--p900)); font: 700 8px/12px 'Alegreya Sans', sans-serif; letter-spacing: 0.06em; }
+/* The original tab buttons are now the sub-tabs of the active hub */
+.hub-subrow { margin-top: 6px; }
+.hub-subrow.hub-subrow-empty { display: none !important; }
+.hub-subrow .nav-tab-btn { padding: 4px 12px !important; border-radius: 999px !important; font-size: 12px; }
+.hub-subrow .nav-tab-btn.active { background: rgb(var(--accent) / 0.16); border-color: rgb(var(--accent) / 0.6) !important; }
+.nav-tab-btn.hub-off { display: none !important; }
+@media (max-width: 640px) { .hub-btn { padding: 7px 11px; font-size: 13px; gap: 6px; } }
+body.stealth #hub-bar::before { content: 'Sections: '; color: #555 !important; }
+body.stealth nav::before { content: none !important; }
+body.stealth .hub-btn { padding: 0 6px !important; color: #1155cc !important; text-decoration: underline !important; display: inline !important; }
+body.stealth .hub-btn.active { color: #222 !important; text-decoration: none !important; font-weight: 700 !important; }
+body.stealth .hub-btn.hub-new::before, body.stealth .hub-dot { display: none !important; }
+body.stealth .hub-btn.hub-new::after { content: ' (new)'; color: #a33 !important; font-size: 12px !important; }
+body.stealth .nav-tab-btn.hub-off { display: none !important; }
+body.stealth .hub-subrow:not(.hub-subrow-empty) { display: block !important; }
+body.stealth .hub-subrow:not(.hub-subrow-empty)::before { content: 'Pages: '; color: #555 !important; }
+.hub-subrow { padding-top: 6px; }
+.hub-subrow .nav-tab-btn.feature-new::before { top: -6px; right: -4px; }
+#hub-bar { padding-top: 6px; }
+.hub-btn.hub-new::before { top: -6px; right: -4px; }
