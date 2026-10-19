@@ -1,7 +1,7 @@
 /**
  * ================= REGION SCENERY =================
  * A drawn backdrop behind the game: layered landscape silhouettes (SVG) plus a light particle layer (canvas).
- * Primal Wilds keeps Tyler's painted camp and adds jungle silhouettes and fireflies.
+ * Primal Wilds: a moonlit jungle with fireflies (the painted camp is retired for now).
  * Frozen Tundra: aurora, ice peaks and falling snow. Ashen Volcano: a glowing volcano, ash ridges and rising embers.
  * Particles pause in Doc view, in a background tab, and for players who prefer reduced motion.
  */
@@ -50,9 +50,13 @@
 
   const SCENES = {
     wilds: {
-      painted: true,
       svg: () =>
-        '<g fill="#0b1209" opacity="0.55"><path d="' + canopy(11, 700, 120) + '"/></g>' +
+        '<defs><linearGradient id="sky-w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c0f08"/><stop offset="0.55" stop-color="#1a1d10"/><stop offset="1" stop-color="#2a2414"/></linearGradient>' +
+        '<radialGradient id="moon-w" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#e9dcc0" stop-opacity="0.35"/><stop offset="1" stop-color="#e9dcc0" stop-opacity="0"/></radialGradient></defs>' +
+        '<rect width="' + W + '" height="' + H + '" fill="url(#sky-w)"/>' +
+        '<circle cx="380" cy="230" r="160" fill="url(#moon-w)"/><circle cx="380" cy="230" r="34" fill="#d9c8a4" opacity="0.18"/>' +
+        '<g fill="#161a0e" opacity="0.9"><path d="' + ridge(7, 560, 120, 90, 40) + '"/></g>' +
+        '<g fill="#0e1209" opacity="0.85"><path d="' + canopy(11, 680, 120) + '"/></g>' +
         '<g fill="#070b06" opacity="0.8"><path d="' + canopy(23, 790, 90) + '"/></g>' +
         '<g fill="#040603" opacity="0.9">' + ferns(37, 26) + '</g>',
       fx: { kind: 'fireflies', count: 34 }
