@@ -524,7 +524,7 @@ function getTotemGuardian() {
 /** The guardian of Seal k (used by the Totem and the Bestiary) */
 function getGuardianAt(k) {
   const base = BEAST_CATALOG[(k - 1) % BEAST_CATALOG.length];
-  const min = Math.floor(TOTEM_CONFIG.sealBaseMin * Math.pow(TOTEM_CONFIG.sealGrowth, k - 1));
+  const min = Math.floor(BOSS_SEAL_SCALE * TOTEM_CONFIG.sealBaseMin * Math.pow(TOTEM_CONFIG.sealGrowth, k - 1));
   return {
     id: 'totem_guardian_' + k,
     isGuardian: true,
@@ -938,7 +938,7 @@ function getApexDepth() {
 /** Bracket minimum of Apex tier k before Weakpoint Anatomy and Ascension growth */
 function getApexBaseMin(k) {
   const wyrm = BEAST_CATALOG[BEAST_CATALOG.length - 1];
-  return Math.floor(wyrm.minPower * APEX_CONFIG.firstMult * Math.pow(APEX_CONFIG.growth, k - 1));
+  return Math.floor(wyrm.minPower * BOSS_APEX_SCALE * APEX_CONFIG.firstMult * Math.pow(APEX_CONFIG.growth, k - 1));
 }
 
 /** The next Apex boss to fight, shaped like a BEAST_CATALOG entry */
@@ -986,6 +986,11 @@ function getApexPowerMult() {
 /**
  * ================= WORLDS =================
  */
+/** Hunter rework: Leadership makes the pack stronger, so bosses scale up, more for later tiers (Apex builds on the Wyrm) */
+let BOSS_POWER_SCALE = 1;
+let BOSS_TIER_SCALE = [1.2, 1.5, 1.8, 1.9];
+let BOSS_SEAL_SCALE = 1.8;
+let BOSS_APEX_SCALE = 1.6; // the Apex Ladder (and Titans built on it) on top of the Wyrm's scale
 const BASE_BEASTS = BEAST_CATALOG.map(b => Object.assign({}, b));
 const BASE_GENS = GENERATOR_LADDER.map(g => Object.assign({}, g));
 const TITAN_SLOT = 97; // selectedBeastIndex value meaning "this world's Titan"
@@ -1006,8 +1011,9 @@ function applyWorld() {
     const ov = (w.beasts && w.beasts[i]) || {};
     b.name = ov.name || base.name;
     b.desc = ov.desc || base.desc;
-    b.minPower = Math.floor(base.minPower * w.hardness);
-    b.maxPower = Math.floor(base.maxPower * w.hardness);
+    const sc = w.hardness * BOSS_POWER_SCALE * (BOSS_TIER_SCALE[i] || 1);
+    b.minPower = Math.floor(base.minPower * sc);
+    b.maxPower = Math.floor(base.maxPower * sc);
     b.rewardPower = Math.floor(base.rewardPower * Math.sqrt(w.hardness));
     b.imageFilter = w.filter || '';
   });
@@ -1025,6 +1031,9 @@ function applyWorld() {
     });
   }
 }
+
+// Apply the current world (and the boss power scale) as soon as the engine loads
+applyWorld();
 
 /** Permanent World Bonus from every world you've opened (World 2 = 1 opened) */
 function getWorldsOpened() {
@@ -1702,7 +1711,8 @@ const HUNTER_CONFIG = {
   leadershipScale: 100,
   adrenalineMeat: 1.40,        // Adrenaline (spar breakthrough): Meat/s x1.40
   adrenalinePower: 1.10,       // ...and Combat Power x1.10
-  warmthHybridPerRank: 0.10    // Catalytic Warmth perk: +10% hybrid power per rank
+  warmthHybridPerRank: 0.10,   // Catalytic Warmth perk: +10% hybrid power per rank
+  butcheryPerRank: 0.02        // Instinctive Butchery perk: +2% of Meat/s per click per rank
 };
 
 function getSparPerLevel() {
@@ -1859,7 +1869,7 @@ function getClickYield() {
   // Ascension Perk: Instinctive Butchery (+0.5% passive/click & +50% click yield per rank)
   const butcheryLvl = getAscensionPerkLevel('instinctive_butchery');
   if (butcheryLvl > 0) {
-    percentBonus += (butcheryLvl * 0.02);
+    percentBonus += (butcheryLvl * HUNTER_CONFIG.butcheryPerRank);
   }
 
   const passiveRate = getMeatRate();

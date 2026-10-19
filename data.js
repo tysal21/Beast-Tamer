@@ -816,7 +816,7 @@ const PACKMASTER_CONFIG = {
 const WORLD_CONFIG = {
   titanAfterApexTier: 12,     // reach this Apex tier once (in any run) to awaken the world's Titan for good
   titanApexEquivalent: 13,    // the Titan's power: this Apex tier's base bracket...
-  titanExtraMult: 8.5,        // ...times this (or the world's own titan.mult). It does NOT grow with Ascensions: you grow into it over many runs
+  titanExtraMult: 21,        // ...times this (or the world's own titan.mult). It does NOT grow with Ascensions: you grow into it over many runs
   bonusMeatPerWorld: 3,       // World Bonus: Meat/s x3 per world opened (stacks)
   bonusPowerPerWorld: 0.5,    // World Bonus: +50% Combat Power per world opened
   blizzard: {
@@ -855,7 +855,7 @@ const WORLDS = [
       { name: 'Frozen Dens', desc: 'Captured ice caves full of sleeping beasts.' },
       { name: 'Glacier Harpoons', desc: 'Harpoon rigs that pin mammoths to the ice.' }
     ],
-    titan: { name: 'Glacial Colossus', baseIndex: 2, mult: 3.5, filter: 'hue-rotate(185deg) saturate(0.6) brightness(1.3) drop-shadow(0 0 12px #7dd3fc)',
+    titan: { name: 'Glacial Colossus', baseIndex: 2, mult: 6.5, filter: 'hue-rotate(185deg) saturate(0.6) brightness(1.3) drop-shadow(0 0 12px #7dd3fc)',
              desc: 'A mountain of living ice. Beat it to open the way onward.' }
   },
   {
