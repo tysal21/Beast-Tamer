@@ -884,11 +884,13 @@ function getCombatPowerBreakdown() {
   if (gameState.sparringLevel > 0) hunterMults.push({ label: 'Sparring Lvl ' + gameState.sparringLevel, mult: hm.sparring });
   if (gameState.bruteConditioningLevel > 0) hunterMults.push({ label: 'Brute Conditioning +' + Math.round(HUNTER_CONFIG.bruteMultPerLevel * 100) + '%/lvl', mult: hm.brute });
   if (hm.vigor > 1) hunterMults.push({ label: 'Primal Vigor perk', mult: hm.vigor });
+  if (hm.honing > 1) hunterMults.push({ label: 'Weapon Honing Lvl ' + getHoningLevel(), mult: hm.honing });
 
   const beasts = [];
   for (const beast of BEAST_CATALOG) {
     if (!gameState.tamedBeasts[beast.id]) continue;
     const l = getParentLevel(beast.id);
+    if (beast.id === getExpeditionPartner()) { beasts.push({ label: beast.name + ' (away on an expedition)', value: 0 }); continue; }
     beasts.push({ label: beast.name + ' Lvl ' + l, value: Math.floor(beast.rewardPower * (1 + (l - 1) * 0.15)) });
   }
   for (const h of HYBRID_CATALOG) {
@@ -1281,6 +1283,8 @@ function getApexStoneMult() {
 
 function tameApexBoss(boss) {
   gameState.apexDepth = getApexDepth() + 1;
+  // Apex Shards (materials for the Apex grade of gear)
+  if (typeof addMaterial === 'function') addMaterial('apex_shard', EXPEDITION_CONFIG.apexShardsPerTier * boss.apexTier);
   // Apex Fangs for the Trophy Weapon
   if (!gameState.trophy) gameState.trophy = { fangs: 0, level: 0 };
   const fangs = TROPHY_CONFIG.fangsPerTier * boss.apexTier;
@@ -1729,18 +1733,152 @@ function getHunterMultParts() {
   return {
     sparring: 1 + gameState.sparringLevel * getSparPerLevel(),
     brute: 1 + gameState.bruteConditioningLevel * HUNTER_CONFIG.bruteMultPerLevel,
-    vigor: 1 + getAscensionPerkLevel('primal_vigor') * HUNTER_CONFIG.vigorMultPerRank
+    vigor: 1 + getAscensionPerkLevel('primal_vigor') * HUNTER_CONFIG.vigorMultPerRank,
+    honing: (typeof getHoningPowerMult === 'function') ? getHoningPowerMult() : 1
   };
 }
 
 function getHunterPower() {
   const m = getHunterMultParts();
-  return Math.floor(getHunterRawPower() * m.sparring * m.brute * m.vigor);
+  return Math.floor(getHunterRawPower() * m.sparring * m.brute * m.vigor * m.honing);
 }
 
 /** Leadership: Beast Power multiplier from Hunter Power (+15% per doubling) */
 function getLeadershipMult(hunterPower = getHunterPower()) {
   return 1 + HUNTER_CONFIG.leadershipPerDoubling * Math.log2(1 + Math.max(0, hunterPower) / HUNTER_CONFIG.leadershipScale);
+}
+
+
+/**
+ * ================= EXPEDITIONS & WEAPON HONING =================
+ */
+function getExpeditionState() {
+  if (!gameState.expedition) gameState.expedition = { active: null, materials: {}, honing: 0, trips: 0 };
+  if (!gameState.expedition.materials) gameState.expedition.materials = {};
+  return gameState.expedition;
+}
+
+function getMaterial(id) {
+  return getExpeditionState().materials[id] || 0;
+}
+
+function addMaterial(id, n) {
+  if (!(n > 0)) return;
+  const m = getExpeditionState().materials;
+  m[id] = (m[id] || 0) + Math.floor(n);
+}
+
+/** You can explore a beast's territory once you have tamed it at least once (in this world) */
+function isRegionOpen(region) {
+  const rec = gameState.bestiary && gameState.bestiary[region.id];
+  return !!(rec && rec.wins > 0) || !!gameState.tamedBeasts[region.id];
+}
+
+function isExpeditionsUnlocked() {
+  return EXPEDITION_REGIONS.some(isRegionOpen);
+}
+
+/** The beast currently away on an expedition (adds no Beast Power) */
+function getExpeditionPartner() {
+  const a = getExpeditionState().active;
+  return a && a.partner ? a.partner : null;
+}
+
+function getExpeditionYield(regionId, durationId, partnerId) {
+  const c = EXPEDITION_CONFIG;
+  const d = c.durations.find(x => x.id === durationId) || c.durations[0];
+  let mult = 1;
+  if (partnerId) mult += partnerId === regionId ? c.matchBonus : c.partnerBonus;
+  mult *= 1 + c.apexBonusPerTier * (gameState.bestApexDepth || 0);
+  return Math.floor(c.baseYield * d.mult * mult);
+}
+
+function startExpedition(regionId, durationId, partnerId) {
+  const st = getExpeditionState();
+  const region = EXPEDITION_REGIONS.find(r => r.id === regionId);
+  const d = EXPEDITION_CONFIG.durations.find(x => x.id === durationId);
+  if (st.active || !region || !d || !isRegionOpen(region)) return false;
+  if (partnerId && !gameState.tamedBeasts[partnerId]) return false;
+  const now = Date.now();
+  st.active = { region: regionId, duration: durationId, partner: partnerId || null, startAt: now, endAt: now + d.sec * 1000, yield: getExpeditionYield(regionId, durationId, partnerId) };
+  const p = partnerId ? BEAST_CATALOG.find(b => b.id === partnerId) : null;
+  logCombatMessage('🧭 <strong>Expedition set out</strong> to ' + region.name + (p ? ' with your ' + p.name : '') + ' (' + d.label + ').', 'default');
+  return true;
+}
+
+function getExpeditionTimeLeft(nowMs = Date.now()) {
+  const a = getExpeditionState().active;
+  return a ? Math.max(0, (a.endAt - nowMs) / 1000) : 0;
+}
+
+function isExpeditionReady() {
+  const a = getExpeditionState().active;
+  return !!a && getExpeditionTimeLeft() <= 0;
+}
+
+/** Collect a finished expedition (or recall an unfinished one for nothing) */
+function collectExpedition(recall) {
+  const st = getExpeditionState();
+  const a = st.active;
+  if (!a) return null;
+  if (!recall && getExpeditionTimeLeft() > 0) return null;
+  st.active = null;
+  const region = EXPEDITION_REGIONS.find(r => r.id === a.region);
+  if (recall) {
+    logCombatMessage('🧭 Expedition to ' + region.name + ' recalled early. Nothing found.', 'default');
+    return { recalled: true };
+  }
+  addMaterial(region.material, a.yield);
+  st.trips = (st.trips || 0) + 1;
+  logCombatMessage('🧭 <strong>Expedition home!</strong> +' + a.yield + ' ' + MATERIALS[region.material].name + ' from ' + region.name + '.', 'win');
+  showToast('Expedition home: +' + a.yield + ' ' + MATERIALS[region.material].name, 'success', true);
+  return { material: region.material, amount: a.yield };
+}
+
+/** Trophy fights (re-fighting a tamed boss) drop that boss's material */
+function dropTrophyMaterial(beast) {
+  const region = EXPEDITION_REGIONS.find(r => r.id === (beast.baseId || beast.id));
+  if (!region) return 0;
+  const resonance = 1 + 0.25 * getAscensionPerkLevel('trophy_resonance');
+  const n = Math.floor((EXPEDITION_CONFIG.trophyDropBase + (beast.tier || 1) / 2) * resonance);
+  addMaterial(region.material, n);
+  logCombatMessage('🦴 +' + n + ' ' + MATERIALS[region.material].name + ' salvaged from the fight.', 'default');
+  return n;
+}
+
+/** ---------- Weapon Honing ---------- */
+function getHoningLevel() {
+  return getExpeditionState().honing || 0;
+}
+
+function getHoningPowerMult() {
+  return 1 + getHoningLevel() * HONING_CONFIG.powerPerLevel;
+}
+
+/** Materials the next honing level needs: { id: amount }, or null at max */
+function getHoningCost() {
+  const lvl = getHoningLevel();
+  if (lvl >= HONING_CONFIG.maxLevel) return null;
+  const tier = HONING_CONFIG.tiers.find(t => lvl < t.upTo) || HONING_CONFIG.tiers[HONING_CONFIG.tiers.length - 1];
+  const each = Math.ceil(HONING_CONFIG.costBase * Math.pow(HONING_CONFIG.costGrowth, lvl));
+  const cost = {};
+  tier.materials.forEach(m => { cost[m] = each; });
+  return cost;
+}
+
+function canHone() {
+  const cost = getHoningCost();
+  return !!cost && Object.keys(cost).every(m => getMaterial(m) >= cost[m]);
+}
+
+function honeWeapon() {
+  if (!canHone()) return false;
+  const cost = getHoningCost();
+  const mats = getExpeditionState().materials;
+  Object.keys(cost).forEach(m => { mats[m] -= cost[m]; });
+  getExpeditionState().honing = getHoningLevel() + 1;
+  logCombatMessage('⚒️ <strong>Weapon Honing ' + getHoningLevel() + '!</strong> Hunter Power x' + getHoningPowerMult().toFixed(2) + ', kept forever.', 'unlock');
+  return true;
 }
 
 function getAdrenalinePowerMult() {
@@ -1774,8 +1912,9 @@ function getBeastMasteryMultiplier() {
 
 function getTotalBeastPower() {
   let rawBeastPower = 0;
+  const away = getExpeditionPartner();
   for (const beast of BEAST_CATALOG) {
-    if (gameState.tamedBeasts[beast.id]) {
+    if (gameState.tamedBeasts[beast.id] && beast.id !== away) {
       const pLvl = getParentLevel(beast.id);
       const levelMult = 1 + ((pLvl - 1) * 0.15);
       rawBeastPower += Math.floor(beast.rewardPower * levelMult);
@@ -2242,6 +2381,7 @@ function challengeCurrentBeast() {
           'win'
         );
         gotRelic = !!rollRelicDrops(beast);
+        dropTrophyMaterial(beast);
       }
     } else {
       sound.playDefeat();
@@ -2347,6 +2487,7 @@ function saveGameToStorage() {
       worldRecords: gameState.worldRecords || {},
       riftOpen: !!gameState.riftOpen,
       tundra: gameState.tundra || null,
+      expedition: gameState.expedition || null,
       lastSavedAt: Date.now()
     };
     localStorage.setItem('beast_tamer_savedata', JSON.stringify(data));
@@ -2450,6 +2591,7 @@ function loadGameFromStorage() {
       if (typeof data.world === 'number' && data.world >= 0 && data.world < WORLDS.length) gameState.world = data.world;
       if (data.worldRecords && typeof data.worldRecords === 'object') gameState.worldRecords = data.worldRecords;
       gameState.riftOpen = !!data.riftOpen;
+      if (data.expedition && typeof data.expedition === 'object') gameState.expedition = Object.assign({ active: null, materials: {}, honing: 0, trips: 0 }, data.expedition);
       if (data.tundra && typeof data.tundra === 'object') gameState.tundra = Object.assign(getTundra(), data.tundra, { caches: Array.isArray(data.tundra.caches) ? data.tundra.caches : [] });
       applyWorld();
       // Saves that already tamed the Wyrm or Ascended get the Totem right away

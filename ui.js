@@ -211,7 +211,8 @@ function switchTab(tabId) {
     { id: 'totem', btn: elements.tabBtnTotem, panel: elements.panelTotem },
     { id: 'legacy', btn: document.getElementById('tab-btn-legacy'), panel: document.getElementById('panel-legacy') },
     { id: 'ascend', btn: elements.tabBtnAscend, panel: elements.panelAscend },
-    { id: 'world', btn: document.getElementById('tab-btn-world'), panel: document.getElementById('panel-world') }
+    { id: 'world', btn: document.getElementById('tab-btn-world'), panel: document.getElementById('panel-world') },
+    { id: 'expedition', btn: document.getElementById('tab-btn-expedition'), panel: document.getElementById('panel-expedition') }
   ];
 
   tabs.forEach(t => {
@@ -239,6 +240,9 @@ function switchTab(tabId) {
   }
   if (tabId === 'legacy') {
     renderLegacyPanel();
+  }
+  if (tabId === 'expedition' && typeof renderExpeditionTab === 'function') {
+    renderExpeditionTab();
   }
   if (tabId === 'world' && typeof renderWorldTab === 'function') {
     worldSignature = '';
@@ -3632,6 +3636,177 @@ function updateWorldLive() {
     saveGameToStorage();
   });
   setInterval(updateWorldLive, 1000);
+})();
+
+
+/**
+ * ================= EXPEDITIONS UI =================
+ */
+const expSel = { region: null, partner: null, duration: 'long' };
+let expSignature = '';
+let expRecallArmedUntil = 0;
+
+function matChip(id, n, need) {
+  const m = MATERIALS[id];
+  const short = need !== undefined && n < need;
+  return '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primal-900/80 border ' + (short ? 'border-red-800/70' : 'border-primal-700') + ' text-xs font-mono">' +
+    '<i class="fa-solid ' + m.icon + ' ' + m.color + '"></i>' +
+    '<span class="' + (short ? 'text-red-300' : 'text-slate-200') + '">' + formatNumber(n) + (need !== undefined ? ' / ' + formatNumber(need) : '') + '</span>' +
+    '<span class="text-slate-500 hidden sm:inline">' + m.name + '</span></span>';
+}
+
+function getExpeditionSignature() {
+  const st = getExpeditionState();
+  return [JSON.stringify(st.materials), st.honing, st.active ? st.active.region + st.active.endAt : '-', isExpeditionReady(), JSON.stringify(expSel),
+    Object.keys(gameState.tamedBeasts).join(','), gameState.bestApexDepth || 0, expRecallArmedUntil > Date.now()].join('|');
+}
+
+function renderExpeditionTab() {
+  const root = document.getElementById('expedition-content');
+  if (!root) return;
+  const st = getExpeditionState();
+  const open = EXPEDITION_REGIONS.filter(isRegionOpen);
+  if (!expSel.region || !open.some(r => r.id === expSel.region)) expSel.region = open.length ? open[open.length - 1].id : null;
+  if (expSel.partner && !gameState.tamedBeasts[expSel.partner]) expSel.partner = null;
+
+  // Inventory
+  const inv = Object.keys(MATERIALS).map(id => matChip(id, getMaterial(id))).join('');
+
+  // Current expedition
+  let current;
+  const a = st.active;
+  if (a) {
+    const region = EXPEDITION_REGIONS.find(r => r.id === a.region);
+    const p = a.partner ? BEAST_CATALOG.find(b => b.id === a.partner) : null;
+    const ready = isExpeditionReady();
+    const armed = expRecallArmedUntil > Date.now();
+    current =
+      '<div class="flex items-center gap-4">' +
+        (p ? '<div class="pack-art !h-24 w-28 shrink-0"><img src="' + getBeastArt(p, true) + '" alt="' + p.name + '" style="filter:' + (p.imageFilter || 'none') + '"></div>' : '<div class="w-20 h-20 shrink-0 rounded-xl bg-primal-900 border border-primal-700 flex items-center justify-center text-3xl text-amber-400"><i class="fa-solid fa-person-hiking"></i></div>') +
+        '<div class="min-w-0 flex-1">' +
+          '<div class="font-cinzel text-xl text-slate-100"><i class="fa-solid ' + region.icon + ' mr-1 text-slate-400"></i>' + region.name + '</div>' +
+          '<div class="text-xs text-slate-400">' + (p ? 'Your ' + p.name + ' is with you (it adds no Combat Power until you return).' : 'The hunter went alone.') + '</div>' +
+          '<div class="mt-2 h-3 rounded-full bg-primal-900 border border-primal-700 overflow-hidden"><div id="exp-progress" class="h-full bg-gradient-to-r from-amber-700 to-amber-400" style="width:0%"></div></div>' +
+          '<div class="flex justify-between text-[11px] font-mono mt-1"><span id="exp-timeleft" class="text-slate-300"></span><span class="text-slate-400">Haul: ' + matChip(region.material, a.yield) + '</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="flex gap-2 mt-3">' +
+        '<button data-exp-action="collect" ' + (ready ? '' : 'disabled') + ' class="flex-1 py-2.5 rounded-lg bt-btn-seal text-base disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">' + (ready ? 'Collect the haul' : 'Still exploring...') + '</button>' +
+        (ready ? '' : '<button data-exp-action="recall" class="px-3 py-2 rounded-lg border text-xs font-bold cursor-pointer ' + (armed ? 'bg-red-800 border-red-400 text-white' : 'bg-primal-800 border-primal-600 text-slate-300') + '">' + (armed ? 'Click again: return with nothing' : 'Recall') + '</button>') +
+      '</div>';
+  } else {
+    current = '<div class="text-sm text-slate-400 py-6 text-center"><i class="fa-solid fa-compass text-2xl text-slate-500 mb-2 block"></i>No expedition is out. Plan one below.</div>';
+  }
+
+  // Planner
+  const regions = EXPEDITION_REGIONS.map(r => {
+    const isOpen = isRegionOpen(r), sel = expSel.region === r.id;
+    const beast = BEAST_CATALOG.find(b => b.id === r.id);
+    return '<button data-exp-region="' + r.id + '" ' + (isOpen ? '' : 'disabled') + ' class="text-left p-3 rounded-xl border transition-colors cursor-pointer disabled:cursor-not-allowed ' +
+      (sel ? 'border-amber-500 bg-amber-950/30' : isOpen ? 'border-primal-700 bg-primal-900/60 hover:border-amber-700' : 'border-dashed border-primal-700 bg-primal-900/30 opacity-60') + '">' +
+      '<div class="font-bold text-sm text-slate-100"><i class="fa-solid ' + r.icon + ' mr-1 text-slate-400"></i>' + r.name + '</div>' +
+      '<div class="text-[11px] text-slate-400 leading-snug">' + (isOpen ? r.blurb : 'Tame the ' + beast.name + ' to find this place.') + '</div>' +
+      '<div class="text-[11px] mt-1"><i class="fa-solid ' + MATERIALS[r.material].icon + ' ' + MATERIALS[r.material].color + ' mr-1"></i><span class="text-slate-300">' + MATERIALS[r.material].name + '</span></div>' +
+    '</button>';
+  }).join('');
+  const partners = ['<button data-exp-partner="" class="px-3 py-2 rounded-lg border text-xs font-bold cursor-pointer ' + (!expSel.partner ? 'border-amber-500 bg-amber-950/30 text-amber-200' : 'border-primal-700 bg-primal-900/60 text-slate-300') + '"><i class="fa-solid fa-person-hiking mr-1"></i>Hunter alone</button>']
+    .concat(BEAST_CATALOG.filter(b => gameState.tamedBeasts[b.id]).map(b => {
+      const sel = expSel.partner === b.id, match = b.id === expSel.region;
+      return '<button data-exp-partner="' + b.id + '" class="flex items-center gap-2 pl-1 pr-3 py-1 rounded-lg border text-xs font-bold cursor-pointer ' + (sel ? 'border-amber-500 bg-amber-950/30 text-amber-200' : 'border-primal-700 bg-primal-900/60 text-slate-300') + '">' +
+        '<img src="' + getBeastArt(b, true) + '" alt="" class="w-10 h-8 object-contain" style="filter:' + (b.imageFilter || 'none') + '">' + b.name +
+        '<span class="font-mono ' + (match ? 'text-emerald-300' : 'text-slate-500') + '">' + (match ? '+100%' : '+50%') + '</span></button>';
+    })).join('');
+  const durations = EXPEDITION_CONFIG.durations.map(d => '<button data-exp-duration="' + d.id + '" class="px-3 py-2 rounded-lg border text-xs font-mono font-bold cursor-pointer ' + (expSel.duration === d.id ? 'border-amber-500 bg-amber-950/30 text-amber-200' : 'border-primal-700 bg-primal-900/60 text-slate-300') + '">' + d.label + '</button>').join('');
+  const region = EXPEDITION_REGIONS.find(r => r.id === expSel.region);
+  const preview = region ? getExpeditionYield(region.id, expSel.duration, expSel.partner) : 0;
+  const planner = open.length === 0 ? '<div class="text-sm text-slate-400">Tame your first beast to discover a territory to explore.</div>' :
+    '<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">' + regions + '</div>' +
+    '<div class="text-xs uppercase tracking-wider text-slate-500 mt-4 mb-2">Bring a partner (it is away from your pack until you return)</div><div class="flex flex-wrap gap-2">' + partners + '</div>' +
+    '<div class="text-xs uppercase tracking-wider text-slate-500 mt-4 mb-2">How long</div><div class="flex flex-wrap gap-2">' + durations + '</div>' +
+    '<div class="flex flex-wrap items-center justify-between gap-3 mt-4 pt-3 border-t border-primal-700">' +
+      '<div class="text-sm text-slate-300">Brings back ' + (region ? matChip(region.material, preview) : '') + '</div>' +
+      '<button data-exp-action="start" ' + (st.active || !region ? 'disabled' : '') + ' class="px-5 py-2.5 rounded-lg bt-btn-seal text-base cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">' + (st.active ? 'One expedition at a time' : 'Set out') + '</button>' +
+    '</div>';
+
+  // Honing
+  const cost = getHoningCost();
+  const lvl = getHoningLevel();
+  const honing =
+    '<div class="text-sm text-slate-300">Level <strong class="text-amber-300">' + lvl + '</strong> / ' + HONING_CONFIG.maxLevel + ' · Hunter Power <strong class="text-emerald-300">x' + getHoningPowerMult().toFixed(2) + '</strong></div>' +
+    '<div class="text-xs text-slate-400 mt-1">Each level: +' + Math.round(HONING_CONFIG.powerPerLevel * 100) + '% Hunter Power (which also raises Leadership). Kept through Ascension and Migration.</div>' +
+    (cost ? '<div class="text-xs uppercase tracking-wider text-slate-500 mt-3 mb-1.5">Next level needs</div><div class="flex flex-wrap gap-2">' + Object.keys(cost).map(m => matChip(m, getMaterial(m), cost[m])).join('') + '</div>' +
+      '<button data-exp-action="hone" ' + (canHone() ? '' : 'disabled') + ' class="mt-3 w-full py-2.5 rounded-lg bt-btn-seal text-base cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Hone to level ' + (lvl + 1) + ' (' + formatPowerGain(previewPowerGain(() => { gameState.expedition.honing++; }, () => { gameState.expedition.honing--; })) + ')</button>'
+      : '<div class="mt-3 text-center font-mono font-bold text-amber-300">FULLY HONED</div>');
+
+  root.innerHTML =
+    '<div class="bt-stone p-5 space-y-3"><div class="flex flex-wrap items-end justify-between gap-3"><div><h2 class="font-cinzel text-2xl sm:text-3xl text-slate-100"><i class="fa-solid fa-compass mr-2 text-amber-400"></i>Expeditions</h2>' +
+      '<p class="text-xs text-slate-400 max-w-xl">Send your hunter into a beast\'s territory and come back later for its materials. Trophy fights and Apex tames drop materials too. Materials are kept forever.</p></div></div>' +
+      '<div class="flex flex-wrap gap-2">' + inv + '</div></div>' +
+    '<div class="grid lg:grid-cols-3 gap-6">' +
+      '<div class="lg:col-span-2 space-y-6">' +
+        '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl"><div class="font-cinzel text-lg text-slate-100 mb-3">Out in the wilds</div>' + current + '</div>' +
+        '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl"><div class="font-cinzel text-lg text-slate-100 mb-3">Plan an expedition</div>' + planner + '</div>' +
+      '</div>' +
+      '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl h-fit"><div class="font-cinzel text-lg text-slate-100 mb-2"><i class="fa-solid fa-hammer mr-2 text-amber-400"></i>Weapon Honing</div>' + honing + '</div>' +
+    '</div>';
+  updateExpeditionLive(true);
+}
+
+function updateExpeditionLive(fromRender) {
+  const btn = document.getElementById('tab-btn-expedition');
+  const unlocked = isExpeditionsUnlocked();
+  if (btn) btn.classList.toggle('hidden', !unlocked);
+  const badge = document.getElementById('tab-expedition-badge');
+  const st = getExpeditionState();
+  const ready = isExpeditionReady();
+  if (badge) {
+    badge.classList.toggle('hidden', !st.active);
+    badge.textContent = ready ? 'Ready!' : 'Out';
+    badge.className = (st.active ? '' : 'hidden ') + 'text-[9px] px-1.5 py-0.2 rounded font-mono border ' + (ready ? 'bg-emerald-900 text-emerald-200 border-emerald-500 font-bold' : 'bg-amber-950 text-amber-300 border-amber-700');
+  }
+  // One toast when an expedition comes home
+  if (st.active && ready && !st.active.notified) {
+    st.active.notified = true;
+    showToast('Your expedition is back! Collect it on the Expeditions tab.', 'success', true);
+  }
+  if (gameState.activeTab !== 'expedition') return;
+  const sig = getExpeditionSignature();
+  if (!fromRender && sig !== expSignature) { expSignature = sig; renderExpeditionTab(); return; }
+  if (fromRender) expSignature = sig;
+  const a = st.active;
+  const bar = document.getElementById('exp-progress');
+  const tl = document.getElementById('exp-timeleft');
+  if (a && bar && tl) {
+    const total = (a.endAt - a.startAt) / 1000, left = getExpeditionTimeLeft();
+    bar.style.width = Math.min(100, (1 - left / total) * 100) + '%';
+    tl.textContent = left > 0 ? formatDuration(left) + ' left' : 'Back at camp!';
+  }
+}
+
+(function initExpeditions() {
+  const btn = document.getElementById('tab-btn-expedition');
+  if (btn) btn.addEventListener('click', () => switchTab('expedition'));
+  const root = document.getElementById('expedition-content');
+  if (root) root.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-exp-region],[data-exp-partner],[data-exp-duration],[data-exp-action]');
+    if (!t || t.disabled) return;
+    if (t.hasAttribute('data-exp-region')) expSel.region = t.getAttribute('data-exp-region');
+    else if (t.hasAttribute('data-exp-partner')) expSel.partner = t.getAttribute('data-exp-partner') || null;
+    else if (t.hasAttribute('data-exp-duration')) expSel.duration = t.getAttribute('data-exp-duration');
+    else {
+      const act = t.getAttribute('data-exp-action');
+      if (act === 'start' && startExpedition(expSel.region, expSel.duration, expSel.partner)) { sound.playClick(); renderMenagerie(); }
+      if (act === 'collect' && collectExpedition(false)) { sound.playWin(); if (typeof confettiBurst === 'function') confettiBurst(); renderMenagerie(); }
+      if (act === 'recall') {
+        if (expRecallArmedUntil > Date.now()) { expRecallArmedUntil = 0; collectExpedition(true); renderMenagerie(); }
+        else expRecallArmedUntil = Date.now() + 4000;
+      }
+      if (act === 'hone' && honeWeapon()) sound.playWin();
+      saveGameToStorage();
+    }
+    renderExpeditionTab();
+  });
+  setInterval(() => updateExpeditionLive(false), 1000);
 })();
 
 setInterval(saveGameToStorage, 10000);
