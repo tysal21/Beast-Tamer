@@ -178,6 +178,8 @@ function isForgeTabAvailable() {
  * Tab Navigation
  */
 function switchTab(tabId) {
+  if (typeof isFeatureUnlocked === 'function' && FEATURE_UNLOCKS.some(f => f.tab === tabId && f.id === tabId) && !isFeatureUnlocked(tabId)) return;
+  if (gameState.newFeatures && gameState.newFeatures[tabId]) { delete gameState.newFeatures[tabId]; applyFeatureLocks(); }
   if (tabId === 'forge' && !isForgeTabAvailable()) {
     showToast('Beast Forge unlocks after taming the ' + BEAST_CATALOG[1].name + '!', 'warning');
     return;
@@ -3876,11 +3878,38 @@ function updateExpeditionLive(fromRender) {
   setInterval(() => updateExpeditionLive(false), 1000);
 })();
 
+/**
+ * ================= MILESTONE UNLOCKS UI =================
+ * Locked features are hidden; a freshly unlocked tab glows with a NEW tag until you open it.
+ */
+function applyFeatureLocks() {
+  document.querySelectorAll('[data-feature]').forEach(el => {
+    el.classList.toggle('feature-locked', !isFeatureUnlocked(el.getAttribute('data-feature')));
+  });
+  document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+    const tab = btn.id.replace('tab-btn-', '');
+    btn.classList.toggle('feature-new', !!(gameState.newFeatures && gameState.newFeatures[tab]));
+  });
+}
+
+(function initFeatureLocks() {
+  applyFeatureLocks();
+  if (typeof updateExpeditionLive === 'function') updateExpeditionLive();
+  setInterval(() => {
+    if (checkFeatureUnlocks(false).length) saveGameToStorage();
+    applyFeatureLocks();
+    if (typeof updateExpeditionLive === 'function') updateExpeditionLive();
+  }, 1000);
+})();
+
 setInterval(saveGameToStorage, 10000);
 
 window.addEventListener('DOMContentLoaded', () => {
   const lastSavedAt = loadGameFromStorage();
   applyWorldText();
+  checkFeatureUnlocks(true);
+  applyFeatureLocks();
+  if (typeof updateExpeditionLive === 'function') updateExpeditionLive();
   updateBeastSelectorOptions();
   renderGeneratorsLadder();
   renderTrophyCabinet();

@@ -50,7 +50,7 @@
   </script>
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=20261019e">
+  <link rel="stylesheet" href="style.css?v=20261019f">
 </head>
 
 <body class="bg-primal-900 text-slate-200 font-sans min-h-screen selection:bg-primal-accent selection:text-white flex flex-col justify-between">
@@ -158,20 +158,20 @@
             <i class="fa-solid fa-campground text-amber-500"></i>
             <span>Camp &amp; Economy</span>
           </button>
-          <button id="tab-btn-hunt" class="nav-tab-btn px-3.5 py-2 rounded-lg border border-transparent text-slate-300 hover:text-amber-300 flex items-center gap-2 whitespace-nowrap cursor-pointer">
+          <button id="tab-btn-hunt" data-feature="hunt" class="nav-tab-btn px-3.5 py-2 rounded-lg border border-transparent text-slate-300 hover:text-amber-300 flex items-center gap-2 whitespace-nowrap cursor-pointer">
             <i class="fa-solid fa-crosshairs text-red-400"></i>
             <span>Hunt &amp; Bosses</span>
           </button>
-          <button id="tab-btn-forge" class="nav-tab-btn disabled px-3.5 py-2 rounded-lg border border-transparent text-slate-400 flex items-center gap-2 whitespace-nowrap">
+          <button id="tab-btn-forge" data-feature="forge" class="nav-tab-btn disabled px-3.5 py-2 rounded-lg border border-transparent text-slate-400 flex items-center gap-2 whitespace-nowrap">
             <i class="fa-solid fa-dna text-purple-400"></i>
             <span>Beast Forge</span>
             <span id="tab-forge-badge" class="text-[9px] bg-primal-800 text-slate-500 border border-slate-700 px-1.5 py-0.2 rounded font-mono">Locked</span>
           </button>
-          <button id="tab-btn-relics" class="nav-tab-btn px-3.5 py-2 rounded-lg border border-transparent text-slate-300 hover:text-amber-300 flex items-center gap-2 whitespace-nowrap cursor-pointer">
+          <button id="tab-btn-relics" data-feature="relics" class="nav-tab-btn px-3.5 py-2 rounded-lg border border-transparent text-slate-300 hover:text-amber-300 flex items-center gap-2 whitespace-nowrap cursor-pointer">
             <i class="fa-solid fa-trophy text-amber-400"></i>
             <span>Relics &amp; Bestiary</span>
           </button>
-          <button id="tab-btn-expedition" class="nav-tab-btn hidden px-3.5 py-2 rounded-lg border border-transparent text-slate-300 hover:text-amber-300 flex items-center gap-2 whitespace-nowrap cursor-pointer">
+          <button id="tab-btn-expedition" data-feature="expedition" class="nav-tab-btn hidden px-3.5 py-2 rounded-lg border border-transparent text-slate-300 hover:text-amber-300 flex items-center gap-2 whitespace-nowrap cursor-pointer">
             <i class="fa-solid fa-compass text-amber-400"></i>
             <span>Expeditions &amp; Gear</span>
             <span id="tab-expedition-badge" class="hidden text-[9px] bg-amber-950 text-amber-300 border border-amber-700 px-1.5 py-0.2 rounded font-mono">Out</span>
@@ -181,7 +181,7 @@
             <span>Fishing Dock</span>
             <span id="tab-fish-badge" class="hidden text-[9px] bg-cyan-950 text-cyan-300 border border-cyan-700 px-1.5 py-0.2 rounded font-mono">0</span>
           </button>
-          <button id="tab-btn-totem" class="nav-tab-btn hidden px-3.5 py-2 rounded-lg border border-transparent text-slate-300 hover:text-amber-300 flex items-center gap-2 whitespace-nowrap cursor-pointer">
+          <button id="tab-btn-totem" data-feature="totem" class="nav-tab-btn hidden px-3.5 py-2 rounded-lg border border-transparent text-slate-300 hover:text-amber-300 flex items-center gap-2 whitespace-nowrap cursor-pointer">
             <i class="fa-solid fa-monument text-amber-400"></i>
             <span>Primal Totem</span>
             <span id="tab-totem-badge" class="text-[9px] bg-amber-950 text-amber-300 border border-amber-700 px-1.5 py-0.2 rounded font-mono">L1</span>
@@ -191,12 +191,12 @@
             <span>Hunter's Legacy</span>
             <span id="tab-legacy-badge" class="text-[9px] bg-amber-950 text-amber-300 border border-amber-700 px-1.5 py-0.2 rounded font-mono">0</span>
           </button>
-          <button id="tab-btn-world" class="nav-tab-btn hidden px-3.5 py-2 rounded-lg border border-transparent text-slate-300 hover:text-sky-300 flex items-center gap-2 whitespace-nowrap cursor-pointer">
+          <button id="tab-btn-world" data-feature="world" class="nav-tab-btn hidden px-3.5 py-2 rounded-lg border border-transparent text-slate-300 hover:text-sky-300 flex items-center gap-2 whitespace-nowrap cursor-pointer">
             <i class="fa-solid fa-earth-americas text-sky-400"></i>
             <span>World</span>
             <span id="tab-world-badge" class="text-[9px] bg-sky-950 text-sky-300 border border-sky-700 px-1.5 py-0.2 rounded font-mono">W1</span>
           </button>
-          <button id="tab-btn-ascend" class="nav-tab-btn disabled px-3.5 py-2 rounded-lg border border-transparent text-slate-400 flex items-center gap-2 whitespace-nowrap">
+          <button id="tab-btn-ascend" data-feature="ascend" class="nav-tab-btn disabled px-3.5 py-2 rounded-lg border border-transparent text-slate-400 flex items-center gap-2 whitespace-nowrap">
             <i class="fa-solid fa-skull-crossbones text-rose-500"></i>
             <span>Ascension Altar</span>
             <span id="tab-ascend-badge" class="text-[9px] bg-primal-800 text-slate-500 border border-slate-700 px-1.5 py-0.2 rounded font-mono">Locked</span>
@@ -306,7 +306,7 @@
         </div>
 
         <!-- Camp Provisions / Stamina Enhancements -->
-        <div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl">
+        <div data-feature="hunt" class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl">
           <div class="flex items-center justify-between pb-3 border-b border-primal-700/60 mb-4">
             <div>
               <h2 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2">
@@ -637,7 +637,7 @@
             </div>
 
             <!-- 3. Weakpoint Anatomy -->
-            <div class="bg-primal-800/90 border border-primal-700 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div data-feature="anatomy" class="bg-primal-800/90 border border-primal-700 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 rounded-lg bg-purple-950/80 border border-purple-700/60 flex items-center justify-center text-purple-400 text-lg shadow-inner">
                   <i class="fa-solid fa-bullseye"></i>
@@ -665,7 +665,7 @@
             </div>
 
             <!-- Sparring Ring (Active Practice Action) -->
-            <div class="bg-gradient-to-r from-amber-950/40 to-primal-900 border border-amber-700/40 rounded-xl p-3.5 mt-2">
+            <div data-feature="sparring" class="bg-gradient-to-r from-amber-950/40 to-primal-900 border border-amber-700/40 rounded-xl p-3.5 mt-2">
               <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
                   <div class="flex items-center gap-2">
@@ -1297,8 +1297,8 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
   <!-- Modular Scripts: Data -> Engine -> UI -->
-  <script src="data.js?v=20261019e"></script>
-  <script src="engine.js?v=20261019e"></script>
-  <script src="ui.js?v=20261019e"></script>
+  <script src="data.js?v=20261019f"></script>
+  <script src="engine.js?v=20261019f"></script>
+  <script src="ui.js?v=20261019f"></script>
 </body>
 </html>

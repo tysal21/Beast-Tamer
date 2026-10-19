@@ -374,3 +374,27 @@ header .bg-primal-800\/90 {
   object-fit: contain;
   image-rendering: auto;
 }
+
+/* Milestone unlocks: hidden until earned; a new tab glows until you open it */
+.feature-locked { display: none !important; }
+.nav-tab-btn.feature-new {
+  position: relative;
+  border-color: rgb(var(--accent) / 0.8) !important;
+  animation: featureGlow 1.6s ease-in-out infinite;
+}
+.nav-tab-btn.feature-new::before {
+  content: 'NEW';
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: rgb(var(--accent));
+  color: rgb(var(--p900));
+  font: 700 8px/12px 'Alegreya Sans', sans-serif;
+  letter-spacing: 0.06em;
+}
+@keyframes featureGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(var(--accent) / 0.0); }
+  50% { box-shadow: 0 0 14px 2px rgb(var(--accent) / 0.55); }
+}

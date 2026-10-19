@@ -468,11 +468,69 @@ function isTotemUnlocked() {
 }
 
 /** Unlocks the Totem the first time the Wyrm is tamed (or for saves that already passed it). Returns true if it just unlocked. */
+
+/**
+ * ================= MILESTONE UNLOCKS =================
+ * Features open one at a time as you progress, so new players learn the game a piece at a time.
+ * Once a feature is unlocked it stays unlocked (a new run or world never hides it again).
+ */
+function hasEverTamed(id) {
+  const rec = gameState.bestiary && gameState.bestiary[id];
+  return !!gameState.tamedBeasts[id] || !!(rec && rec.wins > 0);
+}
+
+const FEATURE_UNLOCKS = [
+  { id: 'hunt', tab: 'hunt', check: () => (gameState.generators.snare_lines || 0) >= 5 || gameState.weaponTier > 0 || hasEverTamed('viper_hound') || gameState.ascensionCount > 0,
+    intro: 'Hunt & Bosses is open: train your hunter, then challenge your first beast.' },
+  { id: 'relics', tab: 'relics', check: () => BEAST_CATALOG.some(b => hasEverTamed(b.id)),
+    intro: 'Relics & Bestiary is open: re-fight tamed beasts for relics, and every beast you meet is recorded.' },
+  { id: 'sparring', tab: 'hunt', check: () => hasEverTamed('viper_hound'),
+    intro: 'The Sparring Ring is open (Hunt tab): spar for Hunter Power, with a chance of Adrenaline.' },
+  { id: 'forge', tab: 'forge', check: () => hasEverTamed('boar_hawk') || !!gameState.forgeUnlocked,
+    intro: 'The Beast Forge is open: level up your tamed beasts and breed hybrids.' },
+  { id: 'anatomy', tab: 'hunt', check: () => hasEverTamed('boar_hawk'),
+    intro: 'Weakpoint Anatomy is open (Hunt tab): study bosses to lower the power they need.' },
+  { id: 'expedition', tab: 'expedition', check: () => hasEverTamed('boar_hawk'),
+    intro: 'Expeditions & Gear is open: send your hunter exploring for materials, then hone and craft gear.' },
+  { id: 'ascend', tab: 'ascend', check: () => hasEverTamed('chimera_wyrm') || gameState.ascensionCount > 0,
+    intro: 'The Ascension Altar has awakened: start a new run stronger, with Bloodstones to spend.' },
+  { id: 'totem', tab: 'totem', check: () => gameState.ascensionCount > 0 || getWorldIndex() > 0 || isTotemUnlocked(),
+    intro: 'The Primal Totem has risen: your Combat Power wears it down, even while you are away.' },
+  { id: 'world', tab: 'world', check: () => (gameState.bestApexDepth || 0) >= 4 || getWorldIndex() > 0 || gameState.riftOpen,
+    intro: 'The World tab is open: a Titan sleeps beyond Apex Tier 12.' }
+];
+
+function isFeatureUnlocked(id) {
+  return !!(gameState.unlocks && gameState.unlocks[id]);
+}
+
+/** Unlock everything whose milestone is met. quiet = no pop-ups (old saves loading in). Returns newly unlocked ids. */
+function checkFeatureUnlocks(quiet) {
+  if (!gameState.unlocks) gameState.unlocks = {};
+  if (!gameState.newFeatures) gameState.newFeatures = {};
+  const fresh = [];
+  FEATURE_UNLOCKS.forEach(f => {
+    if (gameState.unlocks[f.id]) return;
+    let ok = false;
+    try { ok = !!f.check(); } catch (e) { ok = false; }
+    if (!ok) return;
+    gameState.unlocks[f.id] = true;
+    fresh.push(f.id);
+    if (!quiet) {
+      gameState.newFeatures[f.tab] = true;
+      logCombatMessage('✨ <strong>NEW:</strong> ' + f.intro, 'unlock');
+      showToast(f.intro, 'success', true);
+    }
+  });
+  return fresh;
+}
+
 function checkTotemUnlock() {
   if (!gameState.totem) gameState.totem = defaultTotemState();
   const t = gameState.totem;
   if (t.unlocked) return false;
-  if (!gameState.tamedBeasts['chimera_wyrm'] && !(gameState.ascensionCount > 0)) return false;
+  // The Totem rises once the Chimera-Wyrm (the last beast of the run) is tamed, or after any Ascension
+  if (!hasEverTamed('chimera_wyrm') && !(gameState.ascensionCount > 0) && !(gameState.world > 0)) return false;
   t.unlocked = true;
   if (t.hpLeft === null || t.hpLeft === undefined) t.hpLeft = getTotemLayerHp(t.layer);
   return true;
@@ -1346,6 +1404,7 @@ function performAscension() {
   if (gameState.legacy) gameState.legacy.freeRespec = true;
 
   resetRunState();
+  checkTotemUnlock();
 
   logCombatMessage(
     `🔥 <strong>PRIMAL ASCENSION #${gameState.ascensionCount} COMPLETE!</strong> Claimed <strong>+${formatNumber(claimed)} Primal Bloodstones</strong>! Relics, Forge, and Hybrids retained (they sleep until you re-tame their bosses). Bosses grow stronger.`,
@@ -1778,7 +1837,7 @@ function isRegionOpen(region) {
 }
 
 function isExpeditionsUnlocked() {
-  return EXPEDITION_REGIONS.some(isRegionOpen);
+  return isFeatureUnlocked('expedition') && EXPEDITION_REGIONS.some(isRegionOpen);
 }
 
 /** The beast currently away on an expedition (adds no Beast Power) */
@@ -2631,6 +2690,8 @@ function saveGameToStorage() {
       tundra: gameState.tundra || null,
       expedition: gameState.expedition || null,
       gear: gameState.gear || null,
+      unlocks: gameState.unlocks || {},
+      newFeatures: gameState.newFeatures || {},
       lastSavedAt: Date.now()
     };
     localStorage.setItem('beast_tamer_savedata', JSON.stringify(data));
@@ -2738,8 +2799,11 @@ function loadGameFromStorage() {
       if (data.expedition && typeof data.expedition === 'object') gameState.expedition = Object.assign({ active: null, materials: {}, honing: 0, trips: 0 }, data.expedition);
       if (data.tundra && typeof data.tundra === 'object') gameState.tundra = Object.assign(getTundra(), data.tundra, { caches: Array.isArray(data.tundra.caches) ? data.tundra.caches : [] });
       applyWorld();
-      // Saves that already tamed the Wyrm or Ascended get the Totem right away
+      // Saves that already Ascended get the Totem right away
       checkTotemUnlock();
+      // Milestone unlocks: older saves get everything they have already earned, without pop-ups
+      if (data.unlocks && typeof data.unlocks === 'object') { gameState.unlocks = data.unlocks; gameState.newFeatures = (data.newFeatures && typeof data.newFeatures === 'object') ? data.newFeatures : {}; }
+      checkFeatureUnlocks(!data.unlocks);
 
       if (typeof data.lastSavedAt === 'number') savedTimestamp = data.lastSavedAt;
     }
