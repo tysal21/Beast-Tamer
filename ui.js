@@ -3012,6 +3012,7 @@ const arena = {
 const FIGHT_ANIM_MS = { full: 5200, quick: 1300, skip: 0 };
 
 function getFightAnimMode() {
+  if (window.isStealthOn && window.isStealthOn()) return 'skip';
   return ['full', 'quick', 'skip'].includes(gameState.fightAnim) ? gameState.fightAnim : 'full';
 }
 
@@ -3195,6 +3196,7 @@ function fightPresenterEnd(s) {
   const bigMoment = titanWin || firstTame || sealBroken || newBest || !!relic || (win && s.winChance < 0.25);
   const mode = getFightAnimMode();
   if (!arena.active && !(bigMoment && mode === 'skip')) return; // nothing to show
+  if (!arena.active && window.isStealthOn && window.isStealthOn()) return; // Doc view: no pop-up celebrations
   if (!arena.active) {
     // Skip mode: still celebrate the big moments
     arena.active = true;
