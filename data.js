@@ -875,7 +875,7 @@ const WORLDS = [
   {
     id: 'volcano', name: 'Ashen Volcano', icon: 'fa-volcano', color: 'orange',
     blurb: 'Lava flats and ash storms. The volcano builds pressure while you are away: ride its eruptions for huge hauls.',
-    hardness: 40, filter: 'hue-rotate(-25deg) saturate(1.8) contrast(1.15)', twist: 'eruption',
+    hardness: 12, filter: 'hue-rotate(-25deg) saturate(1.8) contrast(1.15)', twist: 'eruption',
     beasts: [
       { name: 'Cinder Hound', desc: 'A soot-black hound with embers for eyes; its breath scorches the trail.' },
       { name: 'Ashwing Boar', desc: 'A tusked flier that rides the hot updrafts above the lava flats.' },
