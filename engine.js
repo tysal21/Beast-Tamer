@@ -490,7 +490,7 @@ const FEATURE_UNLOCKS = [
     intro: 'The Beast Forge is open: level up your tamed beasts and breed hybrids.' },
   { id: 'anatomy', tab: 'hunt', check: () => hasEverTamed('boar_hawk'),
     intro: 'Weakpoint Anatomy is open (Hunt tab): study bosses to lower the power they need.' },
-  { id: 'expedition', tab: 'expedition', check: () => hasEverTamed('grizzly_scorpion'),
+  { id: 'expedition', tab: 'expedition', check: () => hasEverTamed('boar_hawk'),
     intro: 'Expeditions & Gear is open: send your hunter exploring for materials, then hone and craft gear.' },
   { id: 'ascend', tab: 'ascend', check: () => hasEverTamed('chimera_wyrm') || gameState.ascensionCount > 0,
     intro: 'The Ascension Altar has awakened: start a new run stronger, with Bloodstones to spend.' },
