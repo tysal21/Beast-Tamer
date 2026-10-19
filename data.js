@@ -816,7 +816,7 @@ const PACKMASTER_CONFIG = {
 const WORLD_CONFIG = {
   titanAfterApexTier: 12,     // reach this Apex tier once (in any run) to awaken the world's Titan for good
   titanApexEquivalent: 13,    // the Titan's power: this Apex tier's base bracket...
-  titanExtraMult: 21,        // ...times this (or the world's own titan.mult). It does NOT grow with Ascensions: you grow into it over many runs
+  titanExtraMult: 23,        // ...times this (or the world's own titan.mult). It does NOT grow with Ascensions: you grow into it over many runs
   bonusMeatPerWorld: 3,       // World Bonus: Meat/s x3 per world opened (stacks)
   bonusPowerPerWorld: 0.5,    // World Bonus: +50% Combat Power per world opened
   blizzard: {
@@ -870,3 +870,51 @@ const WORLDS = [
   }
 ];
 
+/**
+ * ================= EXPEDITIONS (Hunter Rework, step 2) =================
+ * Timed trips into a beast's territory bring back that beast's material. A tamed partner beast boosts the haul,
+ * but it is away (adds no Beast Power) until you collect. Materials are permanent.
+ */
+const EXPEDITION_CONFIG = {
+  baseYield: 3,              // materials from a 30-minute trip, hunter alone
+  partnerBonus: 0.5,         // any tamed partner: +50%
+  matchBonus: 1.0,           // partner from that same territory: +100% instead
+  apexBonusPerTier: 0.05,    // +5% per deepest Apex tier ever reached (this world)
+  durations: [
+    { id: 'short', label: '30 min', sec: 1800, mult: 1 },
+    { id: 'mid', label: '2 hours', sec: 7200, mult: 3.5 },
+    { id: 'long', label: '8 hours', sec: 28800, mult: 12 },
+    { id: 'day', label: '24 hours', sec: 86400, mult: 30 }
+  ],
+  trophyDropBase: 1,         // a trophy fight win drops 1 + tier/2 of that boss's material
+  apexShardsPerTier: 1       // each Apex tame drops shards equal to its Apex tier number (Tier 5 = 1, Tier 6 = 2...)
+};
+
+const EXPEDITION_REGIONS = [
+  { id: 'viper_hound', name: 'Venom Marsh', material: 'viper_scale', icon: 'fa-water', blurb: 'Steaming bogs where viper-hounds shed their scales.' },
+  { id: 'boar_hawk', name: 'Talon Cliffs', material: 'hawk_feather', icon: 'fa-mountain', blurb: 'Windy crags littered with boar-hawk feathers.' },
+  { id: 'grizzly_scorpion', name: 'Molten Burrows', material: 'scorpion_chitin', icon: 'fa-fire', blurb: 'Hot tunnels full of cast-off chitin plates.' },
+  { id: 'chimera_wyrm', name: 'Obsidian Spire', material: 'wyrm_obsidian', icon: 'fa-gem', blurb: 'A glassy peak where the Wyrm sheds obsidian scales.' }
+];
+
+const MATERIALS = {
+  viper_scale: { name: 'Viper Scales', icon: 'fa-diamond', color: 'text-emerald-400' },
+  hawk_feather: { name: 'Hawk Feathers', icon: 'fa-feather', color: 'text-amber-300' },
+  scorpion_chitin: { name: 'Scorpion Chitin', icon: 'fa-shield-halved', color: 'text-orange-400' },
+  wyrm_obsidian: { name: 'Wyrm Obsidian', icon: 'fa-gem', color: 'text-violet-300' },
+  apex_shard: { name: 'Apex Shards', icon: 'fa-star', color: 'text-fuchsia-300' }
+};
+
+/** Weapon Honing: permanent +% Hunter Power, paid in materials */
+const HONING_CONFIG = {
+  maxLevel: 25,
+  powerPerLevel: 0.04,       // +4% Hunter Power per level
+  costBase: 6,
+  costGrowth: 1.22,
+  // which materials each level needs (all of them, each at the level's cost)
+  tiers: [
+    { upTo: 10, materials: ['viper_scale', 'hawk_feather'] },
+    { upTo: 20, materials: ['viper_scale', 'hawk_feather', 'scorpion_chitin'] },
+    { upTo: 25, materials: ['viper_scale', 'hawk_feather', 'scorpion_chitin', 'wyrm_obsidian'] }
+  ]
+};
