@@ -521,9 +521,58 @@ const ASCENSION_PERKS = [
     baseCost: 20,
     costScale: 2.5,
     maxLevel: null,
-    desc: '+20% Primal Bloodstones claimed from Ascension rituals per rank.'
+    desc: '+20% {cur} claimed from Ascension rituals per rank.'
   }
 ];
+
+/**
+ * ================= REGION CURRENCIES & SHOPS =================
+ * Each region (a fallen fragment of the Loom) has its own Ascension currency. It is the same balance
+ * under the hood (gameState.bloodstones, reset when you cross a Rift), but each region names it,
+ * re-flavours the six basic perks and adds perks of its own built around the region's twist.
+ */
+const REGION_CURRENCY = {
+  wilds:   { name: 'Bloodstones',  one: 'Bloodstone',  icon: 'fa-gem',       img: 'assets/icons/bloodstones-64.png', color: '#fb7185',
+             lore: 'Blood given to the Totem, hardened into stone. The Core keeps what is offered.' },
+  tundra:  { name: 'Rimestones',   one: 'Rimestone',   icon: 'fa-snowflake', img: 'assets/icons/rimestones.svg',     color: '#7dd3fc',
+             lore: 'Memory frozen out of the Archive ice. Every hunt here is written into it.' },
+  volcano: { name: 'Cinderhearts', one: 'Cinderheart', icon: 'fa-fire',      img: '',                                color: '#fb923c',
+             lore: 'What the Furnace leaves behind when it burns something down to its core.' },
+  abyss:   { name: 'Brinepearls',  one: 'Brinepearl',  icon: 'fa-circle',    img: '',                                color: '#5eead4',
+             lore: 'Grown around the Helm\'s dead lights at the bottom of the sea.' }
+};
+
+/** New names for the six basic perks in each region. Effects and prices are unchanged. */
+const REGION_PERK_SKINS = {
+  tundra: {
+    feral_bloodline:      { name: 'Frostmarrow Hoard',  icon: 'fa-drumstick-bite' },
+    instinctive_butchery: { name: 'Ice-Pick Butchery',  icon: 'fa-icicles' },
+    primal_vigor:         { name: 'Rime-Hardened',      icon: 'fa-shield-heart' },
+    catalytic_warmth:     { name: 'Hearth-Born Brood',  icon: 'fa-egg' },
+    trophy_resonance:     { name: 'Archived Trophies',  icon: 'fa-box-archive' },
+    primordial_soul:      { name: 'Deep Archive',       icon: 'fa-snowflake' }
+  }
+};
+
+/** Perks only this region's shop sells */
+const REGION_PERKS = {
+  tundra: [
+    { id: 'whiteout_stalker', name: 'Whiteout Stalker', icon: 'fa-wind', baseCost: 12, costScale: 2.0, maxLevel: 5, unique: true,
+      desc: 'Blizzards cut your Meat 10% less per rank. At rank 5 a blizzard costs you nothing.' },
+    { id: 'hearthkeeper', name: 'Hearthkeeper', icon: 'fa-fire-flame-curved', baseCost: 8, costScale: 1.9, maxLevel: 5, unique: true,
+      desc: '+30% Warmth from clicks and stoking per rank, so you break blizzards sooner.' },
+    { id: 'deep_caches', name: 'Deep Caches', icon: 'fa-cubes-stacked', baseCost: 20, costScale: 2.5, maxLevel: 3, unique: true,
+      desc: '+1 Frozen Cache slot and +3% Mammoth Cache chance per rank.' },
+    { id: 'archive_recall', name: 'Recall', icon: 'fa-brain', baseCost: 40, costScale: 3.0, maxLevel: 2, unique: true,
+      desc: 'The Archive remembers. After each Ascension, your first beast (both of your first two at rank 2) comes back already tamed.' }
+  ]
+};
+const REGION_PERK_FX = {
+  whiteoutPerRank: 0.10,   // blizzard Meat x0.5 -> x1.0 at rank 5
+  warmthPerRank: 0.30,
+  cachesPerRank: 1,
+  jackpotPerRank: 0.03
+};
 
 /**
  * Phase 3+: Realm Expansions (Major Feature Unlocks bought with Bloodstones)
@@ -641,11 +690,11 @@ const FISH_CATALOG = [
   { id: 'leviathan_fry', name: 'Leviathan Fry', rarity: 'legendary', icon: 'fa-dragon',
     desc: 'A newborn sea-titan. Already the size of a boar.', codex: { type: 'power', value: 0.08 }, codexLabel: '+8% Combat Power' },
   { id: 'primordial_coelacanth', name: 'Primordial Coelacanth', rarity: 'legendary', icon: 'fa-shield-halved',
-    desc: 'Older than the beasts above. It remembers the first hunt.', codex: { type: 'stones', value: 0.05 }, codexLabel: '+5% Bloodstones' },
+    desc: 'Older than the beasts above. It remembers the first hunt.', codex: { type: 'stones', value: 0.05 }, codexLabel: '+5% Ascension currency' },
   { id: 'worldcoil_eel', name: 'Worldcoil Eel', rarity: 'mythic', icon: 'fa-infinity',
     desc: 'Said to circle the roots of the world. Few have seen its tail.', codex: { type: 'totem', value: 0.10 }, codexLabel: '+10% Totem damage' },
   { id: 'eclipse_koi', name: 'Eclipse Koi', rarity: 'mythic', icon: 'fa-moon',
-    desc: 'Its scales swallow the torchlight. It surfaces once in a hunter\'s lifetime.', codex: { type: 'stones', value: 0.05 }, codexLabel: '+5% Bloodstones' }
+    desc: 'Its scales swallow the torchlight. It surfaces once in a hunter\'s lifetime.', codex: { type: 'stones', value: 0.05 }, codexLabel: '+5% Ascension currency' }
 ];
 
 /** Timed meal buffs from the Cookpot */

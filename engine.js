@@ -708,8 +708,8 @@ function breakTotemSeal(guardian) {
   if (gameState.selectedBeastIndex === TOTEM_GUARDIAN_SLOT) {
     gameState.selectedBeastIndex = Math.max(0, Math.min(BEAST_CATALOG.length, gameState.highestTierUnlocked) - 1);
   }
-  logCombatMessage('⛓️ <strong>SEAL ' + k + ' BROKEN!</strong> The ' + guardian.name + ' falls. +' + formatNumber(stones) + ' Bloodstones, +' + formatNumber(shards) + ' Totem Shards, permanent +' + Math.round(TOTEM_CONFIG.sealPowerBonus * 100) + '% Combat Power.', 'relic');
-  showToast('SEAL ' + k + ' BROKEN! +' + formatNumber(stones) + ' Bloodstones', 'success', true);
+  logCombatMessage('⛓️ <strong>SEAL ' + k + ' BROKEN!</strong> The ' + guardian.name + ' falls. +' + formatNumber(stones) + ' ' + curName() + ', +' + formatNumber(shards) + ' Totem Shards, permanent +' + Math.round(TOTEM_CONFIG.sealPowerBonus * 100) + '% Combat Power.', 'relic');
+  showToast('SEAL ' + k + ' BROKEN! +' + formatNumber(stones) + ' ' + curName(), 'success', true);
   applySealRework(k, false);
   logCombatMessage('📜 <strong>LOOM LOG · SEAL ' + k + ':</strong> <span class="font-mono">' + getSealLog(k) + '</span>', 'relic');
   const unlock = TOTEM_UNLOCKS.find(u => u.seal === k);
@@ -1205,7 +1205,7 @@ function getApexBossAt(k) {
     rewardPower: getApexReward(k),
     accentColor: base.accentColor,
     imageFilter: APEX_TITLE_FILTERS[Math.min(lap, APEX_TITLE_FILTERS.length - 1)],
-    desc: 'Apex Tier ' + (4 + k) + '. Every Apex you tame this run adds +' + Math.round(APEX_CONFIG.powerPerTier * 100) + '% Combat Power and raises your Ascension Bloodstones. The ladder resets when you Ascend.',
+    desc: 'Apex Tier ' + (4 + k) + '. Every Apex you tame this run adds +' + Math.round(APEX_CONFIG.powerPerTier * 100) + '% Combat Power and raises what you earn for Ascending. The ladder resets when you Ascend.',
     relics: [],
     staminaCost: APEX_CONFIG.stamina,
     woundedSec: APEX_CONFIG.woundSec
@@ -1298,7 +1298,8 @@ function getBlizzardState(nowMs = Date.now() + PREVIEW_CLOCK.offsetMs) {
 }
 
 function getTwistMeatMult() {
-  return isBlizzardRaging() ? WORLD_CONFIG.blizzard.meatMult : 1;
+  if (!isBlizzardRaging()) return 1;
+  return Math.min(1, WORLD_CONFIG.blizzard.meatMult + getRegionPerkRank('whiteout_stalker') * REGION_PERK_FX.whiteoutPerRank);
 }
 
 /** ---------- World 2: Stoke the Hearth and Frozen Caches ---------- */
@@ -1326,7 +1327,7 @@ function addWarmth(n) {
   if (!isBlizzardRaging()) return false;
   const t = getTundra(), c = getBlizzardCycle();
   if (t.warmthCycle !== c) { t.warmthCycle = c; t.warmth = 0; }
-  t.warmth += n;
+  t.warmth += n * (1 + getRegionPerkRank('hearthkeeper') * REGION_PERK_FX.warmthPerRank);
   if (t.warmth >= WORLD_CONFIG.blizzard.warmthNeeded) {
     t.thawedCycle = c;
     t.warmth = 0;
@@ -1354,9 +1355,13 @@ function tickTundra(dtSec) {
   if (t.lastCacheCycle === null) t.lastCacheCycle = completed;
   while (t.lastCacheCycle < completed) {
     t.lastCacheCycle++;
-    if (t.caches.length < c.maxCaches) t.caches.push({ left: c.cacheThawSec });
+    if (t.caches.length < getMaxFrozenCaches()) t.caches.push({ left: c.cacheThawSec });
   }
   if (t.caches.length && t.caches[0].left > 0) t.caches[0].left = Math.max(0, t.caches[0].left - dtSec);
+}
+
+function getMaxFrozenCaches() {
+  return WORLD_CONFIG.blizzard.maxCaches + getRegionPerkRank('deep_caches') * REGION_PERK_FX.cachesPerRank;
 }
 
 function chipFrozenCache() {
@@ -1373,7 +1378,7 @@ function openFrozenCache() {
   const x = t.caches[0];
   if (!x || x.left > 0) return null;
   t.caches.shift();
-  const jackpot = Math.random() < c.jackpotChance;
+  const jackpot = Math.random() < c.jackpotChance + getRegionPerkRank('deep_caches') * REGION_PERK_FX.jackpotPerRank;
   const parts = [];
   const meatRate = getMeatRate() / getTwistMeatMult();
   const meat = Math.floor(Math.max(meatRate * (jackpot ? c.jackpotMeatSec : c.meatSec), getClickYield() * (jackpot ? 1000 : 200)));
@@ -1617,6 +1622,9 @@ function performMigration() {
     gameState.pendingLoomCard = { head: 'THE ARCHIVE', text: 'THE ICE HOLDS RECORDS IN A SCRIPT THE CORE CANNOT YET READ.', sub: 'Break Seal ' + PACK_CONFIG.riteSeal + ' and the Core will be able to read them.' };
   }
   logCombatMessage('🌀 <strong>RIFT CROSSED.</strong> Welcome to the <strong>' + to.name + '</strong>. Region Bonus: Meat/s x' + formatNumber(getWorldMeatMult()) + ', Combat Power x' + getWorldPowerMult().toFixed(1) + '.', 'unlock');
+  if (from.id !== to.id && (REGION_CURRENCY[to.id] || {}).name !== (REGION_CURRENCY[from.id] || {}).name) {
+    logCombatMessage('💠 Ascending here pays in <strong>' + curName() + '</strong>. ' + getRegionCurrency().lore + ' The Altar sells perks found only in the ' + to.name + '.', 'relic');
+  }
   showToast('Welcome to the ' + to.name + '!', 'success', true);
   renderAfterReset();
   return true;
@@ -1682,7 +1690,7 @@ function tameApexBoss(boss) {
     if (gameState.totem) gameState.totem.shards += shards;
     logCombatMessage('🏅 <strong>NEW DEEPEST APEX!</strong> Tier ' + boss.tier + ' reached for the first time: +' + formatNumber(shards) + ' Totem Shards.', 'relic');
   }
-  logCombatMessage('👑 <strong>APEX TAMED!</strong> ' + boss.name + ' (Tier ' + boss.tier + ') joins your pack: Combat Power x' + getApexPowerMult().toFixed(2) + ' this run. Ascension Bloodstones now x' + getApexStoneMult().toFixed(2) + '.', 'unlock');
+  logCombatMessage('👑 <strong>APEX TAMED!</strong> ' + boss.name + ' (Tier ' + boss.tier + ') joins your pack: Combat Power x' + getApexPowerMult().toFixed(2) + ' this run. Ascension ' + curName() + ' now x' + getApexStoneMult().toFixed(2) + '.', 'unlock');
   showToast('APEX TAMED: ' + boss.name + '!', 'success', true);
 }
 
@@ -1692,6 +1700,31 @@ function tameApexBoss(boss) {
 function getAscensionPerkLevel(perkId) {
   if (!gameState.ascensionPerks) return 0;
   return gameState.ascensionPerks[perkId] || 0;
+}
+
+/** ---------- Region currencies & shops ---------- */
+function getRegionCurrency() {
+  const w = (typeof getWorld === 'function' && getWorld()) || { id: 'wilds' };
+  return REGION_CURRENCY[w.id] || REGION_CURRENCY.wilds;
+}
+function curName() { return getRegionCurrency().name; }
+function curOne() { return getRegionCurrency().one; }
+
+/** The perks this region's Altar sells: the six basics (renamed for the region) plus its own */
+function getShopPerks() {
+  const w = getWorld();
+  const skins = REGION_PERK_SKINS[w.id] || {};
+  const cur = curName();
+  const basics = ASCENSION_PERKS.map(p => Object.assign({}, p, skins[p.id] || {}, { desc: p.desc.replace('{cur}', cur) }));
+  return (REGION_PERKS[w.id] || []).concat(basics); // the region's own perks first: they're what's new
+}
+function getShopPerk(id) {
+  return getShopPerks().find(p => p.id === id) || null;
+}
+/** A region perk's rank, but only while you are in its region (ranks reset when you cross anyway) */
+function getRegionPerkRank(id) {
+  const own = REGION_PERKS[getWorld().id] || [];
+  return own.some(p => p.id === id) ? getAscensionPerkLevel(id) : 0;
 }
 
 function getAscensionPerkCost(perk) {
@@ -1718,6 +1751,20 @@ function calculatePendingBloodstones() {
   return Math.max(10, Math.floor(10 * meatFactor * powerFactor * soulMult * (1 + getFishCodexBonus('stones')) * getApexStoneMult()));
 }
 
+/** Recall (Tundra perk): the first N beasts start the run already tamed. Returns their names. */
+function applyArchiveRecall() {
+  const n = getRegionPerkRank('archive_recall');
+  const names = [];
+  for (let tier = 1; tier <= n; tier++) {
+    const b = BEAST_CATALOG.find(x => x.tier === tier);
+    if (!b || b.id === 'chimera_wyrm') continue; // never skip the Altar beast
+    gameState.tamedBeasts[b.id] = true;
+    gameState.highestTierUnlocked = Math.max(gameState.highestTierUnlocked, tier + 1);
+    names.push(b.name);
+  }
+  return names;
+}
+
 function performAscension() {
   if (!canAscendNow()) return;
 
@@ -1730,13 +1777,15 @@ function performAscension() {
   if (gameState.legacy) gameState.legacy.freeRespec = true;
 
   resetRunState();
+  const recalled = applyArchiveRecall();
   checkTotemUnlock();
 
   logCombatMessage(
-    `🔥 <strong>PRIMAL ASCENSION #${gameState.ascensionCount} COMPLETE!</strong> Claimed <strong>+${formatNumber(claimed)} Primal Bloodstones</strong>! Relics, Forge, and Hybrids retained (they sleep until you re-tame their bosses). Bosses grow stronger.`,
+    `🔥 <strong>PRIMAL ASCENSION #${gameState.ascensionCount} COMPLETE!</strong> Claimed <strong>+${formatNumber(claimed)} ${curName()}</strong>! Relics, Forge, and Hybrids retained (they sleep until you re-tame their bosses). Bosses grow stronger.`,
     'unlock'
   );
-  showToast(`Ascended! Claimed +${formatNumber(claimed)} Primal Bloodstones!`, 'success', true);
+  if (recalled.length) logCombatMessage('🧊 <strong>RECALL:</strong> The Archive remembers. ' + recalled.join(' and ') + (recalled.length > 1 ? ' are' : ' is') + ' already tamed.', 'unlock');
+  showToast(`Ascended! Claimed +${formatNumber(claimed)} ${curName()}!`, 'success', true);
   renderAfterReset();
 }
 
@@ -2912,7 +2961,7 @@ function challengeCurrentBeast() {
         showToast(`BEAST TAMED! Stamina fully restored!`, 'success');
 
         if (beast.id === 'chimera_wyrm') {
-          logCombatMessage(`🔥 <strong>THE ASCENSION ALTAR HAS AWAKENED!</strong> You may now Ascend for Primal Bloodstones!`, 'relic');
+          logCombatMessage(`🔥 <strong>THE ASCENSION ALTAR HAS AWAKENED!</strong> You may now Ascend for ${curName()}!`, 'relic');
           showToast(`Ascension Altar Unlocked!`, 'success', true);
           if (checkTotemUnlock()) {
             logCombatMessage(`🗿 <strong>THE GROUND SPLITS!</strong> The <strong>Primal Totem</strong> rises beside the Altar. Your Combat Power now wears it down, even while you're away.`, 'relic');
@@ -3133,7 +3182,7 @@ function loadGameFromStorage() {
         if (exp.comingSoon && gameState.unlockedExpansions && gameState.unlockedExpansions[exp.id]) {
           delete gameState.unlockedExpansions[exp.id];
           gameState.bloodstones += exp.cost;
-          gameState.pendingNotice = 'Refunded ' + exp.cost + ' Bloodstones for ' + exp.name + ' (not built yet).';
+          gameState.pendingNotice = 'Refunded ' + exp.cost + ' ' + curName() + ' for ' + exp.name + ' (not built yet).';
         }
       });
       if (data.fishing && typeof data.fishing === 'object') {

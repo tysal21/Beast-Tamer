@@ -711,3 +711,11 @@ body.stealth #lb-invite { display: none !important; }
 .pack-btn { padding: 6px 12px; border-radius: 8px; border: 0; background: rgb(var(--accent)); color: #fff; font-weight: 800; font-size: 12px; cursor: pointer; white-space: nowrap; }
 .pack-btn.ghost { background: transparent; border: 1px solid rgb(var(--p600)); color: rgb(var(--s300)); }
 .pack-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ================= REGION SHOPS ================= */
+.perk-region-tag { display: inline-block; margin-left: 4px; padding: 0 6px; border: 1px solid; border-radius: 999px; font: 600 9px/16px ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.04em; vertical-align: middle; }
+.perk-regional { border-color: color-mix(in srgb, var(--region-col) 55%, transparent) !important; background: linear-gradient(160deg, color-mix(in srgb, var(--region-col) 14%, #1c1917), #1c1917 70%) !important; }
+.perk-regional .text-rose-300, .perk-regional .text-rose-400 { color: var(--region-col) !important; }
+.perk-regional .bg-rose-950\/80 { background: color-mix(in srgb, var(--region-col) 18%, #0c0a09) !important; border-color: color-mix(in srgb, var(--region-col) 50%, transparent) !important; }
+.perk-regional .btn-buy-perk { background: color-mix(in srgb, var(--region-col) 55%, #0c4a6e) !important; }
+.perk-regional .btn-buy-perk:hover:not(:disabled) { background: color-mix(in srgb, var(--region-col) 70%, #0c4a6e) !important; }
