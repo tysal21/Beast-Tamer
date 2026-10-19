@@ -1302,7 +1302,8 @@ function renderFrame(meatRate) {
   }
 
   if (!meetsMinPower) {
-    elements.btnChancePill.textContent = canUnderdog ? 'Underdog odds: ' + winChancePct + '%' : 'Power too low (0%)';
+    const titanUnder = canUnderdog && typeof isTitanUnderdog === 'function' && isTitanUnderdog(activeBeast);
+    elements.btnChancePill.textContent = canUnderdog ? (titanUnder ? 'Titan underdog: ' + winChancePct + '% · 4x wounds' : 'Underdog odds: ' + winChancePct + '%') : 'Power too low (0%)';
     elements.btnChancePill.className = canUnderdog ? 'text-orange-400 font-bold' : 'text-red-400 font-bold';
   } else {
     elements.btnChancePill.textContent = 'Odds: ' + winChancePct + '%';
