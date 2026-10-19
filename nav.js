@@ -10,7 +10,7 @@
     { id: 'hunt', label: 'Hunt', icon: 'fa-crosshairs', tabs: ['hunt', 'relics'] },
     { id: 'pack', label: 'Pack', icon: 'fa-paw', tabs: ['forge', 'expedition'] },
     { id: 'totem', label: 'Totem', icon: 'fa-monument', tabs: ['totem', 'legacy'] },
-    { id: 'journey', label: 'Journey', icon: 'fa-route', tabs: ['ascend', 'world'] }
+    { id: 'journey', label: 'Journey', icon: 'fa-route', tabs: ['ascend', 'world', 'leaderboard'] }
   ];
   const lastSub = {};
 

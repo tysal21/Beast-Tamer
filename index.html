@@ -50,7 +50,7 @@
   </script>
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=20261019o">
+  <link rel="stylesheet" href="style.css?v=20261019p">
 </head>
 
 <body class="bg-primal-900 text-slate-200 font-sans min-h-screen selection:bg-primal-accent selection:text-white flex flex-col justify-between">
@@ -200,6 +200,10 @@
             <i class="fa-solid fa-skull-crossbones text-rose-500"></i>
             <span>Ascension Altar</span>
             <span id="tab-ascend-badge" class="text-[9px] bg-primal-800 text-slate-500 border border-slate-700 px-1.5 py-0.2 rounded font-mono">Locked</span>
+          </button>
+          <button id="tab-btn-leaderboard" data-feature="hunt" class="nav-tab-btn px-3.5 py-2 rounded-lg border border-transparent text-slate-300 hover:text-amber-300 flex items-center gap-2 whitespace-nowrap cursor-pointer">
+            <i class="fa-solid fa-ranking-star text-amber-400"></i>
+            <span>Leaderboard</span>
           </button>
         </div>
       </div>
@@ -924,6 +928,7 @@
     </div>
 
     <!-- ================= TAB: WORLD ================= -->
+    <div id="panel-leaderboard" class="hidden space-y-6"><div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl"><h2 class="font-cinzel text-2xl text-slate-100 mb-3"><i class="fa-solid fa-ranking-star mr-2 text-amber-400"></i>Leaderboard</h2><div id="leaderboard-content"></div></div></div>
     <div id="panel-world" class="tab-panel hidden max-w-6xl mx-auto w-full">
       <div id="world-content" class="space-y-6"></div>
     </div>
@@ -1299,14 +1304,15 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
   <!-- Modular Scripts: Data -> Engine -> UI -->
-  <script src="data.js?v=20261019o"></script>
-  <script src="engine.js?v=20261019o"></script>
-  <script src="ui.js?v=20261019o"></script>
-  <script src="stealth.js?v=20261019o"></script>
-  <script src="dev.js?v=20261019o"></script>
-  <script src="comforts.js?v=20261019o"></script>
-  <script src="nav.js?v=20261019o"></script>
-  <script src="scenery.js?v=20261019o"></script>
-  <script src="seals.js?v=20261019o"></script>
+  <script src="data.js?v=20261019p"></script>
+  <script src="engine.js?v=20261019p"></script>
+  <script src="ui.js?v=20261019p"></script>
+  <script src="stealth.js?v=20261019p"></script>
+  <script src="dev.js?v=20261019p"></script>
+  <script src="comforts.js?v=20261019p"></script>
+  <script src="nav.js?v=20261019p"></script>
+  <script src="scenery.js?v=20261019p"></script>
+  <script src="seals.js?v=20261019p"></script>
+  <script src="leaderboard.js?v=20261019p"></script>
 </body>
 </html>
