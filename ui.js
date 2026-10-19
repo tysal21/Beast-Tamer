@@ -3545,9 +3545,9 @@ function renderWorldTab() {
 
   const bz = getBlizzardState();
   const twistHtml = w.twist === 'blizzard'
-    ? '<div class="text-xs text-sky-200 mt-2 space-y-1"><div><i class="fa-solid fa-wind mr-1"></i><strong>Blizzards:</strong> every ' + Math.round(WORLD_CONFIG.blizzard.everySec / 60) + ' minutes a blizzard freezes your camp for ' + Math.round(WORLD_CONFIG.blizzard.lastSec / 60) + ' minutes (Meat/s x' + WORLD_CONFIG.blizzard.meatMult + '). ' + (bz.active ? 'One is raging now.' : 'Next in ' + formatDuration(bz.nextIn) + '.') + '</div>' +
+    ? '<div class="text-xs text-sky-200 mt-2 space-y-1"><div><i class="fa-solid fa-wind mr-1"></i><strong>Blizzards:</strong> every ' + Math.round(WORLD_CONFIG.blizzard.everySec / 60) + ' minutes a blizzard freezes your camp for ' + Math.round(WORLD_CONFIG.blizzard.lastSec / 60) + ' minutes (Meat/s x' + Math.min(1, WORLD_CONFIG.blizzard.meatMult + getRegionPerkRank('whiteout_stalker') * REGION_PERK_FX.whiteoutPerRank).toFixed(1) + '). ' + (bz.active ? 'One is raging now.' : 'Next in ' + formatDuration(bz.nextIn) + '.') + '</div>' +
       '<div><i class="fa-solid fa-fire mr-1"></i><strong>Stoke the Hearth:</strong> during a blizzard, Forage clicks and Stoke (' + WORLD_CONFIG.blizzard.stokeStamina + ' Stamina) fill your Warmth. Full Warmth thaws your camp and ends the slowdown early.</div>' +
-      '<div><i class="fa-solid fa-cube mr-1"></i><strong>Frozen Caches:</strong> every blizzard leaves one behind (hold up to ' + WORLD_CONFIG.blizzard.maxCaches + '). Each thaws in ' + Math.round(WORLD_CONFIG.blizzard.cacheThawSec / 60) + ' minutes, or chip the ice with Stamina. Inside: Meat, Totem Shards or Apex Fangs, and rarely a Mammoth Cache with all three.</div></div>'
+      '<div><i class="fa-solid fa-cube mr-1"></i><strong>Frozen Caches:</strong> every blizzard leaves one behind (hold up to ' + getMaxFrozenCaches() + '). Each thaws in ' + Math.round(WORLD_CONFIG.blizzard.cacheThawSec / 60) + ' minutes, or chip the ice with Stamina. Inside: Meat, Totem Shards or Apex Fangs, and rarely a Mammoth Cache with all three.</div></div>'
     : '';
 
   root.innerHTML =
@@ -3592,7 +3592,7 @@ function renderTundraStrip() {
     left = '<div class="flex-1 min-w-[220px] text-sky-200"><i class="fa-solid fa-wind mr-1"></i>Calm skies. Next blizzard in <span class="font-mono">' + formatDuration(bz.nextIn) + '</span>.</div>';
   }
   const icons = [];
-  for (let i = 0; i < c.maxCaches; i++) {
+  for (let i = 0; i < getMaxFrozenCaches(); i++) {
     const x = t.caches[i];
     if (!x) icons.push('<div class="w-8 h-8 rounded-lg border border-dashed border-sky-800 bg-sky-950/40"></div>');
     else {
