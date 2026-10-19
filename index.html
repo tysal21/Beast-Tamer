@@ -50,7 +50,7 @@
   </script>
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=20261019s">
+  <link rel="stylesheet" href="style.css?v=20261019t">
 </head>
 
 <body class="bg-primal-900 text-slate-200 font-sans min-h-screen selection:bg-primal-accent selection:text-white flex flex-col justify-between">
@@ -1164,7 +1164,7 @@
         </button>
         <button id="btn-save-code" class="hover:text-amber-400 transition-colors flex items-center gap-1 cursor-pointer">
           <i class="fa-solid fa-floppy-disk"></i>
-          <span>Export / Import Save</span>
+          <span>Save / Play on phone</span>
         </button>
         <button id="btn-reset-game" class="hover:text-red-400 transition-colors flex items-center gap-1 cursor-pointer">
           <i class="fa-solid fa-rotate-left"></i>
@@ -1200,11 +1200,27 @@
   <div id="save-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-primal-850 border border-amber-700/60 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between">
-        <h3 class="font-cinzel text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-floppy-disk text-amber-400"></i> Save Code</h3>
+        <h3 class="font-cinzel text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-floppy-disk text-amber-400"></i> Save &amp; Devices</h3>
         <button id="btn-close-save" class="text-slate-400 hover:text-white cursor-pointer text-lg" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <div class="space-y-2">
+      <div id="transfer-box" class="space-y-2">
+        <div class="text-xs font-bold text-amber-300 uppercase tracking-wider">Play on another device</div>
+        <p class="text-[11px] text-slate-400">Scan this with your phone's camera to open the game there with your progress. Or copy the link, send it to yourself, and open it on the other device.</p>
+        <div class="flex flex-col sm:flex-row items-center gap-3">
+          <button type="button" id="transfer-qr-wrap" class="shrink-0 cursor-zoom-in" title="Tap to make it bigger"><canvas id="transfer-qr" class="rounded-lg bg-white" style="width:220px;height:220px;image-rendering:pixelated" aria-label="QR code with your save"></canvas></button>
+          <div class="space-y-2 w-full">
+            <div class="flex flex-wrap gap-2">
+              <button id="btn-copy-transfer" class="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white text-xs font-semibold rounded-lg cursor-pointer"><i class="fa-solid fa-link mr-1"></i>Copy transfer link</button>
+              <button id="btn-share-transfer" class="hidden px-3 py-1.5 bg-primal-700 hover:bg-primal-600 text-slate-200 text-xs font-semibold rounded-lg cursor-pointer"><i class="fa-solid fa-share-nodes mr-1"></i>Share</button>
+            </div>
+            <p class="text-[11px] text-slate-500">The QR and link hold your progress as of right now. The devices don't stay in sync, so send a new one whenever you switch.</p>
+            <div id="transfer-msg" class="text-[11px] font-mono text-rose-300"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-2 pt-3 border-t border-primal-700">
         <div class="text-xs font-bold text-amber-300 uppercase tracking-wider">Export</div>
         <p class="text-[11px] text-slate-400">Copy this code (or download it) to back up your game or move it to another browser or device.</p>
         <textarea id="save-export-text" readonly class="w-full h-20 bg-primal-900 border border-primal-700 rounded-lg p-2 text-[10px] font-mono text-slate-300 break-all resize-none"></textarea>
@@ -1309,16 +1325,18 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
   <!-- Modular Scripts: Data -> Engine -> UI -->
-  <script src="data.js?v=20261019s"></script>
-  <script src="engine.js?v=20261019s"></script>
-  <script src="ui.js?v=20261019s"></script>
-  <script src="stealth.js?v=20261019s"></script>
-  <script src="dev.js?v=20261019s"></script>
-  <script src="comforts.js?v=20261019s"></script>
-  <script src="nav.js?v=20261019s"></script>
-  <script src="scenery.js?v=20261019s"></script>
-  <script src="seals.js?v=20261019s"></script>
-  <script src="leaderboard.js?v=20261019s"></script>
-  <script src="pack.js?v=20261019s"></script>
+  <script src="data.js?v=20261019t"></script>
+  <script src="engine.js?v=20261019t"></script>
+  <script src="ui.js?v=20261019t"></script>
+  <script src="stealth.js?v=20261019t"></script>
+  <script src="dev.js?v=20261019t"></script>
+  <script src="comforts.js?v=20261019t"></script>
+  <script src="nav.js?v=20261019t"></script>
+  <script src="scenery.js?v=20261019t"></script>
+  <script src="seals.js?v=20261019t"></script>
+  <script src="leaderboard.js?v=20261019t"></script>
+  <script src="pack.js?v=20261019t"></script>
+  <script src="qr.js?v=20261019t"></script>
+  <script src="transfer.js?v=20261019t"></script>
 </body>
 </html>

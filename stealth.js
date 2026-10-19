@@ -92,7 +92,7 @@
     HYBRID_CATALOG.forEach((h, i) => add(h.name, 'Joint Venture ' + (i + 1)));
     Object.values(RELIC_REGISTRY).forEach((r, i) => add(r.name, 'Asset #' + (101 + i)));
     ASCENSION_PERKS.forEach((p, i) => add(p.name, 'Policy ' + (i + 1)));
-    ASCENSION_EXPANSIONS.forEach((p, i) => add(p.name, 'Add-on ' + (i + 1)));
+    ASCENSION_EXPANSIONS.filter(p => !p.hidden).forEach((p, i) => add(p.name, 'Add-on ' + (i + 1)));
     FISH_CATALOG.forEach((f, i) => add(f.name, 'SKU-' + String(100 + i)));
     FISH_RECIPES.forEach((r, i) => add(r.name, 'Bundle ' + (i + 1)));
     TROPHY_WEAPONS.forEach((t, i) => add(t.name, 'Premium License ' + (i + 1)));
