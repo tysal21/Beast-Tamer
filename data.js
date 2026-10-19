@@ -855,7 +855,7 @@ const WORLDS = [
       { name: 'Frozen Dens', desc: 'Captured ice caves full of sleeping beasts.' },
       { name: 'Glacier Harpoons', desc: 'Harpoon rigs that pin mammoths to the ice.' }
     ],
-    titan: { name: 'Glacial Colossus', baseIndex: 2, mult: 6.5, filter: 'hue-rotate(185deg) saturate(0.6) brightness(1.3) drop-shadow(0 0 12px #7dd3fc)',
+    titan: { name: 'Glacial Colossus', baseIndex: 2, mult: 7.5, filter: 'hue-rotate(185deg) saturate(0.6) brightness(1.3) drop-shadow(0 0 12px #7dd3fc)',
              desc: 'A mountain of living ice. Beat it to open the way onward.' }
   },
   {
@@ -917,4 +917,44 @@ const HONING_CONFIG = {
     { upTo: 20, materials: ['viper_scale', 'hawk_feather', 'scorpion_chitin'] },
     { upTo: 25, materials: ['viper_scale', 'hawk_feather', 'scorpion_chitin', 'wyrm_obsidian'] }
   ]
+};
+
+/**
+ * ================= WORKBENCH: HUNTER'S KIT (Hunter Rework, step 3) =================
+ * Three permanent gear slots crafted from materials. Each piece is made for one climate; worn in another world's
+ * climate it works at half strength. A piece has 4 grades x 10 levels ("effective level" 1..40).
+ */
+const GEAR_CONFIG = {
+  offClimateMult: 0.5,
+  levelsPerGrade: 10,
+  costBase: 8,
+  costGrowth: 1.25,          // each effective level costs 25% more
+  reforgeMult: 3,            // moving up a grade costs 3 levels' worth
+  grades: [
+    { name: 'Bone', materials: ['viper_scale', 'hawk_feather'] },
+    { name: 'Iron', materials: ['viper_scale', 'hawk_feather', 'scorpion_chitin'] },
+    { name: 'Obsidian', materials: ['hawk_feather', 'scorpion_chitin', 'wyrm_obsidian'] },
+    { name: 'Apex', materials: ['scorpion_chitin', 'wyrm_obsidian', 'apex_shard'] }
+  ],
+  charmChangeCost: 10        // feathers x (grade + 1) to change a Charm's bonus
+};
+
+const GEAR_SLOTS = [
+  { id: 'helm', name: 'Helm', icon: 'fa-helmet-safety', perLevel: 0.03, desc: 'Hunter Power' },
+  { id: 'armor', name: 'Hide Armor', icon: 'fa-shirt', perLevel: 0.01, desc: 'Shorter wounds, and a lost fight refunds Stamina' },
+  { id: 'charm', name: 'Charm', icon: 'fa-hand-sparkles', perLevel: 1, desc: 'One bonus you choose' }
+];
+
+const CHARM_BONUSES = [
+  { id: 'odds', name: 'Hunter\'s Eye', perLevel: 0.0025, label: 'fight odds' },        // +0.25 percentage points per level
+  { id: 'stamina', name: 'Second Wind', perLevel: 0.01, label: 'Stamina regen' },      // +1% per level
+  { id: 'drops', name: 'Scavenger\'s Luck', perLevel: 0.02, label: 'relic and material drops' } // +2% per level
+];
+
+/** Each world's climate (gear is made for one) */
+const CLIMATES = {
+  wilds: { name: 'Wilds', prefix: '' },
+  tundra: { name: 'Frost', prefix: 'Fur-lined ' },
+  volcano: { name: 'Ash', prefix: 'Heat-forged ' },
+  abyss: { name: 'Tide', prefix: 'Sealhide ' }
 };
