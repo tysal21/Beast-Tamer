@@ -179,16 +179,16 @@ function isForgeTabAvailable() {
  */
 function switchTab(tabId) {
   if (tabId === 'forge' && !isForgeTabAvailable()) {
-    showToast('Beast Forge unlocks after taming the Boar-Hawk!', 'warning');
+    showToast('Beast Forge unlocks after taming the ' + BEAST_CATALOG[1].name + '!', 'warning');
     return;
   }
   if (tabId === 'ascend' && !isAscensionUnlocked()) {
-    showToast('Ascension Altar unlocks after taming the Tier 4 Chimera-Wyrm!', 'warning');
+    showToast('Ascension Altar unlocks after taming the Tier 4 ' + BEAST_CATALOG[3].name + '!', 'warning');
     return;
   }
 
   if (tabId === 'totem' && !isTotemUnlocked()) {
-    showToast('The Primal Totem rises after you tame the Chimera-Wyrm.', 'warning');
+    showToast('The Primal Totem rises after you tame the ' + BEAST_CATALOG[3].name + '.', 'warning');
     return;
   }
   if (tabId === 'legacy' && !isLegacyUnlocked()) {
@@ -210,7 +210,8 @@ function switchTab(tabId) {
     { id: 'fish', btn: elements.tabBtnFish, panel: elements.panelFish },
     { id: 'totem', btn: elements.tabBtnTotem, panel: elements.panelTotem },
     { id: 'legacy', btn: document.getElementById('tab-btn-legacy'), panel: document.getElementById('panel-legacy') },
-    { id: 'ascend', btn: elements.tabBtnAscend, panel: elements.panelAscend }
+    { id: 'ascend', btn: elements.tabBtnAscend, panel: elements.panelAscend },
+    { id: 'world', btn: document.getElementById('tab-btn-world'), panel: document.getElementById('panel-world') }
   ];
 
   tabs.forEach(t => {
@@ -238,6 +239,10 @@ function switchTab(tabId) {
   }
   if (tabId === 'legacy') {
     renderLegacyPanel();
+  }
+  if (tabId === 'world' && typeof renderWorldTab === 'function') {
+    worldSignature = '';
+    renderWorldTab();
   }
 }
 
@@ -413,7 +418,7 @@ function updateAscensionLiveElements(force = false) {
   }
   if (elements.ascendReqNote) {
     if (!wyrmTamed) {
-      elements.ascendReqNote.textContent = 'Requires taming Tier 4 Chimera-Wyrm on this run';
+      elements.ascendReqNote.textContent = 'Requires taming Tier 4 ' + BEAST_CATALOG[3].name + ' on this run';
       elements.ascendReqNote.className = 'text-[11px] text-amber-400 font-mono';
     } else if (gameState.isBattling) {
       elements.ascendReqNote.textContent = 'Finish the current battle first';
@@ -1150,18 +1155,21 @@ function renderFrame(meatRate) {
   const activeBeast = getSelectedFightTarget();
   const isGuardianFight = !!activeBeast.isGuardian;
   const isApexFight = !!activeBeast.isApex;
-  const isAlreadyTamed = !isGuardianFight && !isApexFight && !!gameState.tamedBeasts[activeBeast.id];
+  const isTitanFight = !!activeBeast.isTitan;
+  const isAlreadyTamed = !isGuardianFight && !isApexFight && !isTitanFight && !!gameState.tamedBeasts[activeBeast.id];
   const bracket = getEffectiveBossBracket(activeBeast);
   const effMin = bracket.min;
   const effMax = bracket.max;
 
-  elements.encounterTierBadge.textContent = isGuardianFight ? 'Totem Seal ' + activeBeast.sealNumber : (isApexFight ? 'Apex Tier ' : 'Tier ') + activeBeast.tier;
+  elements.encounterTierBadge.textContent = getFightTierLabel(activeBeast);
   elements.beastName.textContent = activeBeast.name;
   const fsEl = document.getElementById('beast-fight-stats');
   if (fsEl) {
     const st = (gameState.fightStats && gameState.fightStats[activeBeast.id]) || { trophyFights: 0, trophyWins: 0, relics: 0, tameTries: 0 };
     if (isApexFight) {
       fsEl.textContent = 'Apex this run: ' + getApexDepth() + ' tamed \u00b7 deepest ever: ' + (gameState.bestApexDepth ? 'Tier ' + (4 + gameState.bestApexDepth) : 'none yet') + ' \u00b7 attempts on this one: ' + st.tameTries;
+    } else if (isTitanFight) {
+      fsEl.textContent = 'Attempts on the Titan: ' + st.tameTries;
     } else if (isGuardianFight) {
       fsEl.textContent = 'Attempts on this Seal: ' + st.tameTries;
     } else if (isAlreadyTamed) {
@@ -1177,8 +1185,11 @@ function renderFrame(meatRate) {
   elements.beastPowerMax.textContent = formatNumber(effMax);
 
   if (isApexFight) {
-    elements.beastRewardPower.textContent = '+' + formatNumber(activeBeast.rewardPower) + ' Power, +' + Math.round(APEX_CONFIG.stonesPerTier * 100) + '% Stones';
+    elements.beastRewardPower.textContent = '+' + Math.round(APEX_CONFIG.powerPerTier * 100) + '% Power, +' + Math.round(APEX_CONFIG.stonesPerTier * 100) + '% Stones';
     elements.beastRewardPower.className = 'text-fuchsia-300 font-mono';
+  } else if (isTitanFight) {
+    elements.beastRewardPower.textContent = 'Opens the Rift';
+    elements.beastRewardPower.className = 'text-amber-300 font-mono';
   } else if (isGuardianFight) {
     elements.beastRewardPower.textContent = 'Breaks Seal ' + activeBeast.sealNumber;
     elements.beastRewardPower.className = 'text-rose-300 font-mono';
@@ -1204,6 +1215,9 @@ function renderFrame(meatRate) {
   if (isApexFight) {
     elements.beastStatusRibbon.textContent = 'APEX LADDER';
     elements.beastStatusRibbon.className = 'absolute bottom-0 inset-x-0 bg-fuchsia-950/90 text-[10px] text-center font-mono py-0.5 text-fuchsia-300 border-t border-fuchsia-700/60 font-bold';
+  } else if (isTitanFight) {
+    elements.beastStatusRibbon.textContent = 'WORLD TITAN';
+    elements.beastStatusRibbon.className = 'absolute bottom-0 inset-x-0 bg-amber-950/90 text-[10px] text-center font-mono py-0.5 text-amber-300 border-t border-amber-600/60 font-bold';
   } else if (isGuardianFight) {
     elements.beastStatusRibbon.textContent = 'TOTEM GUARDIAN';
     elements.beastStatusRibbon.className = 'absolute bottom-0 inset-x-0 bg-rose-950/90 text-[10px] text-center font-mono py-0.5 text-rose-300 border-t border-rose-700/60 font-bold';
@@ -1238,6 +1252,9 @@ function renderFrame(meatRate) {
   } else if (isApexFight) {
     elements.btnFightLabel.textContent = 'TAME APEX';
     elements.btnFightIcon.className = 'fa-solid fa-crown text-lg text-fuchsia-200';
+  } else if (isTitanFight) {
+    elements.btnFightLabel.textContent = 'SLAY THE TITAN';
+    elements.btnFightIcon.className = 'fa-solid fa-mountain text-lg text-amber-200';
   } else if (isGuardianFight) {
     elements.btnFightLabel.textContent = 'BREAK THE SEAL';
     elements.btnFightIcon.className = 'fa-solid fa-lock-open text-lg text-rose-200';
@@ -1361,6 +1378,14 @@ function updateBeastSelectorOptions() {
     if (gameState.selectedBeastIndex === APEX_SLOT) opt.selected = true;
     elements.selectBeastTier.appendChild(opt);
   }
+  const titan = (typeof getTitanBoss === 'function') ? getTitanBoss() : null;
+  if (titan) {
+    const opt = document.createElement('option');
+    opt.value = TITAN_SLOT;
+    opt.textContent = '⛰️ TITAN: ' + titan.name + ' (opens the Rift)';
+    if (gameState.selectedBeastIndex === TITAN_SLOT) opt.selected = true;
+    elements.selectBeastTier.appendChild(opt);
+  }
   const guardian = (typeof getTotemGuardian === 'function') ? getTotemGuardian() : null;
   if (guardian) {
     const opt = document.createElement('option');
@@ -1403,7 +1428,7 @@ function renderGeneratorsLadder() {
       const disabledAttr = canAfford ? '' : 'disabled';
 
       const iconInnerHtml = gen.image
-        ? '<img src="' + gen.image + '" alt="' + gen.name + '" class="w-full h-full object-contain p-0.5" onerror="this.style.display=\'none\'" />'
+        ? '<img src="' + gen.image + '" alt="' + gen.name + '" class="w-full h-full object-contain p-0.5" style="filter:' + (gen.imageFilter || 'none') + '" onerror="this.style.display=\'none\'" />'
         : '<i class="fa-solid ' + gen.icon + '"></i>';
 
       card.className = 'bg-primal-800/90 border border-primal-700 rounded-xl p-3 sm:p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-inner hover:border-amber-500/30 transition-colors';
@@ -1643,6 +1668,7 @@ elements.btnForage.addEventListener('click', (e) => {
   addMeat(earned);
   sound.playClick();
   if (isTotemUnlocked()) dealTotemDamage(getTotemClickDamage());
+  if (addWarmth(WORLD_CONFIG.blizzard.warmthPerClick)) renderTundraStrip();
 
   if (gameState.incubator) {
     gameState.incubator.remaining = Math.max(0, gameState.incubator.remaining - 1);
@@ -2584,8 +2610,9 @@ function renderLegacyTree() {
     let body;
     if (branch.locked) {
       const pmOpen = isPackmasterUnlocked();
-      body = LEGACY_PACKMASTER_PREVIEW.map(p => {
-        const ready = pmOpen && p.unlock === 'seal3';
+      const ordersNote = (pmOpen && getWorldIndex() >= 1) ? '<div class="text-[11px] text-sky-300 font-mono"><i class="fa-solid fa-scroll mr-1"></i>Pack Orders: ' + getPackOrders() + ' / ' + PACKMASTER_CONFIG.maxOrders + '. Auto-Trophy and Auto-Strike use one each. Any click in the game refills them.</div>' : '';
+      body = ordersNote + LEGACY_PACKMASTER_PREVIEW.map(p => {
+        const ready = pmOpen && (p.unlock === 'seal3' || (p.unlock === 'world2' && getWorldIndex() >= 1));
         const on = ready && isAutomationOn(p.id);
         const right = ready
           ? '<button data-automation="' + p.id + '" class="shrink-0 px-3 py-1 rounded-full text-[11px] font-mono font-bold border cursor-pointer ' + (on ? 'bg-emerald-700 text-white border-emerald-400' : 'bg-primal-900 text-slate-300 border-primal-600') + '">' + (on ? 'ON' : 'OFF') + '</button>'
@@ -3040,7 +3067,7 @@ function fightPresenterStart(beast, winChance, roll) {
   arena.active = true;
   const win = roll <= winChance;
   const isApex = !!beast.isApex, isGuardian = !!beast.isGuardian;
-  arena.tier.textContent = isGuardian ? 'Totem Seal ' + beast.sealNumber : (isApex ? 'Apex Tier ' : 'Tier ') + beast.tier;
+  arena.tier.textContent = getFightTierLabel(beast);
   arena.title.textContent = beast.name;
   arena.beastName.textContent = beast.name;
   applyBeastImage(arena.beastImg, beast);
@@ -3120,17 +3147,18 @@ function fightPresenterEnd(s) {
   const beast = s.beast, win = s.win;
   const relicId = s.after.relics.find(id => !s.before.relics.includes(id));
   const relic = relicId ? RELIC_REGISTRY[relicId] : null;
-  const firstTame = win && !beast.isApex && !beast.isGuardian && !s.before.tamed.includes(beast.id);
+  const titanWin = win && !!beast.isTitan;
+  const firstTame = win && !beast.isApex && !beast.isGuardian && !beast.isTitan && !s.before.tamed.includes(beast.id);
   const sealBroken = win && beast.isGuardian;
   const apexWin = win && beast.isApex;
   const newBest = s.after.bestApex > s.before.bestApex;
-  const bigMoment = firstTame || sealBroken || newBest || !!relic || (win && s.winChance < 0.25);
+  const bigMoment = titanWin || firstTame || sealBroken || newBest || !!relic || (win && s.winChance < 0.25);
   const mode = getFightAnimMode();
   if (!arena.active && !(bigMoment && mode === 'skip')) return; // nothing to show
   if (!arena.active) {
     // Skip mode: still celebrate the big moments
     arena.active = true;
-    arena.tier.textContent = beast.isGuardian ? 'Totem Seal ' + beast.sealNumber : (beast.isApex ? 'Apex Tier ' : 'Tier ') + beast.tier;
+    arena.tier.textContent = getFightTierLabel(beast);
     arena.title.textContent = beast.name;
     arena.overlay.classList.remove('hidden');
   }
@@ -3151,6 +3179,7 @@ function fightPresenterEnd(s) {
   // Banner + subtitle
   let banner, color, sub;
   if (!win) { banner = 'DEFEATED'; color = 'text-red-500'; sub = 'The ' + beast.name + ' drove you off. Wounded for ' + Math.round(s.after.wound) + 's.'; }
+  else if (titanWin) { banner = 'TITAN SLAIN!'; color = 'text-amber-300'; sub = 'The ' + beast.name + ' falls. The Rift to the next world is open: see the World tab.'; }
   else if (sealBroken) { banner = 'SEAL ' + beast.sealNumber + ' BROKEN!'; color = 'text-rose-300'; sub = 'The ' + beast.name + ' falls and the Totem opens deeper.'; }
   else if (apexWin) { banner = 'APEX TAMED!'; color = 'text-fuchsia-300'; sub = beast.name + ' joins your pack.'; }
   else if (firstTame) { banner = 'TAMED!'; color = 'text-emerald-300'; sub = beast.name + ' bonds with you.'; }
@@ -3178,7 +3207,7 @@ function fightPresenterEnd(s) {
     if (beast.id === 'chimera_wyrm') chips.push(rewardChip('fa-crown', 'Apex Ladder and Ascension open', 'border-fuchsia-600/50 bg-fuchsia-950/40 text-fuchsia-200'));
   }
   if (apexWin) {
-    chips.push(rewardChip('fa-paw', '+' + formatNumber(beast.rewardPower) + ' Beast Power', 'border-emerald-600/50 bg-emerald-950/40 text-emerald-200'));
+    chips.push(rewardChip('fa-paw', 'Combat Power x' + getApexPowerMult().toFixed(2) + ' this run', 'border-emerald-600/50 bg-emerald-950/40 text-emerald-200'));
     chips.push(rewardChip('fa-gem', 'Bloodstones x' + getApexStoneMult().toFixed(2), 'border-rose-600/50 bg-rose-950/40 text-rose-200'));
     if (s.after.fangs > s.before.fangs) chips.push(rewardChip('fa-tooth', '+' + (s.after.fangs - s.before.fangs) + ' Apex Fangs', 'border-fuchsia-600/50 bg-fuchsia-950/40 text-fuchsia-200'));
     if (newBest) chips.push(rewardChip('fa-medal', 'New deepest Apex!'));
@@ -3340,10 +3369,234 @@ function updateAutoBuyBadge() {
   }, 1000);
 })();
 
+
+/**
+ * ================= WORLDS UI =================
+ */
+function getFightTierLabel(b) {
+  if (b.isGuardian) return 'Totem Seal ' + b.sealNumber;
+  if (b.isTitan) return 'World Titan';
+  return (b.isApex ? 'Apex Tier ' : 'Tier ') + b.tier;
+}
+
+/** Fill every hardcoded boss name in the page with this world's names */
+function applyWorldText() {
+  document.querySelectorAll('[data-beast-name]').forEach(el => {
+    const b = BEAST_CATALOG[+el.getAttribute('data-beast-name')];
+    if (b) el.textContent = b.name;
+  });
+  const wn = document.getElementById('hud-world-name');
+  if (wn) wn.textContent = getWorld().name;
+}
+
+let migrateArmedUntil = 0;
+let worldSignature = '';
+
+function worldStatusOf(i) {
+  const w = WORLDS[i];
+  if (i < getWorldIndex()) return 'cleared';
+  if (i === getWorldIndex()) return 'current';
+  if (w.comingSoon) return 'soon';
+  return 'locked';
+}
+
+function renderWorldTab() {
+  const root = document.getElementById('world-content');
+  if (!root) return;
+  const w = getWorld();
+  const next = WORLDS[getWorldIndex() + 1];
+  const depth = getApexDepth();
+  const need = WORLD_CONFIG.titanAfterApexTier - 4;
+  const titan = getTitanBoss();
+  const pct = Math.min(100, Math.max(depth, gameState.bestApexDepth || 0) / need * 100);
+  const armed = migrateArmedUntil > Date.now();
+
+  let titanHtml;
+  if (gameState.riftOpen) {
+    titanHtml = '<div class="text-emerald-300 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>' + w.titan.name + ' slain. The Rift is open.</div>';
+  } else if (titan) {
+    const b = getEffectiveBossBracket(titan);
+    titanHtml = '<div class="text-amber-300 font-bold mb-2"><i class="fa-solid fa-triangle-exclamation mr-1"></i>' + titan.name + ' is awake! Power ' + formatNumber(b.min) + ' - ' + formatNumber(b.max) + '</div>' +
+      '<button data-world-action="fight-titan" class="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-700 to-rose-700 text-white font-cinzel font-bold text-sm border border-amber-400/60 cursor-pointer hover:brightness-110">Hunt the Titan</button>';
+  } else {
+    titanHtml = '<div class="text-slate-400">Sleeping. Reach Apex Tier ' + WORLD_CONFIG.titanAfterApexTier + ' to wake the <strong class="text-slate-200">' + w.titan.name + '</strong>. Once awake it stays awake, and it does not grow stronger when you Ascend.</div>' +
+      '<div class="mt-2 h-2 rounded-full bg-primal-900 overflow-hidden border border-primal-700"><div class="h-full bg-gradient-to-r from-fuchsia-600 to-amber-500" style="width:' + pct + '%"></div></div>' +
+      '<div class="text-[11px] font-mono text-slate-500 mt-1">Deepest Apex: ' + (Math.max(depth, gameState.bestApexDepth || 0) > 0 ? 'Tier ' + (4 + Math.max(depth, gameState.bestApexDepth || 0)) : 'none yet') + ' / Tier ' + WORLD_CONFIG.titanAfterApexTier + '</div>';
+  }
+
+  let migrateHtml;
+  if (!next) {
+    migrateHtml = '<div class="text-slate-400 text-sm">You have reached the farthest known world.</div>';
+  } else if (next.comingSoon) {
+    migrateHtml = '<div class="text-slate-400 text-sm"><i class="fa-solid fa-hourglass-half mr-1"></i>The ' + next.name + ' is coming in a future update. Keep climbing: everything here still counts.</div>';
+  } else {
+    const nextMeat = Math.pow(WORLD_CONFIG.bonusMeatPerWorld, getWorldIndex() + 1);
+    const nextPow = 1 + WORLD_CONFIG.bonusPowerPerWorld * (getWorldIndex() + 1);
+    migrateHtml =
+      '<div class="grid sm:grid-cols-2 gap-3 text-xs">' +
+        '<div class="p-3 rounded-lg border border-rose-800/60 bg-rose-950/20"><div class="font-bold text-rose-300 mb-1">Resets</div><div class="text-slate-300 leading-relaxed">Everything an Ascension resets, plus Bloodstones, Bloodstone Perks, Ascension count, Hybrids, the Nest egg, and your deepest Apex.</div></div>' +
+        '<div class="p-3 rounded-lg border border-emerald-800/60 bg-emerald-950/20"><div class="font-bold text-emerald-300 mb-1">Keeps</div><div class="text-slate-300 leading-relaxed">Relics, Beast Forge, Primal Totem, Hunter\'s Legacy (with a free respec), Trophy Weapon, Fishing and the Bestiary.</div></div>' +
+      '</div>' +
+      '<div class="text-xs text-slate-300 mt-3">New World Bonus: <strong class="text-amber-300">Meat/s x' + formatNumber(nextMeat) + '</strong> and <strong class="text-amber-300">Combat Power x' + nextPow.toFixed(1) + '</strong>, forever. Unlocks <strong class="text-sky-300">Auto-Trophy</strong> and <strong class="text-sky-300">Auto-Strike</strong>.</div>' +
+      '<button data-world-action="migrate" ' + (canMigrate() ? '' : 'disabled') + ' class="mt-3 w-full py-3 rounded-xl font-cinzel font-bold text-sm border cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ' + (armed ? 'bg-rose-700 border-rose-400 text-white' : 'bg-gradient-to-r from-sky-800 via-indigo-700 to-sky-800 border-sky-400/50 text-white') + '">' +
+        (armed ? 'CLICK AGAIN TO MIGRATE TO THE ' + next.name.toUpperCase() : (gameState.riftOpen ? 'STEP THROUGH THE RIFT' : 'Slay the Titan to open the Rift')) + '</button>';
+  }
+
+  const mapHtml = WORLDS.map((x, i) => {
+    const st = worldStatusOf(i);
+    const rec = (gameState.worldRecords || {})[x.id] || {};
+    const badge = { cleared: '<span class="text-emerald-300">Cleared</span>', current: '<span class="text-amber-300">You are here</span>', soon: '<span class="text-slate-500">Coming soon</span>', locked: '<span class="text-slate-500"><i class="fa-solid fa-lock mr-1"></i>Locked</span>' }[st];
+    const recLine = st === 'cleared'
+      ? 'Ascensions: ' + (rec.ascensions || 0) + ' · deepest Apex: Tier ' + (4 + (rec.bestApex || 0))
+      : (st === 'current' ? 'Ascensions here: ' + gameState.ascensionCount + ' · deepest Apex: ' + (gameState.bestApexDepth ? 'Tier ' + (4 + gameState.bestApexDepth) : 'none yet') : '');
+    const img = BEAST_CATALOG[BEAST_CATALOG.length - 1];
+    const art = (st === 'soon' || st === 'locked')
+      ? '<div class="w-14 h-14 rounded-xl bg-primal-900 border border-primal-700 flex items-center justify-center text-slate-600 text-2xl"><i class="fa-solid ' + x.icon + '"></i></div>'
+      : '<img src="' + img.image + '" class="w-14 h-14 rounded-xl object-cover border border-primal-600" style="filter:' + (x.filter || 'none') + '" alt="">';
+    return '<div class="flex items-center gap-3 p-3 rounded-xl border ' + (st === 'current' ? 'border-amber-500/60 bg-amber-950/20' : 'border-primal-700 bg-primal-900/50') + '">' + art +
+      '<div class="min-w-0 flex-1"><div class="flex items-center justify-between gap-2"><div class="font-cinzel font-bold text-slate-100"><i class="fa-solid ' + x.icon + ' mr-1 text-slate-400"></i>World ' + (i + 1) + ': ' + x.name + '</div><div class="text-[11px] font-mono">' + badge + '</div></div>' +
+      '<div class="text-[11px] text-slate-400">' + x.blurb + '</div>' + (recLine ? '<div class="text-[10px] font-mono text-slate-500 mt-0.5">' + recLine + '</div>' : '') + '</div></div>';
+  }).join('');
+
+  const bz = getBlizzardState();
+  const twistHtml = w.twist === 'blizzard'
+    ? '<div class="text-xs text-sky-200 mt-2 space-y-1"><div><i class="fa-solid fa-wind mr-1"></i><strong>Blizzards:</strong> every ' + Math.round(WORLD_CONFIG.blizzard.everySec / 60) + ' minutes a blizzard freezes your camp for ' + Math.round(WORLD_CONFIG.blizzard.lastSec / 60) + ' minutes (Meat/s x' + WORLD_CONFIG.blizzard.meatMult + '). ' + (bz.active ? 'One is raging now.' : 'Next in ' + formatDuration(bz.nextIn) + '.') + '</div>' +
+      '<div><i class="fa-solid fa-fire mr-1"></i><strong>Stoke the Hearth:</strong> during a blizzard, Forage clicks and Stoke (' + WORLD_CONFIG.blizzard.stokeStamina + ' Stamina) fill your Warmth. Full Warmth thaws your camp and ends the slowdown early.</div>' +
+      '<div><i class="fa-solid fa-cube mr-1"></i><strong>Frozen Caches:</strong> every blizzard leaves one behind (hold up to ' + WORLD_CONFIG.blizzard.maxCaches + '). Each thaws in ' + Math.round(WORLD_CONFIG.blizzard.cacheThawSec / 60) + ' minutes, or chip the ice with Stamina. Inside: Meat, Totem Shards or Apex Fangs, and rarely a Mammoth Cache with all three.</div></div>'
+    : '';
+
+  root.innerHTML =
+    '<div class="bg-gradient-to-br from-sky-950/40 via-primal-850 to-primal-900 border border-sky-700/50 rounded-2xl p-5 sm:p-6 shadow-xl">' +
+      '<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-950/90 border border-sky-600/50 text-sky-300 text-xs font-mono font-bold"><i class="fa-solid ' + w.icon + '"></i> World ' + (getWorldIndex() + 1) + '</div>' +
+      '<h2 class="font-cinzel text-2xl sm:text-3xl font-bold text-white tracking-wide mt-1">' + w.name + '</h2>' +
+      '<p class="text-xs text-slate-400 max-w-2xl">' + w.blurb + '</p>' + twistHtml +
+      (getWorldIndex() > 0 ? '<div class="text-xs text-amber-200 mt-2"><i class="fa-solid fa-star mr-1"></i>World Bonus: Meat/s x' + formatNumber(getWorldMeatMult()) + ', Combat Power x' + getWorldPowerMult().toFixed(1) + '</div>' : '') +
+    '</div>' +
+    '<div class="grid lg:grid-cols-2 gap-6">' +
+      '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl space-y-2"><div class="font-cinzel font-bold text-slate-100"><i class="fa-solid fa-mountain mr-1 text-amber-400"></i>The Titan</div>' + titanHtml + '</div>' +
+      '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl"><div class="font-cinzel font-bold text-slate-100 mb-2"><i class="fa-solid fa-hurricane mr-1 text-sky-400"></i>Migration' + (next ? ' to the ' + next.name : '') + '</div>' + migrateHtml + '</div>' +
+    '</div>' +
+    '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl space-y-3"><div class="font-cinzel font-bold text-slate-100"><i class="fa-solid fa-map mr-1 text-emerald-400"></i>World Map</div>' + mapHtml + '</div>';
+}
+
+function formatDuration(sec) {
+  sec = Math.max(0, Math.round(sec));
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return m > 0 ? m + 'm ' + (s < 10 ? '0' : '') + s + 's' : s + 's';
+}
+
+/** World 2 strip under the header: blizzard + Warmth on the left, Frozen Caches on the right */
+function renderTundraStrip() {
+  const el = document.getElementById('blizzard-banner');
+  if (!el) return;
+  if (getWorld().twist !== 'blizzard') { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  const c = WORLD_CONFIG.blizzard, bz = getBlizzardState(), raging = isBlizzardRaging(), t = getTundra();
+  let left;
+  if (raging) {
+    const w = Math.round(getWarmthPct() * 100);
+    left = '<div class="flex-1 min-w-[220px]"><div class="font-bold text-sky-100"><i class="fa-solid fa-snowflake fa-spin mr-1"></i>BLIZZARD! Meat/s x' + c.meatMult + ' for ' + formatDuration(bz.secsLeft) + '</div>' +
+      '<div class="text-[11px] text-sky-200/80">Forage clicks and Stoke warm the hearth. Fill it to thaw your camp early.</div>' +
+      '<div class="flex items-center gap-2 mt-1"><div class="flex-1 h-2.5 rounded-full bg-sky-950 border border-sky-700 overflow-hidden"><div class="h-full bg-gradient-to-r from-amber-500 to-orange-500" style="width:' + w + '%"></div></div>' +
+      '<span class="font-mono text-[11px] text-amber-200">' + w + '%</span>' +
+      '<button data-tundra="stoke" ' + (gameState.stamina >= c.stokeStamina ? '' : 'disabled') + ' class="px-2 py-1 rounded bg-orange-700 hover:bg-orange-600 text-white text-[11px] font-bold border border-orange-400/60 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"><i class="fa-solid fa-fire mr-1"></i>Stoke (' + c.stokeStamina + ' Stamina)</button></div></div>';
+  } else if (bz.active) {
+    left = '<div class="flex-1 min-w-[220px] text-amber-200"><i class="fa-solid fa-fire mr-1"></i><strong>Camp thawed.</strong> The blizzard rages on outside, but your hearth holds it back (' + formatDuration(bz.secsLeft) + ' left).</div>';
+  } else {
+    left = '<div class="flex-1 min-w-[220px] text-sky-200"><i class="fa-solid fa-wind mr-1"></i>Calm skies. Next blizzard in <span class="font-mono">' + formatDuration(bz.nextIn) + '</span>.</div>';
+  }
+  const icons = [];
+  for (let i = 0; i < c.maxCaches; i++) {
+    const x = t.caches[i];
+    if (!x) icons.push('<div class="w-8 h-8 rounded-lg border border-dashed border-sky-800 bg-sky-950/40"></div>');
+    else {
+      const pct = Math.round((1 - x.left / c.cacheThawSec) * 100);
+      icons.push('<div class="relative w-8 h-8 rounded-lg border ' + (x.left <= 0 ? 'border-amber-400 bg-amber-900/60 text-amber-200' : 'border-sky-400/70 bg-sky-800/60 text-sky-100') + ' flex items-center justify-center overflow-hidden" title="' + (x.left <= 0 ? 'Thawed: open it!' : 'Thawing: ' + formatDuration(x.left) + ' left') + '">' +
+        (x.left > 0 ? '<div class="absolute bottom-0 inset-x-0 bg-amber-500/30" style="height:' + (i === 0 ? pct : 0) + '%"></div>' : '') + '<i class="relative fa-solid ' + (x.left <= 0 ? 'fa-box-open' : 'fa-cube') + '"></i></div>');
+    }
+  }
+  const first = t.caches[0];
+  let btn = '';
+  if (first && first.left <= 0) btn = '<button data-tundra="open" class="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold border border-amber-300 cursor-pointer"><i class="fa-solid fa-box-open mr-1"></i>Open Cache</button>';
+  else if (first) btn = '<button data-tundra="chip" ' + (gameState.stamina >= c.chipStamina ? '' : 'disabled') + ' class="px-2.5 py-1 rounded bg-sky-800 hover:bg-sky-700 text-white text-[11px] font-bold border border-sky-400/60 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" title="Thaws the oldest cache ' + Math.round(c.chipSec / 60) + ' min faster"><i class="fa-solid fa-hammer mr-1"></i>Chip ice (' + c.chipStamina + ' Stamina) · ' + formatDuration(first.left) + '</button>';
+  const right = '<div class="flex items-center gap-2"><div class="text-[11px] text-sky-200/80 mr-1">Frozen Caches</div>' + icons.join('') + btn + '</div>';
+  const cls = 'mb-4 px-4 py-2.5 rounded-xl border text-sm shadow-lg flex flex-wrap items-center gap-3 ' + (raging ? 'border-sky-300/70 bg-sky-900/70' : 'border-sky-800/60 bg-sky-950/50');
+  const html = left + right;
+  // Only touch the DOM when something changed, so a click never lands on a button that was just replaced
+  if (el.className !== cls) el.className = cls;
+  if (el._html !== html) { el._html = html; el.innerHTML = html; }
+}
+
+function getWorldSignature() {
+  const bz = getBlizzardState();
+  return [gameState.world, getApexDepth(), gameState.riftOpen, !!getTitanBoss(), migrateArmedUntil > Date.now(), gameState.isBattling, bz.active, Math.floor(bz.nextIn / 60)].join('|');
+}
+
+function updateWorldLive() {
+  const btn = document.getElementById('tab-btn-world');
+  if (btn) btn.classList.toggle('hidden', !(isApexUnlocked() || getWorldIndex() > 0 || gameState.ascensionCount > 0));
+  const badge = document.getElementById('tab-world-badge');
+  if (badge) {
+    const awake = !!getTitanBoss();
+    badge.textContent = gameState.riftOpen ? 'Rift' : (awake ? 'Titan!' : 'W' + (getWorldIndex() + 1));
+    badge.className = 'text-[9px] px-1.5 py-0.2 rounded font-mono border ' + (gameState.riftOpen || awake ? 'bg-amber-900 text-amber-200 border-amber-500 font-bold' : 'bg-sky-950 text-sky-300 border-sky-700');
+  }
+  tickTundra(1);
+  renderTundraStrip();
+  if (gameState.activeTab !== 'world') return;
+  const sig = getWorldSignature();
+  if (sig !== worldSignature) { worldSignature = sig; renderWorldTab(); }
+}
+
+(function initWorlds() {
+  // Pack Orders refill whenever you actually play (any click), so automation helps but you still check in
+  document.addEventListener('pointerdown', (e) => { if (e.isTrusted && typeof refreshPackOrders === 'function') refreshPackOrders(); }, true);
+  applyWorld();
+  applyWorldText();
+  const btn = document.getElementById('tab-btn-world');
+  if (btn) btn.addEventListener('click', () => switchTab('world'));
+  const root = document.getElementById('world-content');
+  if (root) root.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-world-action]');
+    if (!a || a.disabled) return;
+    const act = a.getAttribute('data-world-action');
+    if (act === 'fight-titan') {
+      gameState.selectedBeastIndex = TITAN_SLOT;
+      updateBeastSelectorOptions();
+      switchTab('hunt');
+    } else if (act === 'migrate') {
+      if (migrateArmedUntil > Date.now()) {
+        migrateArmedUntil = 0;
+        if (performMigration()) {
+          applyWorldText();
+          renderGeneratorsLadder();
+        }
+      } else {
+        migrateArmedUntil = Date.now() + 5000;
+      }
+      worldSignature = '';
+      renderWorldTab();
+    }
+  });
+  const strip = document.getElementById('blizzard-banner');
+  if (strip) strip.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tundra]');
+    if (!b || b.disabled) return;
+    const act = b.getAttribute('data-tundra');
+    if (act === 'stoke' && stokeHearth()) sound.playTone(330, 'triangle', 0.1, 0.08);
+    if (act === 'chip' && chipFrozenCache()) sound.playTone(880, 'square', 0.05, 0.05);
+    if (act === 'open' && openFrozenCache()) { sound.playWin(); if (typeof confettiBurst === 'function') confettiBurst(); }
+    renderTundraStrip();
+    saveGameToStorage();
+  });
+  setInterval(updateWorldLive, 1000);
+})();
+
 setInterval(saveGameToStorage, 10000);
 
 window.addEventListener('DOMContentLoaded', () => {
   const lastSavedAt = loadGameFromStorage();
+  applyWorldText();
   updateBeastSelectorOptions();
   renderGeneratorsLadder();
   renderTrophyCabinet();

@@ -186,7 +186,10 @@ const gameState = {
   fightStats: {},
 
   // Seal 3 Packmaster automation toggles (kept forever)
-  automation: { autoBuy: false, autoTend: false },
+  automation: { autoBuy: false, autoTend: false, autoTrophy: false, autoStrike: false },
+  world: 0,
+  worldRecords: {},
+  riftOpen: false,
 
   // Generator buy amount toggle: 'x1', 'x10' or 'next'
   genBuyMode: 'x1',
@@ -553,6 +556,10 @@ function getSelectedFightTarget() {
     const apex = getApexBoss();
     if (apex) return apex;
   }
+  if (gameState.selectedBeastIndex === TITAN_SLOT) {
+    const titan = getTitanBoss();
+    if (titan) return titan;
+  }
   return BEAST_CATALOG[gameState.selectedBeastIndex] || BEAST_CATALOG[0];
 }
 
@@ -793,6 +800,22 @@ function isAutomationOn(id) {
   return isPackmasterUnlocked() && !!(gameState.automation && gameState.automation[id]);
 }
 
+/** Pack Orders: the pack only fights and strikes for you a limited number of times between check-ins */
+function getPackOrders() {
+  const a = gameState.automation || {};
+  return typeof a.orders === 'number' ? Math.max(0, Math.min(PACKMASTER_CONFIG.maxOrders, a.orders)) : PACKMASTER_CONFIG.maxOrders;
+}
+
+function refreshPackOrders() {
+  if (!gameState.automation) gameState.automation = { autoBuy: false, autoTend: false };
+  gameState.automation.orders = PACKMASTER_CONFIG.maxOrders;
+}
+
+function usePackOrder() {
+  if (!gameState.automation) return;
+  gameState.automation.orders = getPackOrders() - 1;
+}
+
 /** Runs once a second while the game is open. Returns what it did (for the UI). */
 function runAutomation() {
   const did = { bought: 0, tended: false };
@@ -819,6 +842,21 @@ function runAutomation() {
     gameState.incubator.remaining = Math.max(0, gameState.incubator.remaining - 30);
     did.tended = true;
     checkIncubatorHatch();
+  }
+  // World 2 automation: Auto-Trophy, then Auto-Strike, both only with a full Stamina bar
+  const full = () => gameState.stamina >= getMaxStamina() - 0.001;
+  if (getWorldIndex() >= 1 && isAutomationOn('autoTrophy') && getPackOrders() > 0 && full() && !gameState.isBattling && !gameState.inCooldown) {
+    const t = getSelectedFightTarget();
+    if (t && !t.isApex && !t.isGuardian && !t.isTitan && gameState.tamedBeasts[t.id] && calculateWinChance(t) >= 0.9 && gameState.stamina >= getBossStaminaCost(t)) {
+      gameState._quietFight = true;
+      challengeCurrentBeast();
+      gameState._quietFight = false;
+      usePackOrder();
+      did.trophy = true;
+    }
+  }
+  if (getWorldIndex() >= 1 && isAutomationOn('autoStrike') && getPackOrders() > 0 && full() && !gameState.isBattling && isTotemUnlocked()) {
+    if (strikeTotem()) { usePackOrder(); did.struck = true; }
   }
   return did;
 }
@@ -856,7 +894,6 @@ function getCombatPowerBreakdown() {
     const p = getHybridRawPower(h);
     if (p > 0) beasts.push({ label: h.name + ' Lvl ' + getHybridLevel(h.id) + (isHybridAwake(h) ? '' : ' (Pack Alpha 25%)'), value: p });
   }
-  if (getApexDepth() > 0) beasts.push({ label: 'Apex Ladder (' + getApexDepth() + ' tamed)', value: getApexBeastPower() });
   const beastMults = [];
   if (gameState.beastMasteryLevel > 0) beastMults.push({ label: 'Beast Mastery Lvl ' + gameState.beastMasteryLevel, mult: getBeastMasteryMultiplier() });
   if (getLegacyRank('beast_bond') > 0) beastMults.push({ label: 'Beast Bond (Legacy)', mult: getLegacyMult('beast_bond') });
@@ -868,6 +905,8 @@ function getCombatPowerBreakdown() {
   add('Totem blessings and Seals', 1 + getTotemBonus('power'));
   add('Keen Instincts (Legacy)', getLegacyMult('keen_instincts'));
   add('Trophy Weapon', getTrophyPowerMult());
+  add('Apex Ladder (' + getApexDepth() + ' tamed this run)', getApexPowerMult());
+  add('World Bonus', getWorldPowerMult());
 
   return {
     hunter, sparLevel: gameState.sparringLevel, sparMult, hunterTotal: getHunterPower(),
@@ -924,15 +963,263 @@ function getApexBossAt(k) {
     rewardPower: getApexReward(k),
     accentColor: base.accentColor,
     imageFilter: APEX_TITLE_FILTERS[Math.min(lap, APEX_TITLE_FILTERS.length - 1)],
-    desc: 'Apex Tier ' + (4 + k) + '. Every Apex you tame this run adds Beast Power and raises your Ascension Bloodstones. The ladder resets when you Ascend.',
+    desc: 'Apex Tier ' + (4 + k) + '. Every Apex you tame this run adds +' + Math.round(APEX_CONFIG.powerPerTier * 100) + '% Combat Power and raises your Ascension Bloodstones. The ladder resets when you Ascend.',
     relics: [],
     staminaCost: APEX_CONFIG.stamina,
     woundedSec: APEX_CONFIG.woundSec
   };
 }
 
+/** Apex rewards are a Combat Power multiplier now (see getApexPowerMult), so no flat Beast Power */
 function getApexReward(k) {
-  return Math.floor(getApexBaseMin(k) * APEX_CONFIG.rewardShare);
+  return 0;
+}
+
+function getApexPowerMult() {
+  return 1 + APEX_CONFIG.powerPerTier * getApexDepth();
+}
+
+/**
+ * ================= WORLDS =================
+ */
+const BASE_BEASTS = BEAST_CATALOG.map(b => Object.assign({}, b));
+const BASE_GENS = GENERATOR_LADDER.map(g => Object.assign({}, g));
+const TITAN_SLOT = 97; // selectedBeastIndex value meaning "this world's Titan"
+
+function getWorldIndex() {
+  return Math.max(0, Math.min(WORLDS.length - 1, gameState.world || 0));
+}
+
+function getWorld() {
+  return WORLDS[getWorldIndex()];
+}
+
+/** Reskin the shared bosses and generators for the current world, and set boss difficulty */
+function applyWorld() {
+  const w = getWorld();
+  BEAST_CATALOG.forEach((b, i) => {
+    const base = BASE_BEASTS[i];
+    const ov = (w.beasts && w.beasts[i]) || {};
+    b.name = ov.name || base.name;
+    b.desc = ov.desc || base.desc;
+    b.minPower = Math.floor(base.minPower * w.hardness);
+    b.maxPower = Math.floor(base.maxPower * w.hardness);
+    b.rewardPower = Math.floor(base.rewardPower * Math.sqrt(w.hardness));
+    b.imageFilter = w.filter || '';
+  });
+  GENERATOR_LADDER.forEach((g, i) => {
+    const base = BASE_GENS[i];
+    const ov = (w.gens && w.gens[i]) || {};
+    g.name = ov.name || base.name;
+    g.desc = ov.desc || base.desc;
+    g.imageFilter = w.filter || '';
+  });
+  if (typeof PARENT_DEFINITIONS !== 'undefined') {
+    PARENT_DEFINITIONS.forEach(p => {
+      const b = BEAST_CATALOG.find(x => x.id === p.id);
+      if (b) p.name = b.name;
+    });
+  }
+}
+
+/** Permanent World Bonus from every world you've opened (World 2 = 1 opened) */
+function getWorldsOpened() {
+  return getWorldIndex();
+}
+
+function getWorldMeatMult() {
+  return Math.pow(WORLD_CONFIG.bonusMeatPerWorld, getWorldsOpened());
+}
+
+function getWorldPowerMult() {
+  return 1 + WORLD_CONFIG.bonusPowerPerWorld * getWorldsOpened();
+}
+
+/** World 2 twist: blizzards on a fixed wall-clock cycle */
+const PREVIEW_CLOCK = { offsetMs: 0 }; // preview/testing only: shifts the blizzard clock
+function getBlizzardState(nowMs = Date.now() + PREVIEW_CLOCK.offsetMs) {
+  const w = getWorld();
+  if (w.twist !== 'blizzard') return { active: false, secsLeft: 0, nextIn: 0 };
+  const c = WORLD_CONFIG.blizzard;
+  const t = Math.floor(nowMs / 1000) % c.everySec;
+  const active = t < c.lastSec;
+  return { active, secsLeft: active ? c.lastSec - t : 0, nextIn: active ? 0 : c.everySec - t };
+}
+
+function getTwistMeatMult() {
+  return isBlizzardRaging() ? WORLD_CONFIG.blizzard.meatMult : 1;
+}
+
+/** ---------- World 2: Stoke the Hearth and Frozen Caches ---------- */
+function getTundra() {
+  if (!gameState.tundra) gameState.tundra = { warmth: 0, warmthCycle: -1, thawedCycle: -1, lastCacheCycle: null, caches: [] };
+  return gameState.tundra;
+}
+
+function getBlizzardCycle(nowMs = Date.now() + PREVIEW_CLOCK.offsetMs) {
+  return Math.floor(nowMs / 1000 / WORLD_CONFIG.blizzard.everySec);
+}
+
+/** A blizzard is "raging" unless you've already thawed your camp this cycle */
+function isBlizzardRaging() {
+  const bz = getBlizzardState();
+  return bz.active && getTundra().thawedCycle !== getBlizzardCycle();
+}
+
+function getWarmthPct() {
+  const t = getTundra();
+  return t.warmthCycle === getBlizzardCycle() ? Math.min(1, t.warmth / WORLD_CONFIG.blizzard.warmthNeeded) : 0;
+}
+
+function addWarmth(n) {
+  if (!isBlizzardRaging()) return false;
+  const t = getTundra(), c = getBlizzardCycle();
+  if (t.warmthCycle !== c) { t.warmthCycle = c; t.warmth = 0; }
+  t.warmth += n;
+  if (t.warmth >= WORLD_CONFIG.blizzard.warmthNeeded) {
+    t.thawedCycle = c;
+    t.warmth = 0;
+    t.caches.forEach(x => { x.left = Math.max(0, x.left - WORLD_CONFIG.blizzard.thawBonusSec); });
+    logCombatMessage('🔥 <strong>CAMP THAWED!</strong> The hearth roars and the blizzard breaks early. Your Frozen Caches thaw ' + Math.round(WORLD_CONFIG.blizzard.thawBonusSec / 60) + ' min faster.', 'unlock');
+    showToast('Camp thawed! The blizzard breaks.', 'success', true);
+  }
+  return true;
+}
+
+function stokeHearth() {
+  const c = WORLD_CONFIG.blizzard;
+  if (!isBlizzardRaging() || gameState.stamina < c.stokeStamina) return false;
+  gameState.stamina -= c.stokeStamina;
+  return addWarmth(c.stokeWarmth);
+}
+
+/** Each blizzard that passes leaves a Frozen Cache behind (up to a few at once); the oldest thaws first */
+function tickTundra(dtSec) {
+  if (getWorld().twist !== 'blizzard') return;
+  const t = getTundra(), c = WORLD_CONFIG.blizzard;
+  const bz = getBlizzardState();
+  const cycle = getBlizzardCycle();
+  const completed = bz.active ? cycle - 1 : cycle;
+  if (t.lastCacheCycle === null) t.lastCacheCycle = completed;
+  while (t.lastCacheCycle < completed) {
+    t.lastCacheCycle++;
+    if (t.caches.length < c.maxCaches) t.caches.push({ left: c.cacheThawSec });
+  }
+  if (t.caches.length && t.caches[0].left > 0) t.caches[0].left = Math.max(0, t.caches[0].left - dtSec);
+}
+
+function chipFrozenCache() {
+  const t = getTundra(), c = WORLD_CONFIG.blizzard;
+  const x = t.caches[0];
+  if (!x || x.left <= 0 || gameState.stamina < c.chipStamina) return false;
+  gameState.stamina -= c.chipStamina;
+  x.left = Math.max(0, x.left - c.chipSec);
+  return true;
+}
+
+function openFrozenCache() {
+  const t = getTundra(), c = WORLD_CONFIG.blizzard;
+  const x = t.caches[0];
+  if (!x || x.left > 0) return null;
+  t.caches.shift();
+  const jackpot = Math.random() < c.jackpotChance;
+  const parts = [];
+  const meatRate = getMeatRate() / getTwistMeatMult();
+  const meat = Math.floor(Math.max(meatRate * (jackpot ? c.jackpotMeatSec : c.meatSec), getClickYield() * (jackpot ? 1000 : 200)));
+  const roll = Math.random();
+  if (jackpot || roll < 0.5) { addMeat(meat); parts.push('+' + formatNumber(meat) + ' Meat'); }
+  if (isTotemUnlocked() && (jackpot || (roll >= 0.5 && roll < 0.75))) {
+    const shards = Math.max(10, c.shardsPerLayer * (gameState.totem.layer || 1));
+    gameState.totem.shards += shards; parts.push('+' + formatNumber(shards) + ' Totem Shards');
+  }
+  if (jackpot || roll >= 0.75 || parts.length === 0) {
+    if (!gameState.trophy) gameState.trophy = { fangs: 0, level: 0 };
+    const fangs = 1 + Math.floor((gameState.bestApexDepth || 0) / 3);
+    gameState.trophy.fangs += fangs; parts.push('+' + fangs + ' Apex Fang' + (fangs === 1 ? '' : 's'));
+  }
+  const msg = (jackpot ? '💎 <strong>MAMMOTH CACHE!</strong> ' : '🧊 <strong>Frozen Cache thawed:</strong> ') + parts.join(', ') + '.';
+  logCombatMessage(msg, jackpot ? 'relic' : 'win');
+  showToast((jackpot ? 'Mammoth Cache! ' : 'Cache opened: ') + parts.join(', '), 'success', jackpot);
+  return { jackpot, parts };
+}
+
+/** ---------- The Titan ---------- */
+function isTitanAwake() {
+  return !gameState.riftOpen && Math.max(getApexDepth(), gameState.bestApexDepth || 0) >= WORLD_CONFIG.titanAfterApexTier - 4;
+}
+
+function getTitanBoss() {
+  if (!isTitanAwake()) return null;
+  const w = getWorld();
+  const base = BEAST_CATALOG[w.titan.baseIndex];
+  const min = Math.floor(getApexBaseMin(WORLD_CONFIG.titanApexEquivalent - 4) * (w.titan.mult || WORLD_CONFIG.titanExtraMult));
+  return {
+    id: 'titan_' + w.id,
+    isTitan: true,
+    tier: 'Titan',
+    baseId: base.id,
+    name: w.titan.name,
+    image: base.image,
+    fallbackImage: base.fallbackImage,
+    imageFilter: w.titan.filter,
+    minPower: min,
+    maxPower: min * APEX_CONFIG.maxMult,
+    rewardPower: 0,
+    accentColor: base.accentColor,
+    desc: w.titan.desc,
+    relics: [],
+    staminaCost: APEX_CONFIG.stamina,
+    woundedSec: 300
+  };
+}
+
+function slayTitan(boss) {
+  gameState.riftOpen = true;
+  const w = getWorld();
+  if (!gameState.worldRecords) gameState.worldRecords = {};
+  const rec = gameState.worldRecords[w.id] || (gameState.worldRecords[w.id] = {});
+  rec.titanAt = Date.now();
+  rec.bestApex = Math.max(rec.bestApex || 0, gameState.bestApexDepth || 0);
+  logCombatMessage('🌋 <strong>TITAN SLAIN!</strong> ' + boss.name + ' falls. <strong>The Rift is open</strong>: see the World tab.', 'relic');
+  showToast('TITAN SLAIN! The Rift is open.', 'success', true);
+}
+
+function canMigrate() {
+  const next = WORLDS[getWorldIndex() + 1];
+  return !!gameState.riftOpen && !!next && !next.comingSoon && !gameState.isBattling;
+}
+
+/** Travel to the next world: a bigger reset than Ascension, with a permanent World Bonus */
+function performMigration() {
+  if (!canMigrate()) return false;
+  const from = getWorld();
+  if (!gameState.worldRecords) gameState.worldRecords = {};
+  const rec = gameState.worldRecords[from.id] || (gameState.worldRecords[from.id] = {});
+  rec.clearedAt = Date.now();
+  rec.ascensions = gameState.ascensionCount;
+  rec.bestApex = Math.max(rec.bestApex || 0, gameState.bestApexDepth || 0);
+
+  // Everything an Ascension resets
+  resetRunState();
+  // ...plus the world's own economy
+  gameState.bloodstones = 0;
+  gameState.ascensionPerks = {};
+  gameState.ascensionCount = 0;
+  gameState.hybrids = {};
+  gameState.incubator = null;
+  gameState.bestApexDepth = 0;
+  gameState.fightStats = {};
+  gameState.riftOpen = false;
+  if (gameState.legacy) gameState.legacy.freeRespec = true;
+
+  gameState.world = getWorldIndex() + 1;
+  applyWorld();
+  const to = getWorld();
+  gameState.worldRecords[to.id] = gameState.worldRecords[to.id] || { arrivedAt: Date.now() };
+  logCombatMessage('🌀 <strong>MIGRATION COMPLETE.</strong> Welcome to the <strong>' + to.name + '</strong>. World Bonus: Meat/s x' + formatNumber(getWorldMeatMult()) + ', Combat Power x' + getWorldPowerMult().toFixed(1) + '.', 'unlock');
+  showToast('Welcome to the ' + to.name + '!', 'success', true);
+  renderAfterReset();
+  return true;
 }
 
 /** ---------- Seal 2 Trophy Weapon ---------- */
@@ -993,7 +1280,7 @@ function tameApexBoss(boss) {
     if (gameState.totem) gameState.totem.shards += shards;
     logCombatMessage('🏅 <strong>NEW DEEPEST APEX!</strong> Tier ' + boss.tier + ' reached for the first time: +' + formatNumber(shards) + ' Totem Shards.', 'relic');
   }
-  logCombatMessage('👑 <strong>APEX TAMED!</strong> ' + boss.name + ' (Tier ' + boss.tier + ') joins your pack: +' + formatNumber(boss.rewardPower) + ' Beast Power. Ascension Bloodstones now x' + getApexStoneMult().toFixed(2) + '.', 'unlock');
+  logCombatMessage('👑 <strong>APEX TAMED!</strong> ' + boss.name + ' (Tier ' + boss.tier + ') joins your pack: Combat Power x' + getApexPowerMult().toFixed(2) + ' this run. Ascension Bloodstones now x' + getApexStoneMult().toFixed(2) + '.', 'unlock');
   showToast('APEX TAMED: ' + boss.name + '!', 'success', true);
 }
 
@@ -1040,6 +1327,18 @@ function performAscension() {
   // Hunter's Legacy: one free respec after each Ascension
   if (gameState.legacy) gameState.legacy.freeRespec = true;
 
+  resetRunState();
+
+  logCombatMessage(
+    `🔥 <strong>PRIMAL ASCENSION #${gameState.ascensionCount} COMPLETE!</strong> Claimed <strong>+${formatNumber(claimed)} Primal Bloodstones</strong>! Relics, Forge, and Hybrids retained (they sleep until you re-tame their bosses). Bosses grow stronger.`,
+    'unlock'
+  );
+  showToast(`Ascended! Claimed +${formatNumber(claimed)} Primal Bloodstones!`, 'success', true);
+  renderAfterReset();
+}
+
+/** Everything a run owns: reset by Ascension and by Migration */
+function resetRunState() {
   // Full Loop Prestige Reset: Reset Camp Economy, Weapons, Training, and Milestone Bosses
   gameState.meat = 0;
   gameState.runMeatEarned = 0;
@@ -1073,13 +1372,9 @@ function performAscension() {
   };
 
   gameState.stamina = getMaxStamina();
+}
 
-  logCombatMessage(
-    `🔥 <strong>PRIMAL ASCENSION #${gameState.ascensionCount} COMPLETE!</strong> Claimed <strong>+${formatNumber(claimed)} Primal Bloodstones</strong>! Relics, Forge, and Hybrids retained (they sleep until you re-tame their bosses). Bosses grow stronger.`,
-    'unlock'
-  );
-  showToast(`Ascended! Claimed +${formatNumber(claimed)} Primal Bloodstones!`, 'success', true);
-
+function renderAfterReset() {
   updateBeastSelectorOptions();
   renderGeneratorsLadder();
   renderTrophyCabinet();
@@ -1448,7 +1743,7 @@ function getTotalBeastPower() {
 function getTotalCombatPower() {
   const base = getHunterPower() + getTotalBeastPower();
   // Fishing: Codex power bonus and Abyssal Fervor meal
-  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts') * getTrophyPowerMult());
+  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts') * getTrophyPowerMult() * getWorldPowerMult() * getApexPowerMult());
 }
 
 function getBaseMeatRate() {
@@ -1501,6 +1796,9 @@ function getMeatRate(withAdrenalineOverride = null) {
   rate *= getFishBuffMult('meat');
   rate *= (1 + getTotemBonus('meat'));
   rate *= getLegacyMult('cleavers_edge');
+  // Worlds: permanent World Bonus, and this world's twist (Blizzards)
+  rate *= getWorldMeatMult();
+  rate *= getTwistMeatMult();
 
   return rate;
 }
@@ -1561,10 +1859,13 @@ function getClickYield() {
 }
 
 /** Bosses grow stronger with every Ascension (Totem guardians use their own scaling) */
-const BOSS_ASCENSION_GROWTH = 0.75; // +this much boss power per Ascension (linear)
+const BOSS_ASCENSION_GROWTH = 0.75; // +this much boss power per Ascension (linear)...
+const BOSS_ASCENSION_SOFTCAP = 8;   // ...for the first 8 Ascensions in a world
+const BOSS_ASCENSION_GROWTH_LATE = 0.25; // then slower, so a world never turns into a wall
 function getBossAscensionMult(beast) {
-  if (!beast || beast.isGuardian) return 1;
-  return 1 + BOSS_ASCENSION_GROWTH * (gameState.ascensionCount || 0);
+  if (!beast || beast.isGuardian || beast.isTitan) return 1;
+  const a = gameState.ascensionCount || 0;
+  return 1 + BOSS_ASCENSION_GROWTH * Math.min(a, BOSS_ASCENSION_SOFTCAP) + BOSS_ASCENSION_GROWTH_LATE * Math.max(0, a - BOSS_ASCENSION_SOFTCAP);
 }
 
 function getEffectiveBossBracket(beast) {
@@ -1816,7 +2117,9 @@ function challengeCurrentBeast() {
   const winChance = calculateWinChance(beast);
   const roll = Math.random();
   const before = getFightSnapshot();
-  const delay = (typeof fightPresenterStart === 'function') ? fightPresenterStart(beast, winChance, roll) : 1500;
+  const quiet = !!gameState._quietFight;
+  gameState._quietFight = false;
+  const delay = quiet ? 0 : ((typeof fightPresenterStart === 'function') ? fightPresenterStart(beast, winChance, roll) : 1500);
   let resolved = false;
   const resolveFight = () => {
     if (resolved) return;
@@ -1840,6 +2143,9 @@ function challengeCurrentBeast() {
 
       if (beast.isGuardian) {
         breakTotemSeal(beast);
+        updateBeastSelectorOptions();
+      } else if (beast.isTitan) {
+        slayTitan(beast);
         updateBeastSelectorOptions();
       } else if (beast.isApex) {
         tameApexBoss(beast);
@@ -1911,7 +2217,7 @@ function challengeCurrentBeast() {
     }
 
     saveGameToStorage();
-    if (typeof fightPresenterEnd === 'function') {
+    if (!quiet && typeof fightPresenterEnd === 'function') {
       fightPresenterEnd({ beast, win: roll <= winChance, roll, winChance, before, after: Object.assign(getFightSnapshot(), { wound: gameState.cooldownRemaining || 0 }) });
     }
   };
@@ -1988,6 +2294,10 @@ function saveGameToStorage() {
       bestiary: gameState.bestiary || {},
       genBuyMode: gameState.genBuyMode,
       automation: gameState.automation,
+      world: gameState.world || 0,
+      worldRecords: gameState.worldRecords || {},
+      riftOpen: !!gameState.riftOpen,
+      tundra: gameState.tundra || null,
       lastSavedAt: Date.now()
     };
     localStorage.setItem('beast_tamer_savedata', JSON.stringify(data));
@@ -2088,6 +2398,11 @@ function loadGameFromStorage() {
       if (typeof data.bestApexDepth === 'number') gameState.bestApexDepth = data.bestApexDepth;
       if (['x1', 'x10', 'next'].includes(data.genBuyMode)) gameState.genBuyMode = data.genBuyMode;
       if (data.automation && typeof data.automation === 'object') gameState.automation = Object.assign({ autoBuy: false, autoTend: false }, data.automation);
+      if (typeof data.world === 'number' && data.world >= 0 && data.world < WORLDS.length) gameState.world = data.world;
+      if (data.worldRecords && typeof data.worldRecords === 'object') gameState.worldRecords = data.worldRecords;
+      gameState.riftOpen = !!data.riftOpen;
+      if (data.tundra && typeof data.tundra === 'object') gameState.tundra = Object.assign(getTundra(), data.tundra, { caches: Array.isArray(data.tundra.caches) ? data.tundra.caches : [] });
+      applyWorld();
       // Saves that already tamed the Wyrm or Ascended get the Totem right away
       checkTotemUnlock();
 
