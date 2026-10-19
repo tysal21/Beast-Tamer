@@ -196,6 +196,7 @@
   };
 
   let tut = null; // { tab, i }
+  let introPending = true; // hold every guide until we know whether this is a brand-new game
 
   function tutorialState() {
     if (!gameState.tutorial || typeof gameState.tutorial !== 'object') gameState.tutorial = { done: {}, off: false };
@@ -253,6 +254,7 @@
     const st = tutorialState();
     if (st.off || st.done[tab] || !TUTORIAL[tab]) return;
     if (document.body.classList.contains('stealth')) return;
+    if (introPending || document.getElementById('intro-card')) return;
     if (tut && tut.tab === tab) return;
     tut = { tab, i: 0 };
     setTimeout(showStep, 350);
@@ -279,7 +281,79 @@
     };
   }
 
-  // Start: footer buttons, and the Camp guide for brand-new players
+
+  // ---------- 4. The hunter: a name you choose, and a title that grows with you ----------
+  const TITLES = [
+    { title: 'Novice Hunter', when: () => true },
+    { title: 'Beast Tamer', when: () => BEAST_CATALOG.some(b => hasEverTamed(b.id)) },
+    { title: 'Pack Leader', when: () => BEAST_CATALOG.every(b => hasEverTamed(b.id)) },
+    { title: 'Ascendant', when: () => gameState.ascensionCount > 0 || getWorldIndex() > 0 },
+    { title: 'Seal Breaker', when: () => !!(gameState.totem && gameState.totem.sealsBroken >= 1) },
+    { title: 'Titan Slayer', when: () => !!gameState.riftOpen || getWorldIndex() > 0 },
+    { title: 'Rift Walker', when: () => getWorldIndex() >= 1 },
+    { title: 'Keeper of the Archive', when: () => getWorldIndex() >= 2 },
+    { title: 'Furnace-Tempered', when: () => getWorldIndex() >= 2 && !!gameState.riftOpen },
+    { title: 'Heir of the Loom', when: () => getWorldIndex() >= 3 }
+  ];
+  function currentTitle() {
+    let t = TITLES[0].title;
+    for (const x of TITLES) { try { if (x.when()) t = x.title; } catch (e) { /* system not ready */ } }
+    return t;
+  }
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  function hunterName() { return (gameState.hunterName || '').trim() || 'Hunter'; }
+  function renderHunterId() {
+    const t = document.getElementById('hunter-title'), n = document.getElementById('hunter-name');
+    if (t && t.textContent !== currentTitle()) t.textContent = currentTitle();
+    if (n && n.textContent !== hunterName()) n.textContent = hunterName();
+  }
+  function tickTitle() {
+    const t = currentTitle();
+    if (gameState.hunterTitle && gameState.hunterTitle !== t && TITLES.findIndex(x => x.title === t) > TITLES.findIndex(x => x.title === gameState.hunterTitle)) {
+      try { showToast('New title: ' + t + ' ' + hunterName(), 'success', true); logCombatMessage('🏅 <strong>NEW TITLE:</strong> you are now known as <strong>' + esc(t + ' ' + hunterName()) + '</strong>.', 'unlock'); } catch (e) { /* ignore */ }
+    }
+    gameState.hunterTitle = t;
+    renderHunterId();
+  }
+  setInterval(tickTitle, 1000);
+
+  function nameCard(isIntro) {
+    if (document.getElementById('intro-card')) return;
+    const card = document.createElement('div');
+    card.id = 'intro-card';
+    card.innerHTML = '<div class="intro-box" role="dialog" aria-label="' + (isIntro ? 'A new hunt' : 'Rename your hunter') + '">' +
+      (isIntro ? '<div class="intro-quote">A wise man once said:<br><em>hunt, or be hunted.</em></div>' : '<div class="intro-quote">What should they call you?</div>') +
+      '<label class="intro-label" for="intro-name">Your hunter\'s name</label>' +
+      '<input id="intro-name" maxlength="20" autocomplete="off" placeholder="Hunter" value="' + esc(gameState.hunterName || '') + '">' +
+      '<button type="button" id="intro-go">' + (isIntro ? 'Begin the hunt' : 'Save name') + '</button></div>';
+    document.body.appendChild(card);
+    const input = card.querySelector('#intro-name');
+    setTimeout(() => input.focus(), 50);
+    const done = () => {
+      gameState.hunterName = input.value.replace(/[<>]/g, '').trim().slice(0, 20);
+      card.remove();
+      tickTitle();
+      try { saveGameToStorage(); } catch (e) { /* ignore */ }
+      if (isIntro) maybeStartTutorial(gameState.activeTab || 'camp');
+    };
+    card.querySelector('#intro-go').addEventListener('click', done);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') done(); });
+    if (!isIntro) card.addEventListener('click', e => { if (e.target === card) card.remove(); });
+  }
+  const idBtn = document.getElementById('hunter-id');
+  if (idBtn) idBtn.addEventListener('click', () => nameCard(false));
+
+  function isBrandNewGame() {
+    return !gameState.hunterName && (gameState.ascensionCount || 0) === 0 && getWorldIndex() === 0 &&
+      Object.keys(gameState.tamedBeasts || {}).length === 0 && (gameState.generators.snare_lines || 0) === 0 && (gameState.runMeatEarned || 0) < 50;
+  }
+
+  // Start: footer buttons; a brand-new game opens with the intro card, then the Camp guide
   addFooterButtons();
-  setTimeout(() => maybeStartTutorial(gameState.activeTab || 'camp'), 1200);
+  setTimeout(() => {
+    introPending = false;
+    tickTitle();
+    if (isBrandNewGame() && !document.body.classList.contains('stealth')) nameCard(true);
+    else maybeStartTutorial(gameState.activeTab || 'camp');
+  }, 1100);
 })();

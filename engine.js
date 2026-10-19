@@ -497,7 +497,7 @@ const FEATURE_UNLOCKS = [
   { id: 'totem', tab: 'totem', check: () => gameState.ascensionCount > 0 || getWorldIndex() > 0 || isTotemUnlocked(),
     intro: 'The Primal Totem has risen: your Combat Power wears it down, even while you are away.' },
   { id: 'world', tab: 'world', check: () => (gameState.bestApexDepth || 0) >= 4 || getWorldIndex() > 0 || gameState.riftOpen,
-    intro: 'The World tab is open: a Titan sleeps beyond Apex Tier 12.' }
+    intro: 'The Regions tab is open: a Titan sleeps beyond Apex Tier 12.' }
 ];
 
 function isFeatureUnlocked(id) {
@@ -970,7 +970,7 @@ function getCombatPowerBreakdown() {
   add('Keen Instincts (Legacy)', getLegacyMult('keen_instincts'));
   add('Trophy Weapon', getTrophyPowerMult());
   add('Apex Ladder (' + getApexDepth() + ' tamed this run)', getApexPowerMult());
-  add('World Bonus', getWorldPowerMult());
+  add('Region Bonus', getWorldPowerMult());
   add('Molten Heart', getMoltenHeartMult());
   add('Adrenaline', getAdrenalinePowerMult());
 
@@ -1400,7 +1400,7 @@ function slayTitan(boss) {
   const rec = gameState.worldRecords[w.id] || (gameState.worldRecords[w.id] = {});
   rec.titanAt = Date.now();
   rec.bestApex = Math.max(rec.bestApex || 0, gameState.bestApexDepth || 0);
-  logCombatMessage('🌋 <strong>TITAN SLAIN!</strong> ' + boss.name + ' falls. <strong>The Rift is open</strong>: see the World tab.', 'relic');
+  logCombatMessage('🌋 <strong>TITAN SLAIN!</strong> ' + boss.name + ' falls, its thread severed. <strong>The Rift is open</strong>: see the Regions tab.', 'relic');
   showToast('TITAN SLAIN! The Rift is open.', 'success', true);
 }
 
@@ -1436,7 +1436,7 @@ function performMigration() {
   applyWorld();
   const to = getWorld();
   gameState.worldRecords[to.id] = gameState.worldRecords[to.id] || { arrivedAt: Date.now() };
-  logCombatMessage('🌀 <strong>MIGRATION COMPLETE.</strong> Welcome to the <strong>' + to.name + '</strong>. World Bonus: Meat/s x' + formatNumber(getWorldMeatMult()) + ', Combat Power x' + getWorldPowerMult().toFixed(1) + '.', 'unlock');
+  logCombatMessage('🌀 <strong>RIFT CROSSED.</strong> Welcome to the <strong>' + to.name + '</strong>. Region Bonus: Meat/s x' + formatNumber(getWorldMeatMult()) + ', Combat Power x' + getWorldPowerMult().toFixed(1) + '.', 'unlock');
   showToast('Welcome to the ' + to.name + '!', 'success', true);
   renderAfterReset();
   return true;
@@ -2837,6 +2837,8 @@ function saveGameToStorage() {
       tundra: gameState.tundra || null,
       volcano: gameState.volcano || null,
       tutorial: gameState.tutorial || null,
+      hunterName: gameState.hunterName || '',
+      hunterTitle: gameState.hunterTitle || '',
       expedition: gameState.expedition || null,
       gear: gameState.gear || null,
       unlocks: gameState.unlocks || {},
@@ -2947,6 +2949,8 @@ function loadGameFromStorage() {
       gameState.riftOpen = !!data.riftOpen;
       if (data.gear && typeof data.gear === 'object') gameState.gear = { pieces: data.gear.pieces || {} };
       if (data.expedition && typeof data.expedition === 'object') gameState.expedition = Object.assign({ active: null, materials: {}, honing: 0, trips: 0 }, data.expedition);
+      if (typeof data.hunterName === 'string') gameState.hunterName = data.hunterName.slice(0, 20);
+      if (typeof data.hunterTitle === 'string') gameState.hunterTitle = data.hunterTitle;
       // Tutorial: older saves already know the game, so every tab they have counts as seen
       if (data.tutorial && typeof data.tutorial === 'object') gameState.tutorial = { done: data.tutorial.done || {}, off: !!data.tutorial.off };
       else { const seen = { camp: true }; Object.keys(data.unlocks || {}).forEach(k => { const f = FEATURE_UNLOCKS.find(x => x.id === k); if (f) seen[f.tab] = true; }); gameState.tutorial = { done: seen, off: false }; }
