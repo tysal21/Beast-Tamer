@@ -2164,7 +2164,7 @@ function renderFishingDock() {
     card.innerHTML =
       '<div class="flex items-center justify-between">' +
         '<span class="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded border ' + style.badge + '">' + style.label + '</span>' +
-        (caught ? '<span class="text-[11px] font-mono font-bold ' + (count > 0 ? 'text-slate-100' : 'text-slate-600') + '">' + (fish.rarity === 'mythic' ? '' : '×' + count) + '</span>' : '') +
+        (caught ? '<span class="text-[11px] font-mono font-bold ' + (count > 0 ? 'text-slate-100' : 'text-slate-600') + '">' + (fish.rarity === 'mythic' ? '' : count + '/' + getSpeciesCap(fish)) + '</span>' : '') +
       '</div>' +
       '<div class="flex items-center gap-2">' +
         '<i class="fa-solid ' + (caught ? fish.icon + ' ' + style.text : 'fa-question text-slate-600') + ' text-lg w-5 text-center"></i>' +
@@ -2230,7 +2230,7 @@ function updateFishingLive() {
     elements.tabBtnFish.classList.toggle('hidden', !unlocked);
     if (unlocked && elements.tabFishBadge) {
       const n = getFishBasketCount();
-      const full = n >= FISHING_CONFIG.basketCap;
+      const full = areLineFishFull();
       elements.tabFishBadge.textContent = full ? 'FULL' : String(n);
       elements.tabFishBadge.className = full
         ? 'text-[9px] bg-red-950 text-red-300 border border-red-600 px-1.5 py-0.2 rounded font-mono font-bold animate-pulse'
@@ -2309,11 +2309,11 @@ function updateFishingLive() {
   // Idle lines
   const interval = FISHING_CONFIG.lines.catchIntervalSec;
   const basketN = getFishBasketCount();
-  const basketFull = basketN >= FISHING_CONFIG.basketCap;
+  const basketFull = areLineFishFull();
   fishEls.linesCount.textContent = f.lines + '/' + FISHING_CONFIG.lines.maxLines + ' Lines';
   fishEls.lineBar.style.width = Math.min(100, (f.lineTimer / interval) * 100) + '%';
   fishEls.lineBar.className = 'h-full ' + (basketFull ? 'bg-red-500' : 'bg-emerald-500');
-  fishEls.lineNext.textContent = basketFull ? 'Basket full!' : formatClock((interval - f.lineTimer) / Math.max(1, f.lines));
+  fishEls.lineNext.textContent = basketFull ? 'Line fish storage full!' : formatClock((interval - f.lineTimer) / Math.max(1, f.lines));
   const lineCost = getNextLineCost();
   if (lineCost === null) {
     fishEls.lineBtn.disabled = true;
@@ -2323,7 +2323,7 @@ function updateFishingLive() {
     fishEls.lineCost.textContent = formatNumber(lineCost);
   }
 
-  fishEls.basketCount.textContent = basketN + '/' + FISHING_CONFIG.basketCap;
+  fishEls.basketCount.textContent = basketN + '/' + getBasketCapacity();
   fishEls.basketCount.className = basketFull ? 'text-red-400 font-bold' : 'text-emerald-300 font-bold';
   fishEls.recipes.querySelectorAll('.btn-cook-recipe').forEach(btn => {
     const recipe = FISH_RECIPES.find(r => r.id === btn.dataset.recipeId);
@@ -3844,7 +3844,7 @@ function gearCardHtml(slot) {
     }
     if (slot.id === 'charm') {
       const cc = getCharmChangeCost();
-      extra = '<div class="text-[10px] uppercase tracking-wider text-slate-500 mt-2 mb-1">Change bonus (' + formatNumber(cc.hawk_feather) + ' Hawk Feathers)</div><div class="flex flex-wrap gap-1.5">' +
+      extra = '<div class="text-[10px] uppercase tracking-wider text-slate-500 mt-2 mb-1">Change bonus (uses up ' + formatNumber(cc.hawk_feather) + ' Hawk Feathers)</div><div class="flex flex-wrap gap-1.5">' +
         CHARM_BONUSES.map(b => '<button data-gear-charm-change="' + b.id + '" ' + (b.id === here.bonus || !canAffordMaterials(cc) ? 'disabled' : '') + ' class="px-2 py-1 rounded border text-[11px] cursor-pointer disabled:cursor-default ' + (b.id === here.bonus ? 'border-amber-500 bg-amber-950/30 text-amber-200' : 'border-primal-700 bg-primal-900/60 text-slate-300 disabled:opacity-40') + '">' + b.name + '</button>').join('') + '</div>';
     }
   } else {
@@ -3860,7 +3860,7 @@ function gearCardHtml(slot) {
   if (!up) action = '<div class="mt-2 text-center font-mono font-bold text-amber-300 text-xs">MASTERWORK</div>';
   else {
     const label = up.kind === 'craft' ? 'Craft' : up.kind === 'reforge' ? 'Reforge into ' + GEAR_CONFIG.grades[here.grade + 1].name : 'Improve to +' + (here.level + 1);
-    action = '<div class="flex flex-wrap gap-1.5 mt-2">' + Object.keys(up.cost).map(m => matChip(m, getMaterial(m), up.cost[m])).join('') + '</div>' +
+    action = '<div class="text-[10px] uppercase tracking-wider text-slate-500 mt-2">Uses up</div><div class="flex flex-wrap gap-1.5 mt-1">' + Object.keys(up.cost).map(m => matChip(m, getMaterial(m), up.cost[m])).join('') + '</div>' +
       '<button data-gear-up="' + slot.id + '" ' + (canAffordMaterials(up.cost) ? '' : 'disabled') + ' class="mt-2 w-full py-2 rounded-lg border border-amber-600/60 bg-amber-900/40 hover:bg-amber-800/50 text-amber-100 text-sm font-bold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">' + label + '</button>';
   }
   return '<div class="p-3 rounded-xl border border-primal-700 bg-primal-900/50">' +
@@ -3870,7 +3870,7 @@ function gearCardHtml(slot) {
 
 function workbenchHtml() {
   const climate = CLIMATES[getClimateId()] || CLIMATES.wilds;
-  return '<div class="text-xs text-slate-400 mb-3">Gear is kept forever, but it is made for one climate. You are in the <strong class="text-slate-200">' + climate.name + '</strong> climate; gear from another climate works at half strength here.</div>' +
+  return '<div class="text-xs text-slate-400 mb-3">Gear is kept forever, but it is made for one climate. You are in the <strong class="text-slate-200">' + climate.name + '</strong> climate; gear from another climate works at half strength here. <strong class="text-amber-200">Crafting, improving and changing a charm use up the materials shown</strong>, the same ones Weapon Honing needs.</div>' +
     '<div class="space-y-3">' + GEAR_SLOTS.map(gearCardHtml).join('') + '</div>';
 }
 

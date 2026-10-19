@@ -285,6 +285,21 @@ function getFishBasketCount() {
   return n;
 }
 
+/** Each species has its own storage slot */
+function getSpeciesCap(fish) {
+  return FISHING_CONFIG.speciesCap[fish.rarity] || 0;
+}
+function isSpeciesFull(fish) {
+  return ((gameState.fishing && gameState.fishing.basket[fish.id]) || 0) >= getSpeciesCap(fish);
+}
+function getBasketCapacity() {
+  return FISH_CATALOG.reduce((n, f) => n + getSpeciesCap(f), 0);
+}
+/** Idle Lines only catch Common and Uncommon fish: are all of those full? */
+function areLineFishFull() {
+  return FISH_CATALOG.filter(f => f.rarity === 'common' || f.rarity === 'uncommon').every(isSpeciesFull);
+}
+
 function getFishCountByRarity(rarity) {
   const basket = gameState.fishing.basket;
   let n = 0;
@@ -345,18 +360,10 @@ function landFish(fish) {
   let stored = false;
   if (fish.rarity === 'mythic') {
     // Mythics are trophies: they go straight into the Codex, not the basket
-  } else if (getFishBasketCount() < FISHING_CONFIG.basketCap) {
+  } else if (!isSpeciesFull(fish)) {
+    // Each species has its own storage: nothing else is ever pushed out
     f.basket[fish.id] = (f.basket[fish.id] || 0) + 1;
     stored = true;
-  } else if (fish.rarity !== 'common') {
-    // Basket full: a rarer fish pushes out the most plentiful common one instead of being thrown away
-    const common = FISH_CATALOG.filter(x => x.rarity === 'common' && (f.basket[x.id] || 0) > 0).sort((a, b) => f.basket[b.id] - f.basket[a.id])[0];
-    if (common) {
-      f.basket[common.id] -= 1;
-      if (f.basket[common.id] <= 0) delete f.basket[common.id];
-      f.basket[fish.id] = (f.basket[fish.id] || 0) + 1;
-      stored = true;
-    }
   }
   return { stored, isNewCodex, starUp: !isNewCodex && starsAfter > starsBefore ? starsAfter : 0 };
 }
@@ -436,14 +443,14 @@ function tickFishingLines(dt) {
   if (!isFishingUnlocked() || !gameState.fishing || gameState.fishing.lines <= 0) return 0;
   const f = gameState.fishing;
   const interval = FISHING_CONFIG.lines.catchIntervalSec;
-  if (getFishBasketCount() >= FISHING_CONFIG.basketCap) {
-    f.lineTimer = interval; // lines sit full until you make room
+  if (areLineFishFull()) {
+    f.lineTimer = interval; // lines sit idle until you cook some of what they catch
     return 0;
   }
   f.lineTimer += dt * f.lines;
   let caught = 0;
   while (f.lineTimer >= interval) {
-    if (getFishBasketCount() >= FISHING_CONFIG.basketCap) { f.lineTimer = interval; break; }
+    if (areLineFishFull()) { f.lineTimer = interval; break; }
     f.lineTimer -= interval;
     landFish(rollFish(['common', 'uncommon']));
     caught++;
