@@ -23,7 +23,7 @@
   const WORDS = {
     'combat power': 'output capacity', 'hunter power': 'lead capacity', 'beast power': 'partner capacity',
     'meat/s': 'units/s', 'meat stock': 'units on hand', 'meat': 'units',
-    'stamina': 'staff hours', 'bloodstones': 'credits', 'bloodstone': 'credit',
+    'stamina': 'staff hours', 'bloodstones': 'credits', 'bloodstone': 'credit', 'rimestones': 'credits', 'rimestone': 'credit', 'cinderhearts': 'credits', 'cinderheart': 'credit', 'brinepearls': 'credits', 'brinepearl': 'credit',
     'apex shards': 'senior tokens', 'apex shard': 'senior token', 'shards': 'tokens', 'shard': 'token',
     'fangs': 'parts', 'fang': 'part',
     'tamed menagerie': 'approved accounts', 'menagerie': 'account list',

@@ -50,7 +50,7 @@
   </script>
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=20261019t">
+  <link rel="stylesheet" href="style.css?v=20261019u">
 </head>
 
 <body class="bg-primal-900 text-slate-200 font-sans min-h-screen selection:bg-primal-accent selection:text-white flex flex-col justify-between">
@@ -122,9 +122,9 @@
 
         <!-- Primal Bloodstones HUD (Phase 3 Prestige Currency) -->
         <div id="hud-bloodstones-card" class="bg-primal-800/90 border border-rose-800/60 rounded-lg px-3 py-1.5 flex items-center space-x-2.5 shadow-inner">
-          <img src="assets/icons/bloodstones-64.png" alt="" class="bt-hud-icon">
+          <img id="hud-cur-img" src="assets/icons/bloodstones-64.png" alt="" class="bt-hud-icon">
           <div>
-            <div class="text-[10px] text-rose-300/80 uppercase tracking-wider font-semibold">Bloodstones</div>
+            <div class="text-[10px] text-rose-300/80 uppercase tracking-wider font-semibold"><span data-cur="name">Bloodstones</span></div>
             <div class="flex items-baseline space-x-1.5">
               <span id="hud-bloodstones" class="text-base sm:text-lg font-bold text-rose-400 font-mono">0</span>
               <span id="hud-ascension-count" class="text-[10px] text-slate-400 font-mono">(Asc: 0)</span>
@@ -1079,7 +1079,7 @@
               <i class="fa-solid fa-fire-flame-curved"></i> PRIMAL ASCENSION RITUAL
             </div>
             <h2 class="font-cinzel text-2xl sm:text-3xl font-bold text-white tracking-wide">
-              Sacrifice Your Camp for Primal Bloodstones
+              Sacrifice Your Camp for <span data-cur="name">Bloodstones</span>
             </h2>
             <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
               Ascending resets your current run's <strong class="text-amber-300">Meat, Generators, Weapons, Training, and untames the 4 Milestone Bosses</strong> so you can hunt them anew. You permanently retain all <strong class="text-emerald-400">Trophy Relics, Beast Forge access, Hatched Hybrid Chimeras, Bloodstone Perks, and Realm Expansions</strong>. Hybrids sleep until both of their parents are re-tamed, and Relics sleep until their boss is re-tamed. Bosses grow stronger with every Ascension.
@@ -1118,7 +1118,7 @@
         <div class="flex items-center justify-between pb-3 border-b border-primal-700/60 mb-4">
           <div>
             <h3 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2">
-              <i class="fa-solid fa-compass text-cyan-400"></i> Realm Expansions (Bloodstone Feature Unlocks)
+              <i class="fa-solid fa-compass text-cyan-400"></i> Realm Expansions
             </h3>
             <p class="text-xs text-slate-400">Unlock permanent new game modes and territories across your hunting grounds.</p>
           </div>
@@ -1133,12 +1133,12 @@
         <div class="flex items-center justify-between pb-3 border-b border-primal-700/60 mb-4">
           <div>
             <h3 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2">
-              <i class="fa-solid fa-ankh text-rose-400"></i> Primal Bloodstone Perks
+              <i class="fa-solid fa-ankh text-rose-400"></i> <span data-cur="shop">Primal Bloodstone Perks</span>
             </h3>
-            <p class="text-xs text-slate-400">Channel Primal Bloodstones into ancient blessings that persist across all runs.</p>
+            <p class="text-xs text-slate-400"><span data-cur="shopdesc">Channel Bloodstones into ancient blessings that persist across all runs.</span></p>
           </div>
           <span class="text-xs font-mono bg-rose-950/80 text-rose-300 px-3 py-1 rounded border border-rose-700/60 font-bold">
-            Available: <span id="perk-available-stones">0</span> Bloodstones
+            Available: <span id="perk-available-stones">0</span> <span data-cur="name">Bloodstones</span>
           </span>
         </div>
         <div id="ascension-perks-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1181,9 +1181,9 @@
         <i class="fa-solid fa-fire-flame-curved"></i>
       </div>
       <div>
-        <h3 class="font-cinzel text-lg font-bold text-white">Ascend &amp; Claim Bloodstones?</h3>
+        <h3 class="font-cinzel text-lg font-bold text-white">Ascend &amp; Claim <span data-cur="name">Bloodstones</span>?</h3>
         <p class="text-xs text-slate-300 mt-1">
-          You will claim <strong class="text-rose-400 font-mono">+<span id="modal-ascend-stones">0</span> Primal Bloodstones</strong>.
+          You will claim <strong class="text-rose-400 font-mono">+<span id="modal-ascend-stones">0</span> <span data-cur="name">Bloodstones</span></strong>.
         </p>
         <p class="text-[11px] text-slate-400 mt-2">
           Your Meat, Generators, Weapons, Training, and 4 Milestone Bosses will reset for a fresh run. Your Relics, Beast Forge, Hatched Hybrids, and Perks remain permanent! Relics and Hybrids sleep until their bosses are re-tamed, and bosses grow stronger.
@@ -1325,18 +1325,18 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
   <!-- Modular Scripts: Data -> Engine -> UI -->
-  <script src="data.js?v=20261019t"></script>
-  <script src="engine.js?v=20261019t"></script>
-  <script src="ui.js?v=20261019t"></script>
-  <script src="stealth.js?v=20261019t"></script>
-  <script src="dev.js?v=20261019t"></script>
-  <script src="comforts.js?v=20261019t"></script>
-  <script src="nav.js?v=20261019t"></script>
-  <script src="scenery.js?v=20261019t"></script>
-  <script src="seals.js?v=20261019t"></script>
-  <script src="leaderboard.js?v=20261019t"></script>
-  <script src="pack.js?v=20261019t"></script>
-  <script src="qr.js?v=20261019t"></script>
-  <script src="transfer.js?v=20261019t"></script>
+  <script src="data.js?v=20261019u"></script>
+  <script src="engine.js?v=20261019u"></script>
+  <script src="ui.js?v=20261019u"></script>
+  <script src="stealth.js?v=20261019u"></script>
+  <script src="dev.js?v=20261019u"></script>
+  <script src="comforts.js?v=20261019u"></script>
+  <script src="nav.js?v=20261019u"></script>
+  <script src="scenery.js?v=20261019u"></script>
+  <script src="seals.js?v=20261019u"></script>
+  <script src="leaderboard.js?v=20261019u"></script>
+  <script src="pack.js?v=20261019u"></script>
+  <script src="qr.js?v=20261019u"></script>
+  <script src="transfer.js?v=20261019u"></script>
 </body>
 </html>

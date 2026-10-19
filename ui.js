@@ -258,7 +258,7 @@ function switchTab(tabId) {
  * ================= PHASE 3: ASCENSION ALTAR =================
  */
 function buyAscensionPerk(perkId) {
-  const perk = ASCENSION_PERKS.find(p => p.id === perkId);
+  const perk = getShopPerk(perkId);
   if (!perk) return;
   const lvl = getAscensionPerkLevel(perk.id);
   if (perk.maxLevel !== null && lvl >= perk.maxLevel) return;
@@ -324,7 +324,11 @@ function getPerkEffectText(perk, r) {
     case 'primal_vigor': return '+' + Math.round(r * HUNTER_CONFIG.vigorMultPerRank * 100) + '% Hunter Power';
     case 'catalytic_warmth': return '+' + Math.round(r * HUNTER_CONFIG.warmthHybridPerRank * 100) + '% Hybrid Power';
     case 'trophy_resonance': return '+' + (r * 20) + '% relic strength';
-    case 'primordial_soul': return '+' + (r * 20) + '% Bloodstones';
+    case 'primordial_soul': return '+' + (r * 20) + '% ' + curName();
+    case 'whiteout_stalker': return 'Blizzard Meat x' + Math.min(1, WORLD_CONFIG.blizzard.meatMult + r * REGION_PERK_FX.whiteoutPerRank).toFixed(1);
+    case 'hearthkeeper': return '+' + Math.round(r * REGION_PERK_FX.warmthPerRank * 100) + '% Warmth';
+    case 'deep_caches': return (WORLD_CONFIG.blizzard.maxCaches + r * REGION_PERK_FX.cachesPerRank) + ' cache slots, ' + Math.round((WORLD_CONFIG.blizzard.jackpotChance + r * REGION_PERK_FX.jackpotPerRank) * 100) + '% Mammoth';
+    case 'archive_recall': return r + (r === 1 ? ' beast' : ' beasts') + ' recalled';
     default: return 'Rank ' + r;
   }
 }
@@ -335,7 +339,7 @@ function renderAscensionAltar() {
   // Perk cards
   if (elements.ascensionPerksContainer) {
     elements.ascensionPerksContainer.innerHTML = '';
-    ASCENSION_PERKS.forEach(perk => {
+    getShopPerks().forEach(perk => {
       const lvl = getAscensionPerkLevel(perk.id);
       const isMaxed = perk.maxLevel !== null && lvl >= perk.maxLevel;
       const cost = getAscensionPerkCost(perk);
@@ -350,7 +354,7 @@ function renderAscensionAltar() {
             '<i class="fa-solid ' + perk.icon + '"></i>' +
           '</div>' +
           '<div class="min-w-0">' +
-            '<div class="font-cinzel font-bold text-sm text-slate-100">' + perk.name + '</div>' +
+            '<div class="font-cinzel font-bold text-sm text-slate-100">' + perk.name + (perk.unique ? ' <span class="perk-region-tag" style="color:' + getRegionCurrency().color + ';border-color:' + getRegionCurrency().color + '">' + getWorld().name + ' only</span>' : '') + '</div>' +
             '<div class="text-[11px] font-mono text-rose-300">' + rankText + '</div>' +
             '<p class="text-[11px] text-slate-400 mt-1 leading-snug">' + perk.desc + '</p>' +
             '<div class="text-[11px] font-mono mt-1"><span class="text-slate-300">' + (lvl > 0 ? 'Now ' + getPerkEffectText(perk, lvl) : 'Not awakened') + '</span>' +
@@ -361,8 +365,14 @@ function renderAscensionAltar() {
           ? '<div class="text-center text-[11px] font-mono font-bold text-rose-300 py-1.5 border border-rose-700/50 rounded-lg bg-rose-950/40">MAX RANK</div>'
           : '<button data-perk-id="' + perk.id + '" data-cost="' + cost + '" class="btn-buy-perk w-full py-1.5 px-3 bg-rose-800 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-semibold rounded-lg font-mono flex items-center justify-center gap-1.5 cursor-pointer"' +
               (gameState.bloodstones >= cost ? '' : ' disabled') + '>' +
-              '<span>Awaken</span><i class="fa-solid fa-gem text-rose-300"></i><span class="font-bold">' + formatNumber(cost) + '</span>' +
+              '<span>Awaken</span><i class="fa-solid ' + getRegionCurrency().icon + '" style="color:' + getRegionCurrency().color + '"></i><span class="font-bold">' + formatNumber(cost) + '</span>' +
             '</button>');
+      if (perk.unique) {
+        // This region's own perks wear its colour instead of blood red
+        const col = getRegionCurrency().color;
+        card.classList.add('perk-regional');
+        card.style.setProperty('--region-col', col);
+      }
       elements.ascensionPerksContainer.appendChild(card);
     });
   }
@@ -413,9 +423,31 @@ function renderAscensionAltar() {
   updateAscensionLiveElements(true);
 }
 
+/** Name the region's currency everywhere the page says it (HUD, Altar, Ascend dialog) */
+let lastCurrencyRegion = null;
+function applyRegionCurrencyText() {
+  const w = getWorld();
+  if (lastCurrencyRegion === w.id) return;
+  lastCurrencyRegion = w.id;
+  const c = getRegionCurrency();
+  document.querySelectorAll('[data-cur="name"]').forEach(el => { el.textContent = c.name; });
+  document.querySelectorAll('[data-cur="shop"]').forEach(el => { el.textContent = (w.id === 'wilds' ? 'Primal Bloodstone' : c.one) + ' Perks'; });
+  document.querySelectorAll('[data-cur="shopdesc"]').forEach(el => {
+    el.textContent = w.id === 'wilds' ? 'Channel Bloodstones into ancient blessings that persist across all runs.'
+      : c.lore + ' Spend ' + c.name + ' on blessings that last until you cross the next Rift, including perks found only in the ' + w.name + '.';
+  });
+  const img = document.getElementById('hud-cur-img');
+  if (img) {
+    if (c.img) { img.src = c.img; img.classList.remove('hidden'); } else img.classList.add('hidden');
+  }
+  const num = document.getElementById('hud-bloodstones');
+  if (num) num.style.color = w.id === 'wilds' ? '' : c.color;
+}
+
 /** Cheap per-frame text/disabled updates for the Altar, HUD stones and tab badge. */
 function updateAscensionLiveElements(force = false) {
   if (elements.hudBloodstones) elements.hudBloodstones.textContent = formatNumber(gameState.bloodstones);
+  applyRegionCurrencyText();
   if (elements.hudAscensionCount) elements.hudAscensionCount.textContent = '(Asc: ' + gameState.ascensionCount + ')';
 
   const unlocked = isAscensionUnlocked();
@@ -462,7 +494,7 @@ function updateAscensionLiveElements(force = false) {
     } else {
       const mult = getApexStoneMult();
       const nextGain = Math.max(0, Math.floor(pending * (mult + APEX_CONFIG.stonesPerTier) / mult) - pending);
-      elements.ascendReqNote.textContent = 'Ritual ready. Apex tamed this run: ' + getApexDepth() + ' (x' + mult.toFixed(2) + ' Bloodstones). Taming the next Apex adds about +' + formatNumber(nextGain) + '.';
+      elements.ascendReqNote.textContent = 'Ritual ready. Apex tamed this run: ' + getApexDepth() + ' (x' + mult.toFixed(2) + ' ' + curName() + '). Taming the next Apex adds about +' + formatNumber(nextGain) + '.';
       elements.ascendReqNote.className = 'text-[11px] text-emerald-400 font-mono';
     }
   }
@@ -2185,7 +2217,7 @@ function renderFishingDock() {
   if (meat) totals.push('+' + Math.round(meat * 100) + '% Meat/sec');
   if (totemB) totals.push('+' + (Math.round(totemB * 1000) / 10) + '% Totem dmg');
   if (relicB) totals.push('+' + (Math.round(relicB * 1000) / 10) + '% Relic drops');
-  if (stonesB) totals.push('+' + (Math.round(stonesB * 1000) / 10) + '% Bloodstones');
+  if (stonesB) totals.push('+' + (Math.round(stonesB * 1000) / 10) + '% ' + curName());
   if (click) totals.push('+' + (Math.round(click * 1000) / 10) + '% Click');
   if (power) totals.push('+' + (Math.round(power * 1000) / 10) + '% Power');
   if (regen) totals.push('+' + (Math.round(regen * 1000) / 10) + '% Regen');
@@ -2488,7 +2520,7 @@ function updateTotemLive() {
     totemEls.sealNumber.textContent = guardian.sealNumber;
     totemEls.guardianName.textContent = guardian.name;
     totemEls.guardianRange.textContent = formatNumber(guardian.minPower) + ' - ' + formatNumber(guardian.maxPower);
-    totemEls.sealReward.textContent = '+' + formatNumber(TOTEM_CONFIG.sealStones * guardian.sealNumber) + ' Bloodstones, +' +
+    totemEls.sealReward.textContent = '+' + formatNumber(TOTEM_CONFIG.sealStones * guardian.sealNumber) + ' ' + curName() + ', +' +
       formatNumber(TOTEM_CONFIG.sealShards * guardian.sealNumber) + ' Totem Shards, permanent +' + Math.round(TOTEM_CONFIG.sealPowerBonus * 100) + '% Combat Power';
     return;
   }
@@ -3259,12 +3291,12 @@ function fightPresenterEnd(s) {
   }
   if (apexWin) {
     chips.push(rewardChip('fa-paw', 'Combat Power x' + getApexPowerMult().toFixed(2) + ' this run', 'border-emerald-600/50 bg-emerald-950/40 text-emerald-200'));
-    chips.push(rewardChip('fa-gem', 'Bloodstones x' + getApexStoneMult().toFixed(2), 'border-rose-600/50 bg-rose-950/40 text-rose-200'));
+    chips.push(rewardChip(getRegionCurrency().icon, curName() + ' x' + getApexStoneMult().toFixed(2), 'border-rose-600/50 bg-rose-950/40 text-rose-200'));
     if (s.after.fangs > s.before.fangs) chips.push(rewardChip('fa-tooth', '+' + (s.after.fangs - s.before.fangs) + ' Apex Fangs', 'border-fuchsia-600/50 bg-fuchsia-950/40 text-fuchsia-200'));
     if (newBest) chips.push(rewardChip('fa-medal', 'New deepest Apex!'));
   }
   if (sealBroken) {
-    chips.push(rewardChip('fa-gem', '+' + formatNumber(s.after.stones - s.before.stones) + ' Bloodstones', 'border-rose-600/50 bg-rose-950/40 text-rose-200'));
+    chips.push(rewardChip(getRegionCurrency().icon, '+' + formatNumber(s.after.stones - s.before.stones) + ' ' + curName(), 'border-rose-600/50 bg-rose-950/40 text-rose-200'));
     chips.push(rewardChip('fa-hand-fist', '+' + Math.round(TOTEM_CONFIG.sealPowerBonus * 100) + '% Combat Power'));
   }
   if (s.after.shards > s.before.shards) chips.push(rewardChip('fa-shapes', '+' + formatNumber(s.after.shards - s.before.shards) + ' Totem Shards'));
@@ -3487,7 +3519,7 @@ function renderWorldTab() {
     const nextPow = 1 + WORLD_CONFIG.bonusPowerPerWorld * (getWorldIndex() + 1);
     migrateHtml =
       '<div class="grid sm:grid-cols-2 gap-3 text-xs">' +
-        '<div class="p-3 rounded-lg border border-rose-800/60 bg-rose-950/20"><div class="font-bold text-rose-300 mb-1">Resets</div><div class="text-slate-300 leading-relaxed">Everything an Ascension resets, plus Bloodstones, Bloodstone Perks, Ascension count, Hybrids, the Nest egg, and your deepest Apex.</div></div>' +
+        '<div class="p-3 rounded-lg border border-rose-800/60 bg-rose-950/20"><div class="font-bold text-rose-300 mb-1">Resets</div><div class="text-slate-300 leading-relaxed">Everything an Ascension resets, plus ' + curName() + ' and this region\'s perks, Ascension count, Hybrids, the Nest egg, and your deepest Apex.</div></div>' +
         '<div class="p-3 rounded-lg border border-emerald-800/60 bg-emerald-950/20"><div class="font-bold text-emerald-300 mb-1">Keeps</div><div class="text-slate-300 leading-relaxed">Relics, Beast Forge, Primal Totem, Hunter\'s Legacy (with a free respec), Trophy Weapon, Fishing and the Bestiary.</div></div>' +
       '</div>' +
       '<div class="text-xs text-slate-300 mt-3">New Region Bonus: <strong class="text-amber-300">Meat/s x' + formatNumber(nextMeat) + '</strong> and <strong class="text-amber-300">Combat Power x' + nextPow.toFixed(1) + '</strong>, forever. Unlocks <strong class="text-sky-300">Auto-Trophy</strong> and <strong class="text-sky-300">Auto-Strike</strong>.</div>' +
@@ -3513,9 +3545,9 @@ function renderWorldTab() {
 
   const bz = getBlizzardState();
   const twistHtml = w.twist === 'blizzard'
-    ? '<div class="text-xs text-sky-200 mt-2 space-y-1"><div><i class="fa-solid fa-wind mr-1"></i><strong>Blizzards:</strong> every ' + Math.round(WORLD_CONFIG.blizzard.everySec / 60) + ' minutes a blizzard freezes your camp for ' + Math.round(WORLD_CONFIG.blizzard.lastSec / 60) + ' minutes (Meat/s x' + WORLD_CONFIG.blizzard.meatMult + '). ' + (bz.active ? 'One is raging now.' : 'Next in ' + formatDuration(bz.nextIn) + '.') + '</div>' +
+    ? '<div class="text-xs text-sky-200 mt-2 space-y-1"><div><i class="fa-solid fa-wind mr-1"></i><strong>Blizzards:</strong> every ' + Math.round(WORLD_CONFIG.blizzard.everySec / 60) + ' minutes a blizzard freezes your camp for ' + Math.round(WORLD_CONFIG.blizzard.lastSec / 60) + ' minutes (Meat/s x' + Math.min(1, WORLD_CONFIG.blizzard.meatMult + getRegionPerkRank('whiteout_stalker') * REGION_PERK_FX.whiteoutPerRank).toFixed(1) + '). ' + (bz.active ? 'One is raging now.' : 'Next in ' + formatDuration(bz.nextIn) + '.') + '</div>' +
       '<div><i class="fa-solid fa-fire mr-1"></i><strong>Stoke the Hearth:</strong> during a blizzard, Forage clicks and Stoke (' + WORLD_CONFIG.blizzard.stokeStamina + ' Stamina) fill your Warmth. Full Warmth thaws your camp and ends the slowdown early.</div>' +
-      '<div><i class="fa-solid fa-cube mr-1"></i><strong>Frozen Caches:</strong> every blizzard leaves one behind (hold up to ' + WORLD_CONFIG.blizzard.maxCaches + '). Each thaws in ' + Math.round(WORLD_CONFIG.blizzard.cacheThawSec / 60) + ' minutes, or chip the ice with Stamina. Inside: Meat, Totem Shards or Apex Fangs, and rarely a Mammoth Cache with all three.</div></div>'
+      '<div><i class="fa-solid fa-cube mr-1"></i><strong>Frozen Caches:</strong> every blizzard leaves one behind (hold up to ' + getMaxFrozenCaches() + '). Each thaws in ' + Math.round(WORLD_CONFIG.blizzard.cacheThawSec / 60) + ' minutes, or chip the ice with Stamina. Inside: Meat, Totem Shards or Apex Fangs, and rarely a Mammoth Cache with all three.</div></div>'
     : '';
 
   root.innerHTML =
@@ -3560,7 +3592,7 @@ function renderTundraStrip() {
     left = '<div class="flex-1 min-w-[220px] text-sky-200"><i class="fa-solid fa-wind mr-1"></i>Calm skies. Next blizzard in <span class="font-mono">' + formatDuration(bz.nextIn) + '</span>.</div>';
   }
   const icons = [];
-  for (let i = 0; i < c.maxCaches; i++) {
+  for (let i = 0; i < getMaxFrozenCaches(); i++) {
     const x = t.caches[i];
     if (!x) icons.push('<div class="w-8 h-8 rounded-lg border border-dashed border-sky-800 bg-sky-950/40"></div>');
     else {
