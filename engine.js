@@ -529,8 +529,8 @@ function checkTotemUnlock() {
   if (!gameState.totem) gameState.totem = defaultTotemState();
   const t = gameState.totem;
   if (t.unlocked) return false;
-  // The Totem rises after your first Ascension (milestone unlocks)
-  if (!(gameState.ascensionCount > 0) && !(gameState.world > 0)) return false;
+  // The Totem rises once the Chimera-Wyrm (the last beast of the run) is tamed, or after any Ascension
+  if (!hasEverTamed('chimera_wyrm') && !(gameState.ascensionCount > 0) && !(gameState.world > 0)) return false;
   t.unlocked = true;
   if (t.hpLeft === null || t.hpLeft === undefined) t.hpLeft = getTotemLayerHp(t.layer);
   return true;
