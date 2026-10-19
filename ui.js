@@ -3012,6 +3012,7 @@ const arena = {
 const FIGHT_ANIM_MS = { full: 5200, quick: 1300, skip: 0 };
 
 function getFightAnimMode() {
+  if (window.isStealthOn && window.isStealthOn()) return 'skip';
   return ['full', 'quick', 'skip'].includes(gameState.fightAnim) ? gameState.fightAnim : 'full';
 }
 
