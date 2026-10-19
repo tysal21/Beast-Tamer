@@ -885,6 +885,7 @@ function getCombatPowerBreakdown() {
   if (gameState.bruteConditioningLevel > 0) hunterMults.push({ label: 'Brute Conditioning +' + Math.round(HUNTER_CONFIG.bruteMultPerLevel * 100) + '%/lvl', mult: hm.brute });
   if (hm.vigor > 1) hunterMults.push({ label: 'Primal Vigor perk', mult: hm.vigor });
   if (hm.honing > 1) hunterMults.push({ label: 'Weapon Honing Lvl ' + getHoningLevel(), mult: hm.honing });
+  if (hm.helm > 1) { const g = getActiveGear('helm'); hunterMults.push({ label: getGearName('helm', g.piece, g.climate) + (g.strength < 1 ? ' (off-climate, half)' : ''), mult: hm.helm }); }
 
   const beasts = [];
   for (const beast of BEAST_CATALOG) {
@@ -1589,6 +1590,7 @@ function getStaminaRegenInterval(withAdrenalineOverride = null) {
   interval /= (1 + getFishCodexBonus('regen'));
   interval /= getFishBuffMult('regen');
   interval /= (1 + getTotemBonus('regen'));
+  interval /= (1 + getCharmBonus('stamina'));
 
   return softLimit(interval, STAMINA_SOFT_MIN_SEC);
 }
@@ -1611,7 +1613,7 @@ function getWoundedDuration(beast = getSelectedFightTarget()) {
   }
   const mult = getRelicEffectMultiplier('chitin_carapace');
   const relicDur = hasRelic('chitin_carapace') ? baseDur / (1 + mult) : baseDur;
-  return softLimit(relicDur * (1 - Math.min(0.5, getFishCodexBonus('wound'))) * getLegacyReduction('thick_hide'), WOUND_SOFT_MIN_SEC);
+  return softLimit(relicDur * (1 - Math.min(0.5, getFishCodexBonus('wound'))) * getLegacyReduction('thick_hide') * (1 - getArmorWoundCut()), WOUND_SOFT_MIN_SEC);
 }
 
 function getBrutePowerPerLevel() {
@@ -1734,13 +1736,14 @@ function getHunterMultParts() {
     sparring: 1 + gameState.sparringLevel * getSparPerLevel(),
     brute: 1 + gameState.bruteConditioningLevel * HUNTER_CONFIG.bruteMultPerLevel,
     vigor: 1 + getAscensionPerkLevel('primal_vigor') * HUNTER_CONFIG.vigorMultPerRank,
-    honing: (typeof getHoningPowerMult === 'function') ? getHoningPowerMult() : 1
+    honing: (typeof getHoningPowerMult === 'function') ? getHoningPowerMult() : 1,
+    helm: (typeof getHelmPowerMult === 'function') ? getHelmPowerMult() : 1
   };
 }
 
 function getHunterPower() {
   const m = getHunterMultParts();
-  return Math.floor(getHunterRawPower() * m.sparring * m.brute * m.vigor * m.honing);
+  return Math.floor(getHunterRawPower() * m.sparring * m.brute * m.vigor * m.honing * m.helm);
 }
 
 /** Leadership: Beast Power multiplier from Hunter Power (+15% per doubling) */
@@ -1840,10 +1843,140 @@ function dropTrophyMaterial(beast) {
   const region = EXPEDITION_REGIONS.find(r => r.id === (beast.baseId || beast.id));
   if (!region) return 0;
   const resonance = 1 + 0.25 * getAscensionPerkLevel('trophy_resonance');
-  const n = Math.floor((EXPEDITION_CONFIG.trophyDropBase + (beast.tier || 1) / 2) * resonance);
+  const n = Math.floor((EXPEDITION_CONFIG.trophyDropBase + (beast.tier || 1) / 2) * resonance * (1 + getCharmBonus('drops')));
   addMaterial(region.material, n);
   logCombatMessage('🦴 +' + n + ' ' + MATERIALS[region.material].name + ' salvaged from the fight.', 'default');
   return n;
+}
+
+
+/**
+ * ================= WORKBENCH GEAR =================
+ */
+function getGearState() {
+  if (!gameState.gear) gameState.gear = { pieces: {} };
+  if (!gameState.gear.pieces) gameState.gear.pieces = {};
+  return gameState.gear;
+}
+
+function getClimateId() {
+  return getWorld().id;
+}
+
+function getGearPiece(slotId, climateId = getClimateId()) {
+  return getGearState().pieces[slotId + ':' + climateId] || null;
+}
+
+/** 1..40 for a crafted piece */
+function getGearEffLevel(piece) {
+  return piece ? piece.grade * GEAR_CONFIG.levelsPerGrade + piece.level : 0;
+}
+
+/** The piece that counts in this world: your piece for this climate, else your best other one at half strength */
+function getActiveGear(slotId) {
+  // Whichever is stronger here: your piece for this climate at full strength, or another climate's piece at half
+  let best = null;
+  Object.keys(getGearState().pieces).forEach(key => {
+    const [slot, climate] = key.split(':');
+    if (slot !== slotId) return;
+    const p = getGearState().pieces[key];
+    const strength = climate === getClimateId() ? 1 : GEAR_CONFIG.offClimateMult;
+    if (!best || getGearEffLevel(p) * strength > getGearEffLevel(best.piece) * best.strength) best = { piece: p, strength, climate };
+  });
+  return best;
+}
+
+/** Effective level that applies here (half for off-climate gear) */
+function getGearPower(slotId) {
+  const g = getActiveGear(slotId);
+  return g ? getGearEffLevel(g.piece) * g.strength : 0;
+}
+
+function getHelmPowerMult() {
+  return 1 + getGearPower('helm') * GEAR_SLOTS[0].perLevel;
+}
+
+function getArmorWoundCut() {
+  return Math.min(0.4, getGearPower('armor') * GEAR_SLOTS[1].perLevel);
+}
+
+function getArmorStaminaRefund() {
+  return Math.min(0.4, getGearPower('armor') * GEAR_SLOTS[1].perLevel);
+}
+
+function getCharmBonus(bonusId) {
+  const g = getActiveGear('charm');
+  if (!g || g.piece.bonus !== bonusId) return 0;
+  const b = CHARM_BONUSES.find(x => x.id === bonusId);
+  return getGearEffLevel(g.piece) * g.strength * b.perLevel;
+}
+
+function getGearName(slotId, piece, climateId = getClimateId()) {
+  const slot = GEAR_SLOTS.find(s => s.id === slotId);
+  const c = CLIMATES[climateId] || CLIMATES.wilds;
+  return c.prefix + GEAR_CONFIG.grades[piece ? piece.grade : 0].name + ' ' + slot.name;
+}
+
+/** Materials for the next step of a piece: { cost: {id: n}, kind: 'craft' | 'level' | 'reforge' } or null at max */
+function getGearUpgrade(slotId) {
+  const p = getGearPiece(slotId);
+  const c = GEAR_CONFIG;
+  if (!p) {
+    const cost = {};
+    c.grades[0].materials.forEach(m => { cost[m] = c.costBase; });
+    return { cost, kind: 'craft' };
+  }
+  const eff = getGearEffLevel(p);
+  if (p.level >= c.levelsPerGrade) {
+    if (p.grade >= c.grades.length - 1) return null;
+    const each = Math.ceil(c.costBase * Math.pow(c.costGrowth, eff) * c.reforgeMult);
+    const cost = {};
+    c.grades[p.grade + 1].materials.forEach(m => { cost[m] = each; });
+    return { cost, kind: 'reforge' };
+  }
+  const each = Math.ceil(c.costBase * Math.pow(c.costGrowth, eff));
+  const cost = {};
+  c.grades[p.grade].materials.forEach(m => { cost[m] = each; });
+  return { cost, kind: 'level' };
+}
+
+function canAffordMaterials(cost) {
+  return Object.keys(cost).every(m => getMaterial(m) >= cost[m]);
+}
+
+function spendMaterials(cost) {
+  const mats = getExpeditionState().materials;
+  Object.keys(cost).forEach(m => { mats[m] -= cost[m]; });
+}
+
+/** Craft, level up, or reforge a piece for the current climate. charmBonus is needed when crafting a Charm. */
+function upgradeGear(slotId, charmBonus) {
+  const up = getGearUpgrade(slotId);
+  if (!up || !canAffordMaterials(up.cost)) return false;
+  if (up.kind === 'craft' && slotId === 'charm' && !CHARM_BONUSES.some(b => b.id === charmBonus)) return false;
+  spendMaterials(up.cost);
+  const key = slotId + ':' + getClimateId();
+  const pieces = getGearState().pieces;
+  if (up.kind === 'craft') pieces[key] = { grade: 0, level: 1, bonus: slotId === 'charm' ? charmBonus : null };
+  else if (up.kind === 'reforge') { pieces[key].grade += 1; pieces[key].level = 1; }
+  else pieces[key].level += 1;
+  const p = pieces[key];
+  logCombatMessage('🛠️ <strong>' + (up.kind === 'craft' ? 'Crafted' : up.kind === 'reforge' ? 'Reforged into' : 'Improved') + ' ' + getGearName(slotId, p) + (up.kind === 'level' ? ' to +' + p.level : '') + '.</strong>', 'unlock');
+  return true;
+}
+
+function getCharmChangeCost() {
+  const p = getGearPiece('charm');
+  return p ? { hawk_feather: GEAR_CONFIG.charmChangeCost * (p.grade + 1) } : null;
+}
+
+function changeCharmBonus(bonusId) {
+  const p = getGearPiece('charm');
+  const cost = getCharmChangeCost();
+  if (!p || p.bonus === bonusId || !CHARM_BONUSES.some(b => b.id === bonusId) || !canAffordMaterials(cost)) return false;
+  spendMaterials(cost);
+  p.bonus = bonusId;
+  return true;
 }
 
 /** ---------- Weapon Honing ---------- */
@@ -2066,6 +2199,12 @@ function getEffectiveBossBracket(beast) {
 }
 
 function calculateWinChance(beast) {
+  const base = calculateBaseWinChance(beast);
+  // Hunter's Eye charm: flat bonus to odds you already have (never turns 0% into a chance)
+  return base > 0 ? Math.min(0.98, base + getCharmBonus('odds')) : 0;
+}
+
+function calculateBaseWinChance(beast) {
   const power = getCombatPowerVs(beast);
   const { min, max } = getEffectiveBossBracket(beast);
 
@@ -2212,7 +2351,7 @@ function rollRelicDrops(beast) {
   let droppedAny = false;
 
   const resonanceLvl = getAscensionPerkLevel('trophy_resonance');
-  const dropMult = (1 + (resonanceLvl * 0.25)) * (1 + getFishCodexBonus('relic'));
+  const dropMult = (1 + (resonanceLvl * 0.25)) * (1 + getFishCodexBonus('relic')) * (1 + getCharmBonus('drops'));
 
   // One roll per expedition, so at most ONE relic can drop per win.
   // Each unowned relic keeps its own drop chance; the rarest is checked first.
@@ -2388,6 +2527,9 @@ function challengeCurrentBeast() {
       if (addBattleInsight(beast)) {
         logCombatMessage('🧠 <strong>Battle Insight:</strong> +' + Math.round(getBattleInsightStacks(beast) * LEGACY_CONFIG.insightPerLoss * 100) + '% Combat Power against ' + beast.name + ' until you beat it.', 'relic');
       }
+      // Hide Armor: a lost fight refunds part of its Stamina
+      const refund = Math.floor(staminaCost * getArmorStaminaRefund());
+      if (refund > 0) gameState.stamina = Math.min(getMaxStamina(), gameState.stamina + refund);
       gameState.inCooldown = true;
       gameState.cooldownRemaining = getWoundedDuration(beast);
       gameState.cooldownTotal = gameState.cooldownRemaining;
@@ -2488,6 +2630,7 @@ function saveGameToStorage() {
       riftOpen: !!gameState.riftOpen,
       tundra: gameState.tundra || null,
       expedition: gameState.expedition || null,
+      gear: gameState.gear || null,
       lastSavedAt: Date.now()
     };
     localStorage.setItem('beast_tamer_savedata', JSON.stringify(data));
@@ -2591,6 +2734,7 @@ function loadGameFromStorage() {
       if (typeof data.world === 'number' && data.world >= 0 && data.world < WORLDS.length) gameState.world = data.world;
       if (data.worldRecords && typeof data.worldRecords === 'object') gameState.worldRecords = data.worldRecords;
       gameState.riftOpen = !!data.riftOpen;
+      if (data.gear && typeof data.gear === 'object') gameState.gear = { pieces: data.gear.pieces || {} };
       if (data.expedition && typeof data.expedition === 'object') gameState.expedition = Object.assign({ active: null, materials: {}, honing: 0, trips: 0 }, data.expedition);
       if (data.tundra && typeof data.tundra === 'object') gameState.tundra = Object.assign(getTundra(), data.tundra, { caches: Array.isArray(data.tundra.caches) ? data.tundra.caches : [] });
       applyWorld();

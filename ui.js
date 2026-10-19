@@ -3656,10 +3656,72 @@ function matChip(id, n, need) {
     '<span class="text-slate-500 hidden sm:inline">' + m.name + '</span></span>';
 }
 
+
+/** ---------- Workbench gear cards ---------- */
+const gearSel = { charm: 'odds' };
+
+function gearEffectText(slotId, eff, bonusId) {
+  if (eff <= 0) return 'No bonus yet';
+  if (slotId === 'helm') return 'Hunter Power x' + (1 + eff * GEAR_SLOTS[0].perLevel).toFixed(2);
+  if (slotId === 'armor') { const v = Math.round(Math.min(0.4, eff * GEAR_SLOTS[1].perLevel) * 100); return '-' + v + '% wound time, ' + v + '% Stamina back on a loss'; }
+  const b = CHARM_BONUSES.find(x => x.id === bonusId) || CHARM_BONUSES[0];
+  const v = eff * b.perLevel * 100;
+  return '+' + (v < 10 ? v.toFixed(1) : Math.round(v)) + (b.id === 'odds' ? ' points' : '%') + ' ' + b.label;
+}
+
+function gearCardHtml(slot) {
+  const here = getGearPiece(slot.id);
+  const active = getActiveGear(slot.id);
+  const up = getGearUpgrade(slot.id);
+  const climate = CLIMATES[getClimateId()] || CLIMATES.wilds;
+  let head, note = '', extra = '';
+  if (here) {
+    const eff = getGearEffLevel(here);
+    head = '<div class="font-bold text-slate-100">' + getGearName(slot.id, here) + ' <span class="font-mono text-amber-300">+' + here.level + '</span></div>' +
+      '<div class="text-xs text-emerald-300">' + gearEffectText(slot.id, eff, here.bonus) + '</div>';
+    if (up) {
+      const nextEff = up.kind === 'reforge' ? (here.grade + 1) * GEAR_CONFIG.levelsPerGrade + 1 : eff + 1;
+      note = '<div class="text-[11px] text-slate-400">Next: ' + gearEffectText(slot.id, nextEff, here.bonus) + '</div>';
+    }
+    if (active && active.climate !== getClimateId()) {
+      note += '<div class="text-[11px] text-sky-300 mt-1"><i class="fa-solid fa-temperature-half mr-1"></i>For now your ' + getGearName(slot.id, active.piece, active.climate) + ' +' + active.piece.level + ' is still stronger, even at half strength in this climate, so it is the one in use (' + gearEffectText(slot.id, getGearEffLevel(active.piece) * active.strength, active.piece.bonus) + ').</div>';
+    }
+    if (slot.id === 'charm') {
+      const cc = getCharmChangeCost();
+      extra = '<div class="text-[10px] uppercase tracking-wider text-slate-500 mt-2 mb-1">Change bonus (' + formatNumber(cc.hawk_feather) + ' Hawk Feathers)</div><div class="flex flex-wrap gap-1.5">' +
+        CHARM_BONUSES.map(b => '<button data-gear-charm-change="' + b.id + '" ' + (b.id === here.bonus || !canAffordMaterials(cc) ? 'disabled' : '') + ' class="px-2 py-1 rounded border text-[11px] cursor-pointer disabled:cursor-default ' + (b.id === here.bonus ? 'border-amber-500 bg-amber-950/30 text-amber-200' : 'border-primal-700 bg-primal-900/60 text-slate-300 disabled:opacity-40') + '">' + b.name + '</button>').join('') + '</div>';
+    }
+  } else {
+    head = '<div class="font-bold text-slate-300">' + climate.prefix + 'Bone ' + slot.name + ' <span class="text-xs font-normal text-slate-500">not crafted</span></div>' +
+      '<div class="text-xs text-slate-400">' + slot.desc + '</div>';
+    if (active) note = '<div class="text-[11px] text-sky-300 mt-1"><i class="fa-solid fa-temperature-half mr-1"></i>Your ' + getGearName(slot.id, active.piece, active.climate) + ' +' + active.piece.level + ' is made for the ' + CLIMATES[active.climate].name + ' climate, so it works at half strength here: ' + gearEffectText(slot.id, getGearEffLevel(active.piece) * active.strength, active.piece.bonus) + '.</div>';
+    if (slot.id === 'charm') {
+      extra = '<div class="text-[10px] uppercase tracking-wider text-slate-500 mt-2 mb-1">Choose its bonus</div><div class="flex flex-wrap gap-1.5">' +
+        CHARM_BONUSES.map(b => '<button data-gear-charm-pick="' + b.id + '" class="px-2 py-1 rounded border text-[11px] cursor-pointer ' + (gearSel.charm === b.id ? 'border-amber-500 bg-amber-950/30 text-amber-200' : 'border-primal-700 bg-primal-900/60 text-slate-300') + '" title="+' + (b.perLevel * 100) + (b.id === 'odds' ? ' points of ' : '% ') + b.label + ' per level">' + b.name + ' <span class="text-slate-500">(' + b.label + ')</span></button>').join('') + '</div>';
+    }
+  }
+  let action;
+  if (!up) action = '<div class="mt-2 text-center font-mono font-bold text-amber-300 text-xs">MASTERWORK</div>';
+  else {
+    const label = up.kind === 'craft' ? 'Craft' : up.kind === 'reforge' ? 'Reforge into ' + GEAR_CONFIG.grades[here.grade + 1].name : 'Improve to +' + (here.level + 1);
+    action = '<div class="flex flex-wrap gap-1.5 mt-2">' + Object.keys(up.cost).map(m => matChip(m, getMaterial(m), up.cost[m])).join('') + '</div>' +
+      '<button data-gear-up="' + slot.id + '" ' + (canAffordMaterials(up.cost) ? '' : 'disabled') + ' class="mt-2 w-full py-2 rounded-lg border border-amber-600/60 bg-amber-900/40 hover:bg-amber-800/50 text-amber-100 text-sm font-bold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">' + label + '</button>';
+  }
+  return '<div class="p-3 rounded-xl border border-primal-700 bg-primal-900/50">' +
+    '<div class="flex items-start gap-3"><div class="w-9 h-9 shrink-0 rounded-lg bg-primal-800 border border-primal-600 flex items-center justify-center text-amber-400"><i class="fa-solid ' + slot.icon + '"></i></div>' +
+    '<div class="min-w-0 flex-1">' + head + note + '</div></div>' + extra + action + '</div>';
+}
+
+function workbenchHtml() {
+  const climate = CLIMATES[getClimateId()] || CLIMATES.wilds;
+  return '<div class="text-xs text-slate-400 mb-3">Gear is kept forever, but it is made for one climate. You are in the <strong class="text-slate-200">' + climate.name + '</strong> climate; gear from another climate works at half strength here.</div>' +
+    '<div class="space-y-3">' + GEAR_SLOTS.map(gearCardHtml).join('') + '</div>';
+}
+
 function getExpeditionSignature() {
   const st = getExpeditionState();
   return [JSON.stringify(st.materials), st.honing, st.active ? st.active.region + st.active.endAt : '-', isExpeditionReady(), JSON.stringify(expSel),
-    Object.keys(gameState.tamedBeasts).join(','), gameState.bestApexDepth || 0, expRecallArmedUntil > Date.now()].join('|');
+    Object.keys(gameState.tamedBeasts).join(','), gameState.bestApexDepth || 0, expRecallArmedUntil > Date.now(), JSON.stringify(getGearState().pieces), gearSel.charm, getClimateId()].join('|');
 }
 
 function renderExpeditionTab() {
@@ -3741,14 +3803,15 @@ function renderExpeditionTab() {
 
   root.innerHTML =
     '<div class="bt-stone p-5 space-y-3"><div class="flex flex-wrap items-end justify-between gap-3"><div><h2 class="font-cinzel text-2xl sm:text-3xl text-slate-100"><i class="fa-solid fa-compass mr-2 text-amber-400"></i>Expeditions</h2>' +
-      '<p class="text-xs text-slate-400 max-w-xl">Send your hunter into a beast\'s territory and come back later for its materials. Trophy fights and Apex tames drop materials too. Materials are kept forever.</p></div></div>' +
+      '<p class="text-xs text-slate-400 max-w-xl">Send your hunter into a beast\'s territory and come back later for its materials, then hone your weapon and craft gear at the Workbench. Trophy fights and Apex tames drop materials too. Materials and gear are kept forever.</p></div></div>' +
       '<div class="flex flex-wrap gap-2">' + inv + '</div></div>' +
     '<div class="grid lg:grid-cols-3 gap-6">' +
       '<div class="lg:col-span-2 space-y-6">' +
         '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl"><div class="font-cinzel text-lg text-slate-100 mb-3">Out in the wilds</div>' + current + '</div>' +
         '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl"><div class="font-cinzel text-lg text-slate-100 mb-3">Plan an expedition</div>' + planner + '</div>' +
       '</div>' +
-      '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl h-fit"><div class="font-cinzel text-lg text-slate-100 mb-2"><i class="fa-solid fa-hammer mr-2 text-amber-400"></i>Weapon Honing</div>' + honing + '</div>' +
+      '<div class="space-y-6"><div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl h-fit"><div class="font-cinzel text-lg text-slate-100 mb-2"><i class="fa-solid fa-hammer mr-2 text-amber-400"></i>Weapon Honing</div>' + honing + '</div>' +
+      '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl h-fit"><div class="font-cinzel text-lg text-slate-100 mb-2"><i class="fa-solid fa-screwdriver-wrench mr-2 text-amber-400"></i>Workbench</div>' + workbenchHtml() + '</div></div>' +
     '</div>';
   updateExpeditionLive(true);
 }
@@ -3789,11 +3852,14 @@ function updateExpeditionLive(fromRender) {
   if (btn) btn.addEventListener('click', () => switchTab('expedition'));
   const root = document.getElementById('expedition-content');
   if (root) root.addEventListener('click', (e) => {
-    const t = e.target.closest('[data-exp-region],[data-exp-partner],[data-exp-duration],[data-exp-action]');
+    const t = e.target.closest('[data-exp-region],[data-exp-partner],[data-exp-duration],[data-exp-action],[data-gear-up],[data-gear-charm-pick],[data-gear-charm-change]');
     if (!t || t.disabled) return;
     if (t.hasAttribute('data-exp-region')) expSel.region = t.getAttribute('data-exp-region');
     else if (t.hasAttribute('data-exp-partner')) expSel.partner = t.getAttribute('data-exp-partner') || null;
     else if (t.hasAttribute('data-exp-duration')) expSel.duration = t.getAttribute('data-exp-duration');
+    else if (t.hasAttribute('data-gear-charm-pick')) gearSel.charm = t.getAttribute('data-gear-charm-pick');
+    else if (t.hasAttribute('data-gear-charm-change')) { if (changeCharmBonus(t.getAttribute('data-gear-charm-change'))) { sound.playClick(); saveGameToStorage(); } }
+    else if (t.hasAttribute('data-gear-up')) { if (upgradeGear(t.getAttribute('data-gear-up'), gearSel.charm)) { sound.playWin(); saveGameToStorage(); } }
     else {
       const act = t.getAttribute('data-exp-action');
       if (act === 'start' && startExpedition(expSel.region, expSel.duration, expSel.partner)) { sound.playClick(); renderMenagerie(); }
