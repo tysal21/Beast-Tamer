@@ -2995,6 +2995,8 @@ function saveGameToStorage() {
       sealRework: gameState.sealRework || 0,
       tutorial: gameState.tutorial || null,
       hunterName: gameState.hunterName || '',
+      leaderboard: gameState.leaderboard || null,
+      firstPlayedAt: gameState.firstPlayedAt || null,
       hunterTitle: gameState.hunterTitle || '',
       expedition: gameState.expedition || null,
       gear: gameState.gear || null,
@@ -3106,6 +3108,8 @@ function loadGameFromStorage() {
       gameState.riftOpen = !!data.riftOpen;
       if (data.gear && typeof data.gear === 'object') gameState.gear = { pieces: data.gear.pieces || {} };
       if (data.expedition && typeof data.expedition === 'object') gameState.expedition = Object.assign({ active: null, materials: {}, honing: 0, trips: 0 }, data.expedition);
+      if (data.leaderboard && typeof data.leaderboard === 'object') gameState.leaderboard = data.leaderboard;
+      if (typeof data.firstPlayedAt === 'number') gameState.firstPlayedAt = data.firstPlayedAt;
       if (typeof data.hunterName === 'string') gameState.hunterName = data.hunterName.slice(0, 20);
       if (typeof data.hunterTitle === 'string') gameState.hunterTitle = data.hunterTitle;
       // Tutorial: older saves already know the game, so every tab they have counts as seen

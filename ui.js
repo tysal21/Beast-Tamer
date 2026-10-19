@@ -214,6 +214,7 @@ function switchTab(tabId) {
     { id: 'legacy', btn: document.getElementById('tab-btn-legacy'), panel: document.getElementById('panel-legacy') },
     { id: 'ascend', btn: elements.tabBtnAscend, panel: elements.panelAscend },
     { id: 'world', btn: document.getElementById('tab-btn-world'), panel: document.getElementById('panel-world') },
+    { id: 'leaderboard', btn: document.getElementById('tab-btn-leaderboard'), panel: document.getElementById('panel-leaderboard') },
     { id: 'expedition', btn: document.getElementById('tab-btn-expedition'), panel: document.getElementById('panel-expedition') }
   ];
 
