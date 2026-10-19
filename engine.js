@@ -2123,7 +2123,7 @@ function getTotalCombatPower() {
   const hunter = getHunterPower();
   const base = hunter + getTotalBeastPower() * getLeadershipMult(hunter);
   // Fishing: Codex power bonus and Abyssal Fervor meal
-  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts') * getTrophyPowerMult() * getWorldPowerMult() * getApexPowerMult() * getAdrenalinePowerMult());
+  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts') * getTrophyPowerMult() * getWorldPowerMult() * getApexPowerMult() * getAdrenalinePowerMult() * (gameState.devPowerMult || 1));
 }
 
 function getBaseMeatRate() {
@@ -2691,6 +2691,7 @@ function saveGameToStorage() {
       expedition: gameState.expedition || null,
       gear: gameState.gear || null,
       unlocks: gameState.unlocks || {},
+      devPowerMult: gameState.devPowerMult || 1,
       newFeatures: gameState.newFeatures || {},
       lastSavedAt: Date.now()
     };
@@ -2802,6 +2803,7 @@ function loadGameFromStorage() {
       // Saves that already Ascended get the Totem right away
       checkTotemUnlock();
       // Milestone unlocks: older saves get everything they have already earned, without pop-ups
+      gameState.devPowerMult = (typeof data.devPowerMult === 'number' && data.devPowerMult > 0) ? data.devPowerMult : 1;
       if (data.unlocks && typeof data.unlocks === 'object') { gameState.unlocks = data.unlocks; gameState.newFeatures = (data.newFeatures && typeof data.newFeatures === 'object') ? data.newFeatures : {}; }
       checkFeatureUnlocks(!data.unlocks);
 
