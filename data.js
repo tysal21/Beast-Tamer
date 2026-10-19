@@ -603,7 +603,7 @@ const FISHING_CONFIG = {
   },
   basketCap: 40, // (old shared basket, kept for old saves)
   // Every species has its own storage, so a rare catch never pushes anything out. Mythics are trophies (Codex only).
-  speciesCap: { common: 12, uncommon: 10, rare: 6, legendary: 4 },
+  speciesCap: { common: 12, uncommon: 10, rare: 6, legendary: 4, mythic: 3 },
   buffMaxSec: 3600 // cooking the same meal again extends it, up to 60 minutes
 };
 
