@@ -2541,8 +2541,9 @@ function advanceSimulation(rawDt, isBulkCatchup = false) {
         `⏳ <strong>Camp Report (${timeLabel} away):</strong> Harvested +${formatNumber(meatEarned)} Meat${staminaEarned > 0 ? ` & recovered +${staminaEarned} Stamina` : ''}${fishCaught > 0 ? ` & your lines caught ${fishCaught} fish` : ''}${totemLayersBroken > 0 ? ` & shattered ${totemLayersBroken} Totem layer${totemLayersBroken === 1 ? '' : 's'}` : ''}.`,
         'default'
       );
-      if (dt >= 60 && meatEarned > 0) {
-        showToast(`Welcome back! +${formatNumber(meatEarned)} Meat harvested over${timeLabel}.`, 'info');
+      // 5+ minutes away gets the full "While you were away" card instead (comforts.js)
+      if (dt >= 60 && dt < 300 && meatEarned > 0) {
+        showToast(`Welcome back! +${formatNumber(meatEarned)} Meat harvested over ${timeLabel}.`, 'info');
       }
     }
   }
@@ -2835,6 +2836,7 @@ function saveGameToStorage() {
       riftOpen: !!gameState.riftOpen,
       tundra: gameState.tundra || null,
       volcano: gameState.volcano || null,
+      tutorial: gameState.tutorial || null,
       expedition: gameState.expedition || null,
       gear: gameState.gear || null,
       unlocks: gameState.unlocks || {},
@@ -2945,6 +2947,9 @@ function loadGameFromStorage() {
       gameState.riftOpen = !!data.riftOpen;
       if (data.gear && typeof data.gear === 'object') gameState.gear = { pieces: data.gear.pieces || {} };
       if (data.expedition && typeof data.expedition === 'object') gameState.expedition = Object.assign({ active: null, materials: {}, honing: 0, trips: 0 }, data.expedition);
+      // Tutorial: older saves already know the game, so every tab they have counts as seen
+      if (data.tutorial && typeof data.tutorial === 'object') gameState.tutorial = { done: data.tutorial.done || {}, off: !!data.tutorial.off };
+      else { const seen = { camp: true }; Object.keys(data.unlocks || {}).forEach(k => { const f = FEATURE_UNLOCKS.find(x => x.id === k); if (f) seen[f.tab] = true; }); gameState.tutorial = { done: seen, off: false }; }
       if (data.volcano && typeof data.volcano === 'object') { gameState.volcano = Object.assign(getVolcano(), data.volcano); gameState.volcano.stats = Object.assign({ rounds: 0, wins: 0, busts: 0, best: 0 }, data.volcano.stats || {}); }
       if (data.tundra && typeof data.tundra === 'object') gameState.tundra = Object.assign(getTundra(), data.tundra, { caches: Array.isArray(data.tundra.caches) ? data.tundra.caches : [] });
       applyWorld();
