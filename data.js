@@ -572,8 +572,8 @@ const FISHING_CONFIG = {
     common:    { zone: 0.30, sweepSec: 1.6,  misses: 2, drift: 0,    erratic: false },
     uncommon:  { zone: 0.22, sweepSec: 1.2,  misses: 1, drift: 0,    erratic: false },
     rare:      { zone: 0.14, sweepSec: 0.9,  misses: 1, drift: 0.12, erratic: false },
-    legendary: { zone: 0.08, sweepSec: 0.85, misses: 0, drift: 0.18, erratic: true },
-    mythic:    { zone: 0.06, sweepSec: 0.7,  misses: 0, drift: 0.25, erratic: true }
+    legendary: { zone: 0.095, sweepSec: 0.92, misses: 0, drift: 0.15, erratic: true },  // a touch easier than before
+    mythic:    { zone: 0.08,  sweepSec: 0.85, misses: 0, drift: 0.18, erratic: true }   // what Legendary used to be
   },
   // Codex mastery: catches needed for each star [first catch, silver, gold] and the share of the full bonus each star gives
   mastery: {
@@ -599,9 +599,11 @@ const FISHING_CONFIG = {
   lines: {
     maxLines: 6,
     costs: [0, 25000000, 750000000, 50000000000, 5000000000000, 500000000000000], // 1st line is free with the dock
-    catchIntervalSec: 300            // each line lands a fish every 5 minutes (also while offline)
+    catchIntervalSec: 600            // each line lands a fish every 10 minutes (also while offline); was 5, halved so casting by hand matters
   },
-  basketCap: 40,
+  basketCap: 40, // (old shared basket, kept for old saves)
+  // Every species has its own storage, so a rare catch never pushes anything out. Mythics are trophies (Codex only).
+  speciesCap: { common: 12, uncommon: 10, rare: 6, legendary: 4 },
   buffMaxSec: 3600 // cooking the same meal again extends it, up to 60 minutes
 };
 
