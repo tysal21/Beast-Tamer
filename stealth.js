@@ -54,7 +54,22 @@
     'wounded': 'on leave', 'wound': 'leave', 'adrenaline': 'overtime', 'slay': 'close', 'slain': 'closed',
     'roar': 'note', 'wild': 'pending', 'wilds': 'main office', 'primal': 'core', 'primeval': 'senior',
     'legacy': 'tenure', 'insight': 'feedback', 'beat': 'complete', 'defeated': 'completed',
-    'wanted': 'pending', 'untamed': 'unapproved', 'sprite': 'icon', 'lair': 'office'
+    'wanted': 'pending', 'untamed': 'unapproved', 'sprite': 'icon', 'lair': 'office',
+    'chimera': 'vendor', 'chimeras': 'vendors', 'viper': 'vendor', 'vipers': 'vendors', 'boar': 'vendor', 'hawk': 'vendor',
+    'grizzly': 'vendor', 'scorpion': 'vendor', 'scorpions': 'vendors', 'wyrm': 'vendor', 'wyrms': 'vendors', 'hound': 'vendor', 'hounds': 'vendors',
+    'wolf': 'courier', 'wolves': 'couriers', 'serpent': 'client', 'dragon': 'client', 'mammoths': 'clients', 'mammoth': 'client',
+    'prey': 'leads', 'herds': 'batches', 'herd': 'batch', 'predator': 'competitor', 'predators': 'competitors',
+    'venom': 'compliance', 'venomous': 'compliant', 'claws': 'clauses', 'claw': 'clause', 'talons': 'terms', 'talon': 'term',
+    'tusked': 'senior', 'tusks': 'terms', 'musk': 'outreach', 'bait': 'outreach', 'traps': 'channels', 'trap': 'channel',
+    'snares': 'channels', 'snare': 'channel', 'harpoon': 'contract', 'harpoons': 'contracts', 'spear': 'pen', 'blood': 'budget',
+    'bloodline': 'pipeline', 'kill': 'close', 'kills': 'closes', 'jungle': 'market', 'swamp': 'market', 'swamps': 'markets',
+    'butcher': 'analyst', 'butchery': 'analysis', 'feral': 'organic', 'savage': 'aggressive', 'monster': 'client', 'monsters': 'clients',
+    'hunt & bosses': 'vendor reviews', 'combat log': 'activity log', 'combat': 'operations', 'lethality': 'efficiency',
+    'canine': 'regional', 'subdue': 'onboard', 'bond': 'partner', 'encounter': 'engagement', 'lesser game': 'small accounts',
+    'armory': 'equipment room', 'bare hands': 'no toolkit', 'flint knife': 'basic toolkit', 'weapons': 'toolkits',
+    'hermite curve': 'growth curve', 'arena': 'meeting room', 'creature': 'client', 'creatures': 'clients', 'game': 'project',
+    'refight': 'resubmit', 'spar': 'train', 'conquered': 'completed', 'salvaged': 'recovered', 'trophy expedition': 'award field visit',
+    'roars': 'notes', 'bite': 'fee', 'sting': 'fee', 'pits': 'channels', 'dens': 'branches', 'den': 'branch'
   };
 
   function buildMap() {

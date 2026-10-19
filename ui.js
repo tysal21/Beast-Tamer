@@ -3196,6 +3196,7 @@ function fightPresenterEnd(s) {
   const bigMoment = titanWin || firstTame || sealBroken || newBest || !!relic || (win && s.winChance < 0.25);
   const mode = getFightAnimMode();
   if (!arena.active && !(bigMoment && mode === 'skip')) return; // nothing to show
+  if (!arena.active && window.isStealthOn && window.isStealthOn()) return; // Doc view: no pop-up celebrations
   if (!arena.active) {
     // Skip mode: still celebrate the big moments
     arena.active = true;
