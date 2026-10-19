@@ -1597,7 +1597,7 @@ function renderMenagerie() {
       const card = document.createElement('div');
       card.className = 'bg-primal-800/90 border border-primal-700/80 rounded-xl p-2.5 flex items-center space-x-3 shadow-inner hover:border-amber-500/40 transition-colors';
       card.innerHTML =
-        '<img src="' + beast.image + '" alt="' + beast.name + '" class="menagerie-thumb" onerror="this.onerror=null; this.src=\'' + beast.fallbackImage + '\';" />' +
+        '<img src="' + getBeastArt(beast, true) + '" alt="' + beast.name + '" class="menagerie-thumb is-tamed" style="filter:' + (beast.imageFilter || 'none') + '" onerror="this.onerror=null; this.src=\'' + beast.fallbackImage + '\';" />' +
         '<div class="flex-1 min-w-0">' +
           '<div class="flex items-center justify-between gap-1 mb-0.5">' +
             '<h4 class="font-bold text-xs text-slate-100 truncate">' + beast.name + '</h4>' +
@@ -2998,9 +2998,15 @@ function setNeedle(v) {
   arena.needle.setAttribute('y2', p.y.toFixed(2));
 }
 
-function applyBeastImage(img, beast) {
+/** Wild portrait by default; the full-body tamed art when asked (falls back to the portrait, then the old sprite) */
+function getBeastArt(beast, tamed) {
+  const base = (beast && beast.baseId) ? (BEAST_CATALOG.find(b => b.id === beast.baseId) || beast) : beast;
+  return (tamed && base && base.tamedImage) ? base.tamedImage : beast.image;
+}
+
+function applyBeastImage(img, beast, tamed) {
   img.onerror = () => { img.onerror = null; if (beast.fallbackImage) img.src = beast.fallbackImage; };
-  img.src = beast.image;
+  img.src = getBeastArt(beast, tamed);
   img.alt = beast.name;
   img.style.filter = beast.imageFilter || '';
 }
@@ -3172,8 +3178,14 @@ function fightPresenterEnd(s) {
   if (relic) {
     arena.resultArt.innerHTML = '<div class="w-28 h-28 sm:w-36 sm:h-36 mx-auto rounded-2xl bg-amber-950/80 border-2 border-amber-400 flex items-center justify-center text-amber-300 text-6xl reveal-pop reveal-glow"><i class="fa-solid ' + relic.icon + '"></i></div>';
   } else {
-    arena.resultArt.innerHTML = '<div class="monster-portrait-frame mx-auto !w-44 !h-44 sm:!w-64 sm:!h-64 reveal-pop ' + (win ? 'reveal-glow' : 'opacity-60 grayscale') + '"><img class="monster-portrait-img" alt=""></div>';
-    applyBeastImage(arena.resultArt.querySelector('img'), beast);
+    if (firstTame && getBeastArt(beast, true) !== beast.image) {
+      // The tame reveal: your new pack-mate, full body, with a TAMED stamp
+      arena.resultArt.innerHTML = '<div class="tamed-reveal reveal-pop"><img alt=""><div class="tamed-stamp">TAMED</div></div>';
+      applyBeastImage(arena.resultArt.querySelector('img'), beast, true);
+    } else {
+      arena.resultArt.innerHTML = '<div class="monster-portrait-frame mx-auto !w-44 !h-44 sm:!w-64 sm:!h-64 reveal-pop ' + (win ? 'reveal-glow' : 'opacity-60 grayscale') + '"><img class="monster-portrait-img" alt=""></div>';
+      applyBeastImage(arena.resultArt.querySelector('img'), beast);
+    }
   }
 
   // Banner + subtitle
@@ -3387,6 +3399,8 @@ function applyWorldText() {
   });
   const wn = document.getElementById('hud-world-name');
   if (wn) wn.textContent = getWorld().name;
+  // Each world themes the whole page (colors, paper, background) through CSS variables
+  document.body.dataset.world = getWorld().id;
 }
 
 let migrateArmedUntil = 0;
