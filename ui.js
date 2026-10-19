@@ -2108,7 +2108,7 @@ function formatNeeds(recipe) {
   }).join(' <span class="text-slate-500">+</span> ');
 }
 
-function formatDuration(sec) {
+function formatClock(sec) {
   sec = Math.max(0, Math.ceil(sec));
   const m = Math.floor(sec / 60), s = sec % 60;
   return m + ':' + String(s).padStart(2, '0');
@@ -2213,7 +2213,7 @@ function updateFishBuffBadges() {
       '</div>').join('');
   }
   fishEls.buffBadges.querySelectorAll('[data-fish-buff-timer]').forEach(el => {
-    el.textContent = formatDuration(gameState.fishing.buffs[el.dataset.fishBuffTimer]);
+    el.textContent = formatClock(gameState.fishing.buffs[el.dataset.fishBuffTimer]);
   });
   return active.length > 0;
 }
@@ -2308,7 +2308,7 @@ function updateFishingLive() {
   fishEls.linesCount.textContent = f.lines + '/' + FISHING_CONFIG.lines.maxLines + ' Lines';
   fishEls.lineBar.style.width = Math.min(100, (f.lineTimer / interval) * 100) + '%';
   fishEls.lineBar.className = 'h-full ' + (basketFull ? 'bg-red-500' : 'bg-emerald-500');
-  fishEls.lineNext.textContent = basketFull ? 'Basket full!' : formatDuration((interval - f.lineTimer) / Math.max(1, f.lines));
+  fishEls.lineNext.textContent = basketFull ? 'Basket full!' : formatClock((interval - f.lineTimer) / Math.max(1, f.lines));
   const lineCost = getNextLineCost();
   if (lineCost === null) {
     fishEls.lineBtn.disabled = true;
@@ -3527,7 +3527,8 @@ function renderWorldTab() {
 
 function formatDuration(sec) {
   sec = Math.max(0, Math.round(sec));
-  const m = Math.floor(sec / 60), s = sec % 60;
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  if (h > 0) return h + 'h ' + (m < 10 ? '0' : '') + m + 'm';
   return m > 0 ? m + 'm ' + (s < 10 ? '0' : '') + s + 's' : s + 's';
 }
 
