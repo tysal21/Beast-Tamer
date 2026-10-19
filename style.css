@@ -564,3 +564,34 @@ body.stealth .erupt-mult { font-size: 16px !important; font-weight: 700 !importa
 body.stealth .erupt-dot { display: none !important; }
 body.stealth .erupt-idle, body.stealth .erupt-round { display: block !important; }
 body.stealth .erupt-stepper span { font-size: 14px !important; }
+
+/* ================= SMALL COMFORTS ================= */
+/* While you were away */
+#away-card { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgb(0 0 0 / 0.55); }
+#away-card .away-box { width: 100%; max-width: 420px; background: var(--paper); color: var(--ink); border-radius: 6px; padding: 18px 20px 16px;
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.55); outline: 1px solid var(--paper-shade); outline-offset: -6px; font-family: 'Alegreya Sans', sans-serif; }
+#away-card .away-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+#away-card .away-title { font: 400 24px/1.1 'IM Fell English SC', serif; }
+#away-card .away-sub { font-size: 12px; color: var(--ink-soft); }
+#away-card .away-x { font-size: 22px; line-height: 1; color: var(--ink-soft); background: none; border: 0; cursor: pointer; }
+#away-card .away-list { list-style: none; margin: 12px 0 0; padding: 0; }
+#away-card .away-list li { display: flex; gap: 10px; align-items: center; padding: 5px 0; border-bottom: 1px dashed var(--paper-shade); font-size: 14px; }
+#away-card .away-list i { width: 16px; text-align: center; color: rgb(var(--accent-hover)); }
+#away-card .away-ready-title { margin-top: 14px; font-weight: 800; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+#away-card .away-ready { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+#away-card .away-ready button { display: flex; gap: 10px; align-items: center; text-align: left; padding: 8px 10px; border-radius: 6px; cursor: pointer;
+  background: rgb(var(--accent) / 0.14); border: 1px solid rgb(var(--accent) / 0.55); color: var(--ink); font-weight: 700; font-size: 13px; }
+#away-card .away-ready button:hover { background: rgb(var(--accent) / 0.24); }
+#away-card .away-ok { margin-top: 14px; width: 100%; padding: 9px; border-radius: 6px; border: 0; cursor: pointer; font-weight: 800;
+  background: rgb(var(--accent)); color: #fff; }
+
+/* Tutorial */
+.tut-spot { position: relative; z-index: 61 !important; box-shadow: 0 0 0 3px rgb(var(--accent)), 0 0 0 9999px rgb(0 0 0 / 0.45) !important; border-radius: 10px; }
+#tut-tip { position: fixed; z-index: 62; background: var(--paper); color: var(--ink); border-radius: 6px; padding: 12px 14px;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 0.5); font: 14px/1.45 'Alegreya Sans', sans-serif; }
+#tut-tip .tut-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; color: var(--ink-soft); }
+#tut-tip .tut-row span { margin-right: auto; }
+#tut-tip button { background: none; border: 0; cursor: pointer; color: var(--ink-soft); font-size: 12px; text-decoration: underline; }
+#tut-tip button.tut-next { text-decoration: none; padding: 5px 14px; border-radius: 6px; background: rgb(var(--accent)); color: #fff; font-weight: 800; font-size: 13px; }
+body.stealth #away-card, body.stealth #tut-tip { display: none !important; }
+body.stealth .tut-spot { box-shadow: none !important; }

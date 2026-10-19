@@ -4077,7 +4077,9 @@ window.addEventListener('DOMContentLoaded', () => {
   if (lastSavedAt) {
     const offlineSec = Math.max(0, (Date.now() - lastSavedAt) / 1000);
     if (offlineSec >= 5) {
+      if (window.awayBeforeCatchup) window.awayBeforeCatchup();
       advanceSimulation(offlineSec, true);
+      if (window.awayAfterCatchup) window.awayAfterCatchup(offlineSec);
     }
   }
 
