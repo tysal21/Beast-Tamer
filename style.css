@@ -719,3 +719,18 @@ body.stealth #lb-invite { display: none !important; }
 .perk-regional .bg-rose-950\/80 { background: color-mix(in srgb, var(--region-col) 18%, #0c0a09) !important; border-color: color-mix(in srgb, var(--region-col) 50%, transparent) !important; }
 .perk-regional .btn-buy-perk { background: color-mix(in srgb, var(--region-col) 55%, #0c4a6e) !important; }
 .perk-regional .btn-buy-perk:hover:not(:disabled) { background: color-mix(in srgb, var(--region-col) 70%, #0c4a6e) !important; }
+
+/* ================= WHAT'S NEW ================= */
+#whatsnew-card { position: fixed; inset: 0; z-index: 85; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgb(0 0 0 / 0.72); }
+#whatsnew-card .wn-box { width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; background: var(--paper); color: var(--ink); border-radius: 6px; padding: 22px 22px 18px;
+  box-shadow: 0 20px 50px rgb(0 0 0 / 0.6); outline: 1px solid var(--paper-shade); outline-offset: -7px; font-family: 'Alegreya Sans', sans-serif; }
+#whatsnew-card .wn-kicker { font: 600 11px/1 ui-monospace, monospace; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.6; text-align: center; }
+#whatsnew-card .wn-title { font: 400 26px/1.2 'IM Fell English SC', serif; text-align: center; margin: 6px 0 14px; }
+#whatsnew-card .wn-patch + .wn-patch { border-top: 1px solid var(--paper-shade); margin-top: 14px; padding-top: 4px; }
+#whatsnew-card .wn-item { display: flex; gap: 12px; align-items: flex-start; margin: 0 0 12px; }
+#whatsnew-card .wn-item > i { width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #c2410c; color: #fff7ed; font-size: 13px; margin-top: 2px; }
+#whatsnew-card .wn-head { font-weight: 700; font-size: 15px; }
+#whatsnew-card .wn-text { font-size: 14px; line-height: 1.4; opacity: 0.85; }
+#whatsnew-card .wn-ok { display: block; width: 100%; margin-top: 8px; padding: 11px; border-radius: 6px; background: #c2410c; color: #fff; font-weight: 700; font-size: 15px; cursor: pointer; border: 0; }
+#whatsnew-card .wn-ok:hover { background: #ea580c; }
+body.stealth #whatsnew-card { display: none !important; }
