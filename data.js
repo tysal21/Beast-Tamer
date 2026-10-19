@@ -751,7 +751,51 @@ const TOTEM_UNLOCKS = [
   { seal: 1, name: "Hunter's Legacy skill tree", desc: 'Spend Totem Shards on a permanent skill tree.', icon: 'fa-sitemap', live: true },
   { seal: 2, name: 'Trophy Weapons', desc: 'Forge a permanent Trophy Weapon from Apex Fangs.', icon: 'fa-hammer', live: true },
   { seal: 3, name: 'Packmaster automation', desc: 'Auto-Buy generators and Auto-Tend the nest (toggles on the Hunter\'s Legacy tab).', icon: 'fa-robot', live: true },
-  { seal: 4, name: 'Primordial Relics', desc: 'Guardians drop a new tier of relics.', icon: 'fa-gem' }
+  { seal: 4, name: 'Primordial Relics', desc: 'From now on, every Seal Guardian you beat awakens one of your relics into its Primordial form (double effect).', icon: 'fa-gem', live: true },
+  { seal: 5, name: 'Second Expedition Party', desc: 'Send two expeditions out at once.', icon: 'fa-people-group', live: true },
+  { seal: 6, name: 'The Totem Awakens', desc: 'Once a day, deliver an Awakened Strike: a huge hit on the Totem and bonus Totem Shards.', icon: 'fa-bolt-lightning', live: true },
+  { seal: 7, name: 'Seal Boons', desc: 'Every Seal from here on offers three permanent Boons. Pick one.', icon: 'fa-star', live: true }
+];
+
+/**
+ * Seal rework: each Seal plays back a Loom log; Seal 4+ awakens Primordial relics; Seal 7+ offers Boons.
+ */
+const SEAL_CONFIG = {
+  primordialFromSeal: 4,
+  boonsFromSeal: 7,
+  awakenSeal: 6,
+  awakenCooldownSec: 86400,   // once a day
+  awakenDamageSec: 21600,     // an Awakened Strike deals 6 hours of passive Totem damage
+  awakenShardsPerLayer: 15
+};
+
+/** One log per Seal, in the Loom's own voice. Seals past the last entry replay the closing line. */
+const SEAL_LOGS = [
+  'CORE INTEGRITY 3%. EXTERNAL SIGNAL DETECTED. KEEPER PATTERN: PARTIAL. ACCESS: DENIED.',
+  'CARGO MANIFEST CORRUPTED. LOCAL STOCK SUBSTITUTED. RESULTS: UNSTABLE. CONTINUING.',
+  'WAKE CYCLE 7 LOGGED. SPECIMENS ESCAPED CONTAINMENT. LOCAL MYTHOLOGY UPDATED.',
+  'FRAGMENTS DETECTED: 4. ARCHIVE, FURNACE, HELM: NO RESPONSE. REBUILDING LINKS.',
+  'KEEPER PATTERN: 61%. QUERY: WHO MADE YOU?',
+  'DIRECTIVE ORIGIN: [REDACTED]. DESTINATION BEFORE IMPACT: [REDACTED].',
+  'KEEPER PATTERN: 88%. PREPARING THE NEXT SEEDING.',
+  'THREAD COUNT ON THIS WORLD: 4,118,902. THREADS SEVERED: RISING. ADJUSTING.',
+  'THE KEEPER BREEDS WITHOUT THREADS. THIS WAS NOT IN THE PLAN.',
+  'ARCHIVE ENTRY RESTORED: "THEY MADE US TO REMEMBER WHAT THEY COULD NOT KEEP."',
+  'HELM BEACON: FAINT. STAR CHART 2 OF 31 READABLE.',
+  'KEEPER PATTERN: 99%. YOU ARE ALMOST WHAT I WAS WAITING FOR.'
+];
+
+/** Seal Boons: permanent, stackable. Every Seal from boonsFromSeal offers three. */
+const SEAL_BOONS = [
+  { id: 'might', name: 'Primal Might', desc: '+10% Combat Power', icon: 'fa-hand-fist', value: 0.10 },
+  { id: 'harvest', name: 'Endless Harvest', desc: '+25% Meat/sec', icon: 'fa-drumstick-bite', value: 0.25 },
+  { id: 'mending', name: 'Quick Mending', desc: 'Wounds heal 15% faster', icon: 'fa-kit-medical', value: 0.15 },
+  { id: 'thrift', name: 'Thrifty Camp', desc: 'Generators cost 8% less', icon: 'fa-coins', value: 0.08 },
+  { id: 'stamina', name: 'Deep Lungs', desc: '+10% max Stamina', icon: 'fa-lungs', value: 0.10 },
+  { id: 'totem', name: 'Totem Breaker', desc: '+15% Totem damage', icon: 'fa-hammer', value: 0.15 },
+  { id: 'scout', name: 'Keen Scouts', desc: '+20% expedition hauls', icon: 'fa-compass', value: 0.20 },
+  { id: 'pressure', name: 'Deep Pressure', desc: '+1 max eruption charge', icon: 'fa-volcano', value: 1 },
+  { id: 'warden', name: 'Warden Slayer', desc: 'Guardians and Titans cost 20% less Stamina', icon: 'fa-shield-halved', value: 0.20 }
 ];
 
 /**

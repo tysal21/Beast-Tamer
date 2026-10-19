@@ -604,7 +604,7 @@ function getGuardianAt(k) {
     accentColor: base.accentColor,
     desc: 'Guardian of Seal ' + k + ' on the Primal Totem. Defeat it to break the Seal.',
     relics: [],
-    staminaCost: TOTEM_CONFIG.sealStamina,
+    staminaCost: Math.ceil(TOTEM_CONFIG.sealStamina * getBoonCut('warden')),
     woundedSec: TOTEM_CONFIG.sealWoundSec
   };
 }
@@ -633,7 +633,7 @@ function getTotemBonus(type) {
 /** Passive Totem damage per second */
 function getTotemDps() {
   if (!isTotemUnlocked()) return 0;
-  return getTotalCombatPower() * TOTEM_CONFIG.passivePct * getLegacyMult('totem_breaker') * (1 + getFishCodexBonus('totem'));
+  return getTotalCombatPower() * TOTEM_CONFIG.passivePct * getLegacyMult('totem_breaker') * (1 + getFishCodexBonus('totem')) * getBoonMult('totem');
 }
 
 function breakTotemLayer(quiet) {
@@ -701,13 +701,128 @@ function breakTotemSeal(guardian) {
   }
   logCombatMessage('⛓️ <strong>SEAL ' + k + ' BROKEN!</strong> The ' + guardian.name + ' falls. +' + formatNumber(stones) + ' Bloodstones, +' + formatNumber(shards) + ' Totem Shards, permanent +' + Math.round(TOTEM_CONFIG.sealPowerBonus * 100) + '% Combat Power.', 'relic');
   showToast('SEAL ' + k + ' BROKEN! +' + formatNumber(stones) + ' Bloodstones', 'success', true);
+  applySealRework(k, false);
+  logCombatMessage('📜 <strong>LOOM LOG · SEAL ' + k + ':</strong> <span class="font-mono">' + getSealLog(k) + '</span>', 'relic');
   const unlock = TOTEM_UNLOCKS.find(u => u.seal === k);
   if (unlock && unlock.live) {
-    logCombatMessage('🌳 Seal ' + k + ' opens: <strong>' + unlock.name + '</strong>! Find it on the Hunter\'s Legacy tab.', 'unlock');
+    const where = { 1: ' Find it on the Hunter\'s Legacy tab.', 2: ' Forge it on the Camp tab.', 3: ' Toggles are on the Hunter\'s Legacy tab.', 5: ' See the Expeditions tab.', 6: ' Strike from the Totem tab.', 7: ' Choose on the Totem tab.' }[k] || '';
+    logCombatMessage('🌳 Seal ' + k + ' opens: <strong>' + unlock.name + '</strong>!' + where, 'unlock');
     showToast(unlock.name + ' is open!', 'success', true);
   } else if (unlock) {
     logCombatMessage('🧭 Seal ' + k + ' reveals: <strong>' + unlock.name + '</strong> (coming in a future update).', 'unlock');
   }
+}
+
+
+/**
+ * ================= SEAL REWORK =================
+ * Logs, Primordial relics (Seal 4+), the Awakened Strike (Seal 6) and Seal Boons (Seal 7+).
+ */
+function getSealLog(k) {
+  return SEAL_LOGS[Math.min(k, SEAL_LOGS.length) - 1] || SEAL_LOGS[SEAL_LOGS.length - 1];
+}
+
+function isPrimordial(relicId) {
+  return !!(gameState.primordial && gameState.primordial[relicId]);
+}
+
+/** Awaken one owned relic into its Primordial form. Returns the relic, or null if every owned relic is already Primordial. */
+function awakenPrimordialRelic(quiet) {
+  if (!gameState.primordial) gameState.primordial = {};
+  const pool = Object.keys(gameState.ownedRelics || {}).filter(id => gameState.ownedRelics[id] && RELIC_REGISTRY[id] && !gameState.primordial[id]);
+  if (!pool.length) return null;
+  const id = pool[Math.floor(Math.random() * pool.length)];
+  gameState.primordial[id] = true;
+  if (!quiet) {
+    logCombatMessage('💠 <strong>PRIMORDIAL RELIC!</strong> Your ' + RELIC_REGISTRY[id].name + ' awakens into its Primordial form: double effect.', 'relic');
+    showToast('Primordial ' + RELIC_REGISTRY[id].name + '!', 'success', true);
+  }
+  return RELIC_REGISTRY[id];
+}
+
+// ---------- Boons ----------
+function getBoonCount(id) {
+  return (gameState.boons && gameState.boons[id]) || 0;
+}
+function getBoonDef(id) {
+  return SEAL_BOONS.find(b => b.id === id);
+}
+/** A multiplier that grows with each copy of a boon (1 + value x count) */
+function getBoonMult(id) {
+  const b = getBoonDef(id);
+  return 1 + (b ? b.value * getBoonCount(id) : 0);
+}
+/** A multiplier that shrinks with each copy (value cut per copy, compounding) */
+function getBoonCut(id) {
+  const b = getBoonDef(id);
+  return Math.pow(1 - (b ? b.value : 0), getBoonCount(id));
+}
+
+function rollBoonChoice(seal) {
+  const ids = SEAL_BOONS.map(b => b.id);
+  for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+  if (!gameState.boonChoices) gameState.boonChoices = [];
+  gameState.boonChoices.push({ seal, options: ids.slice(0, 3) });
+}
+
+function chooseBoon(boonId) {
+  const choice = (gameState.boonChoices || [])[0];
+  if (!choice || !choice.options.includes(boonId)) return false;
+  gameState.boonChoices.shift();
+  if (!gameState.boons) gameState.boons = {};
+  gameState.boons[boonId] = (gameState.boons[boonId] || 0) + 1;
+  const b = getBoonDef(boonId);
+  logCombatMessage('✨ <strong>SEAL BOON:</strong> ' + b.name + ' (' + b.desc + ').', 'unlock');
+  return true;
+}
+
+function getMaxEruptionCharges() {
+  return WORLD_CONFIG.eruption.maxCharges + getBoonCount('pressure');
+}
+
+// ---------- The Awakened Strike (Seal 6) ----------
+function isAwakenUnlocked() {
+  return !!(gameState.totem && gameState.totem.sealsBroken >= SEAL_CONFIG.awakenSeal);
+}
+function getAwakenCooldownLeft(nowMs = Date.now()) {
+  const at = (gameState.totem && gameState.totem.awakenAt) || 0;
+  return Math.max(0, SEAL_CONFIG.awakenCooldownSec - (nowMs - at) / 1000);
+}
+function canAwaken() {
+  return isAwakenUnlocked() && isTotemUnlocked() && getAwakenCooldownLeft() <= 0 && !isTotemSealLayer(gameState.totem.layer);
+}
+function awakenedStrike() {
+  if (!canAwaken()) return null;
+  const t = gameState.totem;
+  t.awakenAt = Date.now();
+  const shards = SEAL_CONFIG.awakenShardsPerLayer * Math.max(1, t.layer);
+  t.shards += shards;
+  const broken = dealTotemDamage(getTotemDps() * SEAL_CONFIG.awakenDamageSec);
+  logCombatMessage('⚡ <strong>AWAKENED STRIKE!</strong> The Core answers your call: ' + (broken ? broken + ' layer' + (broken === 1 ? '' : 's') + ' shattered, ' : '') + '+' + formatNumber(shards) + ' Totem Shards.', 'relic');
+  return { broken, shards };
+}
+
+/** Everything a Seal gives beyond its base rewards */
+function applySealRework(k, quiet) {
+  if (!gameState.sealLogsSeen) gameState.sealLogsSeen = 0;
+  if (!quiet) gameState.pendingSealLog = k;
+  if (k >= SEAL_CONFIG.primordialFromSeal) {
+    const r = awakenPrimordialRelic(quiet);
+    if (!r && !quiet) {
+      const bonus = 200 * k;
+      gameState.totem.shards += bonus;
+      logCombatMessage('💠 Every relic you own is already Primordial. The Guardian leaves +' + formatNumber(bonus) + ' Totem Shards instead.', 'relic');
+    }
+  }
+  if (k >= SEAL_CONFIG.boonsFromSeal) rollBoonChoice(k);
+}
+
+/** Older saves: give them everything their broken Seals have earned under the rework */
+function migrateSealRework() {
+  if (gameState.sealRework) return;
+  gameState.sealRework = 1;
+  const s = (gameState.totem && gameState.totem.sealsBroken) || 0;
+  for (let k = 1; k <= s; k++) applySealRework(k, true);
 }
 
 /**
@@ -954,7 +1069,7 @@ function getCombatPowerBreakdown() {
   for (const beast of BEAST_CATALOG) {
     if (!gameState.tamedBeasts[beast.id]) continue;
     const l = getParentLevel(beast.id);
-    if (beast.id === getExpeditionPartner()) { beasts.push({ label: beast.name + ' (away on an expedition)', value: 0 }); continue; }
+    if (isAwayOnExpedition(beast.id)) { beasts.push({ label: beast.name + ' (away on an expedition)', value: 0 }); continue; }
     beasts.push({ label: beast.name + ' Lvl ' + l, value: Math.floor(beast.rewardPower * (1 + (l - 1) * 0.15)) });
   }
   for (const h of HYBRID_CATALOG) {
@@ -977,6 +1092,7 @@ function getCombatPowerBreakdown() {
   add('Apex Ladder (' + getApexDepth() + ' tamed this run)', getApexPowerMult());
   add('Region Bonus', getWorldPowerMult());
   add('Molten Heart', getMoltenHeartMult());
+  add('Seal Boon: Primal Might', getBoonMult('might'));
   add('Adrenaline', getAdrenalinePowerMult());
 
   return {
@@ -1240,17 +1356,18 @@ function tickVolcanoCharges(nowMs = Date.now() + PREVIEW_CLOCK.offsetMs) {
   if (!isEruptionWorld()) return;
   const v = getVolcano(), c = WORLD_CONFIG.eruption;
   if (v.chargeAt === null || v.chargeAt === undefined) v.chargeAt = nowMs;
-  if (v.charges >= c.maxCharges) { v.charges = c.maxCharges; v.chargeAt = nowMs; return; }
+  const maxC = getMaxEruptionCharges();
+  if (v.charges >= maxC) { v.charges = maxC; v.chargeAt = nowMs; return; }
   const gained = Math.floor((nowMs - v.chargeAt) / 1000 / c.chargeSec);
   if (gained > 0) {
-    v.charges = Math.min(c.maxCharges, v.charges + gained);
-    v.chargeAt = v.charges >= c.maxCharges ? nowMs : v.chargeAt + gained * c.chargeSec * 1000;
+    v.charges = Math.min(maxC, v.charges + gained);
+    v.chargeAt = v.charges >= maxC ? nowMs : v.chargeAt + gained * c.chargeSec * 1000;
   }
 }
 
 function getNextChargeIn(nowMs = Date.now() + PREVIEW_CLOCK.offsetMs) {
   const v = getVolcano(), c = WORLD_CONFIG.eruption;
-  if (v.charges >= c.maxCharges || v.chargeAt === null) return 0;
+  if (v.charges >= getMaxEruptionCharges() || v.chargeAt === null) return 0;
   return Math.max(0, c.chargeSec - (nowMs - v.chargeAt) / 1000);
 }
 
@@ -1279,7 +1396,7 @@ function startEruption(stake, nowMs = Date.now() + PREVIEW_CLOCK.offsetMs) {
   const v = getVolcano(), c = WORLD_CONFIG.eruption;
   tickVolcanoCharges(nowMs);
   stake = Math.floor(stake || v.stake || 1);
-  if (v.round || stake < 1 || stake > c.maxCharges || v.charges < stake) return false;
+  if (v.round || stake < 1 || stake > getMaxEruptionCharges() || v.charges < stake) return false;
   const prize = getEruptionPrize(stake);
   v.charges -= stake;
   v.stake = stake;
@@ -1393,7 +1510,7 @@ function getTitanBoss() {
     accentColor: base.accentColor,
     desc: w.titan.desc,
     relics: [],
-    staminaCost: APEX_CONFIG.stamina,
+    staminaCost: Math.ceil(APEX_CONFIG.stamina * getBoonCut('warden')),
     woundedSec: 300
   };
 }
@@ -1669,12 +1786,13 @@ function getRelicEffectMultiplier(id) {
   if (!hasRelic(id)) return 0;
   let mult = 1.0;
   if (id !== 'eldritch_crown' && hasRelic('eldritch_crown')) {
-    mult *= 1.25;
+    mult *= isPrimordial('eldritch_crown') ? 1.5 : 1.25;
   }
   const resonanceLvl = getAscensionPerkLevel('trophy_resonance');
   if (resonanceLvl > 0) {
     mult *= (1 + resonanceLvl * 0.20);
   }
+  if (isPrimordial(id)) mult *= 2;
   return mult;
 }
 
@@ -1686,7 +1804,7 @@ function getMaxStamina() {
   }
   maxCap += getFishCodexBonus('maxStamina');
   maxCap += getTotemBonus('stamina');
-  return maxCap;
+  return maxCap * getBoonMult('stamina');
 }
 
 function getParentLevel(beastId) {
@@ -1825,16 +1943,17 @@ function getWoundedDuration(beast = getSelectedFightTarget()) {
   const relicDur = hasRelic('chitin_carapace') ? baseDur / (1 + mult) : baseDur;
   const dur = softLimit(relicDur * (1 - Math.min(0.5, getFishCodexBonus('wound'))) * getLegacyReduction('thick_hide') * (1 - getArmorWoundCut()), WOUND_SOFT_MIN_SEC);
   // A desperate swing at a Titan you're too weak for leaves a deep wound
-  if (isTitanUnderdog(beast)) return Math.max(TITAN_UNDERDOG_WOUND_MIN_SEC, dur * TITAN_UNDERDOG_WOUND_MULT);
-  return dur;
+  const healed = dur / getBoonMult('mending');
+  if (isTitanUnderdog(beast)) return Math.max(TITAN_UNDERDOG_WOUND_MIN_SEC, healed * TITAN_UNDERDOG_WOUND_MULT);
+  return healed;
 }
 
 function getBrutePowerPerLevel() {
-  return hasRelic('razor_talons') ? 5 : 3;
+  return hasRelic('razor_talons') ? (isPrimordial('razor_talons') ? 8 : 5) : 3;
 }
 
 function getTrainingDisciplineCostMultiplier() {
-  let mult = hasRelic('razor_talons') ? 0.75 : 1.0;
+  let mult = hasRelic('razor_talons') ? (isPrimordial('razor_talons') ? 0.6 : 0.75) : 1.0;
   const vigorLvl = getAscensionPerkLevel('primal_vigor');
   if (vigorLvl > 0) {
     mult *= Math.max(0.50, 1 - (vigorLvl * 0.10));
@@ -1917,7 +2036,7 @@ function getGeneratorCost(gen) {
   // Overdrive also eases price growth: past 25 owned each unit's price climbs more slowly, and slower still past 50
   const g = gen.costScale - 1;
   const n0 = Math.min(count, 25), n1 = Math.min(Math.max(count - 25, 0), 25), n2 = Math.max(count - 50, 0);
-  return Math.floor(gen.baseCost * Math.pow(gen.costScale, n0) * Math.pow(1 + g * OVERDRIVE_COST_EASE[1], n1) * Math.pow(1 + g * OVERDRIVE_COST_EASE[2], n2));
+  return Math.floor(gen.baseCost * Math.pow(gen.costScale, n0) * Math.pow(1 + g * OVERDRIVE_COST_EASE[1], n1) * Math.pow(1 + g * OVERDRIVE_COST_EASE[2], n2) * getBoonCut('thrift'));
 }
 
 /** Hunter rework: Training and Primal Vigor scale Hunter Power by %, and Hunter Power leads the pack */
@@ -1994,10 +2113,24 @@ function isExpeditionsUnlocked() {
   return isFeatureUnlocked('expedition') && EXPEDITION_REGIONS.some(isRegionOpen);
 }
 
-/** The beast currently away on an expedition (adds no Beast Power) */
+/** Expedition parties: slot 0 is 'active', slot 1 ('active2') opens at Seal 5 */
+const EXPEDITION_SLOT_KEYS = ['active', 'active2'];
+function getExpeditionSlots() {
+  return (gameState.totem && gameState.totem.sealsBroken >= 5) ? 2 : 1;
+}
+function getParty(i = 0) {
+  return getExpeditionState()[EXPEDITION_SLOT_KEYS[i]] || null;
+}
+
+/** The beast away on the first party (kept for older callers) */
 function getExpeditionPartner() {
-  const a = getExpeditionState().active;
+  const a = getParty(0);
   return a && a.partner ? a.partner : null;
+}
+
+/** Beasts away on any expedition add no Beast Power */
+function isAwayOnExpedition(id) {
+  return EXPEDITION_SLOT_KEYS.some(k => { const a = getExpeditionState()[k]; return !!(a && a.partner === id); });
 }
 
 function getExpeditionYield(regionId, durationId, partnerId) {
@@ -2006,39 +2139,44 @@ function getExpeditionYield(regionId, durationId, partnerId) {
   let mult = 1;
   if (partnerId) mult += partnerId === regionId ? c.matchBonus : c.partnerBonus;
   mult *= 1 + c.apexBonusPerTier * (gameState.bestApexDepth || 0);
-  return Math.floor(c.baseYield * d.mult * mult);
+  return Math.floor(c.baseYield * d.mult * mult * getBoonMult('scout'));
 }
 
 function startExpedition(regionId, durationId, partnerId) {
   const st = getExpeditionState();
   const region = EXPEDITION_REGIONS.find(r => r.id === regionId);
   const d = EXPEDITION_CONFIG.durations.find(x => x.id === durationId);
-  if (st.active || !region || !d || !isRegionOpen(region)) return false;
-  if (partnerId && !gameState.tamedBeasts[partnerId]) return false;
+  let slot = -1;
+  for (let i = 0; i < getExpeditionSlots(); i++) if (!st[EXPEDITION_SLOT_KEYS[i]]) { slot = i; break; }
+  if (slot < 0 || !region || !d || !isRegionOpen(region)) return false;
+  if (partnerId && (!gameState.tamedBeasts[partnerId] || isAwayOnExpedition(partnerId))) return false;
   const now = Date.now();
-  st.active = { region: regionId, duration: durationId, partner: partnerId || null, startAt: now, endAt: now + d.sec * 1000, yield: getExpeditionYield(regionId, durationId, partnerId) };
+  st[EXPEDITION_SLOT_KEYS[slot]] = { region: regionId, duration: durationId, partner: partnerId || null, startAt: now, endAt: now + d.sec * 1000, yield: getExpeditionYield(regionId, durationId, partnerId) };
   const p = partnerId ? BEAST_CATALOG.find(b => b.id === partnerId) : null;
   logCombatMessage('🧭 <strong>Expedition set out</strong> to ' + region.name + (p ? ' with your ' + p.name : '') + ' (' + d.label + ').', 'default');
   return true;
 }
 
-function getExpeditionTimeLeft(nowMs = Date.now()) {
-  const a = getExpeditionState().active;
+function getExpeditionTimeLeft(nowMs = Date.now(), slot = 0) {
+  const a = getParty(slot);
   return a ? Math.max(0, (a.endAt - nowMs) / 1000) : 0;
 }
 
-function isExpeditionReady() {
-  const a = getExpeditionState().active;
-  return !!a && getExpeditionTimeLeft() <= 0;
+/** Is a party home and waiting? With no slot given: is ANY party ready */
+function isExpeditionReady(slot) {
+  if (slot === undefined) return EXPEDITION_SLOT_KEYS.some((k, i) => isExpeditionReady(i));
+  const a = getParty(slot);
+  return !!a && getExpeditionTimeLeft(Date.now(), slot) <= 0;
 }
 
 /** Collect a finished expedition (or recall an unfinished one for nothing) */
-function collectExpedition(recall) {
+function collectExpedition(recall, slot = 0) {
   const st = getExpeditionState();
-  const a = st.active;
+  const key = EXPEDITION_SLOT_KEYS[slot];
+  const a = st[key];
   if (!a) return null;
-  if (!recall && getExpeditionTimeLeft() > 0) return null;
-  st.active = null;
+  if (!recall && getExpeditionTimeLeft(Date.now(), slot) > 0) return null;
+  st[key] = null;
   const region = EXPEDITION_REGIONS.find(r => r.id === a.region);
   if (recall) {
     logCombatMessage('🧭 Expedition to ' + region.name + ' recalled early. Nothing found.', 'default');
@@ -2258,9 +2396,8 @@ function getBeastMasteryMultiplier() {
 
 function getTotalBeastPower() {
   let rawBeastPower = 0;
-  const away = getExpeditionPartner();
   for (const beast of BEAST_CATALOG) {
-    if (gameState.tamedBeasts[beast.id] && beast.id !== away) {
+    if (gameState.tamedBeasts[beast.id] && !isAwayOnExpedition(beast.id)) {
       const pLvl = getParentLevel(beast.id);
       const levelMult = 1 + ((pLvl - 1) * 0.15);
       rawBeastPower += Math.floor(beast.rewardPower * levelMult);
@@ -2277,7 +2414,7 @@ function getTotalCombatPower() {
   const hunter = getHunterPower();
   const base = hunter + getTotalBeastPower() * getLeadershipMult(hunter);
   // Fishing: Codex power bonus and Abyssal Fervor meal
-  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts') * getTrophyPowerMult() * getWorldPowerMult() * getApexPowerMult() * getAdrenalinePowerMult() * getMoltenHeartMult() * (gameState.devPowerMult || 1));
+  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts') * getTrophyPowerMult() * getWorldPowerMult() * getApexPowerMult() * getAdrenalinePowerMult() * getMoltenHeartMult() * getBoonMult('might') * (gameState.devPowerMult || 1));
 }
 
 function getBaseMeatRate() {
@@ -2324,6 +2461,7 @@ function getMeatRate(withAdrenalineOverride = null) {
   if (bloodlineLvl > 0) {
     rate *= (1 + (bloodlineLvl * 0.25));
   }
+  rate *= getBoonMult('harvest');
 
   // Fishing: Codex bonuses and Smoked Feast meal
   rate *= (1 + getFishCodexBonus('meat'));
@@ -2683,7 +2821,7 @@ function challengeCurrentBeast() {
 
       if (hasRelic('magma_stinger') && winChance < 0.25 && !beast.isTitan) {
         gameState.stamina = Math.min(getMaxStamina(), gameState.stamina + staminaCost);
-        const windfall = Math.floor(getMeatRate() * 600);
+        const windfall = Math.floor(getMeatRate() * (isPrimordial('magma_stinger') ? 1800 : 600));
         addMeat(windfall);
         logCombatMessage(`🔥 <strong>Underdog's Fury!</strong> Magma Stinger refunded ${staminaCost} Stamina & awarded a 10m meat windfall (+${formatNumber(windfall)} Meat)!`, 'relic');
         showToast(`Underdog's Fury Triggered! Full Stamina refund & +${formatNumber(windfall)} Meat!`, 'success', true);
@@ -2851,6 +2989,10 @@ function saveGameToStorage() {
       riftOpen: !!gameState.riftOpen,
       tundra: gameState.tundra || null,
       volcano: gameState.volcano || null,
+      primordial: gameState.primordial || {},
+      boons: gameState.boons || {},
+      boonChoices: gameState.boonChoices || [],
+      sealRework: gameState.sealRework || 0,
       tutorial: gameState.tutorial || null,
       hunterName: gameState.hunterName || '',
       hunterTitle: gameState.hunterTitle || '',
@@ -2969,6 +3111,10 @@ function loadGameFromStorage() {
       // Tutorial: older saves already know the game, so every tab they have counts as seen
       if (data.tutorial && typeof data.tutorial === 'object') gameState.tutorial = { done: data.tutorial.done || {}, off: !!data.tutorial.off };
       else { const seen = { camp: true }; Object.keys(data.unlocks || {}).forEach(k => { const f = FEATURE_UNLOCKS.find(x => x.id === k); if (f) seen[f.tab] = true; }); gameState.tutorial = { done: seen, off: false }; }
+      gameState.primordial = (data.primordial && typeof data.primordial === 'object') ? data.primordial : {};
+      gameState.boons = (data.boons && typeof data.boons === 'object') ? data.boons : {};
+      gameState.boonChoices = Array.isArray(data.boonChoices) ? data.boonChoices : [];
+      gameState.sealRework = data.sealRework || 0;
       if (data.volcano && typeof data.volcano === 'object') { gameState.volcano = Object.assign(getVolcano(), data.volcano); gameState.volcano.stats = Object.assign({ rounds: 0, wins: 0, busts: 0, best: 0 }, data.volcano.stats || {}); }
       if (data.tundra && typeof data.tundra === 'object') gameState.tundra = Object.assign(getTundra(), data.tundra, { caches: Array.isArray(data.tundra.caches) ? data.tundra.caches : [] });
       applyWorld();
@@ -2984,6 +3130,7 @@ function loadGameFromStorage() {
   } catch (err) {
     console.warn('Could not load save data', err);
   }
+  migrateSealRework();
   return savedTimestamp;
 }
 

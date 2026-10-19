@@ -64,7 +64,7 @@
         toast('welcome to ' + getWorld().name); } },
     { label: 'Fill eruption charges', run: () => {
         if (typeof getVolcano !== 'function') return toast('no volcano yet');
-        const v = getVolcano(); v.charges = WORLD_CONFIG.eruption.maxCharges; v.chargeAt = Date.now();
+        const v = getVolcano(); v.charges = getMaxEruptionCharges(); v.chargeAt = Date.now();
         toast('eruption charges full'); } },
     { group: 'Time' },
     { label: 'Skip 10 minutes', run: () => { advanceSimulation(600, true); toast('skipped 10 minutes'); } },
