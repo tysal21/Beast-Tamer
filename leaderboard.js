@@ -65,7 +65,9 @@
     const out = {};
     rows.slice(1).forEach(r => {
       if (!r[1]) return;
-      const p = { key: r[1], name: r[1].split('#')[0], title: r[2] || '', region: +r[3] || 1, seals: +r[4] || 0, ascensions: +r[5] || 0, power: +r[6] || 0, hours: +r[7] || 0, when: r[0] };
+      // One row per player: the hidden tag after '#' identifies them, so renaming never makes a duplicate
+      const tag = r[1].includes('#') ? r[1].split('#').pop() : r[1];
+      const p = { key: tag, name: r[1].split('#')[0], title: r[2] || '', region: +r[3] || 1, seals: +r[4] || 0, ascensions: +r[5] || 0, power: +r[6] || 0, hours: +r[7] || 0, when: r[0] };
       out[p.key] = p; // later rows win
     });
     return Object.values(out).sort((a, b) => b.region - a.region || b.seals - a.seals || b.power - a.power);
@@ -79,9 +81,11 @@
     if (!root) return;
     const s = lb();
     const me = myStats().name;
+    const myTag = lb().tag;
     const toggle = '<div class="lb-optin"><div><div class="font-bold text-slate-100">Friends leaderboard</div>' +
       '<div class="text-xs text-slate-400">' + (s.optIn ? 'You are on the board as <strong class="text-amber-300">' + esc(me.split('#')[0]) + '</strong>. Your progress is sent about every 10 minutes.' : 'Share your hunter name and progress (region, Seals, Ascensions, Combat Power, hours) with everyone playing.') + '</div></div>' +
-      '<button type="button" data-lb="toggle" class="lb-btn">' + (s.optIn ? 'Leave the board' : 'Join the board') + '</button></div>';
+      (!s.optIn && !(gameState.hunterName || '').trim() ? '<div class="flex gap-2"><input id="lb-name" maxlength="20" placeholder="Your hunter name" class="lb-name-page"><button type="button" data-lb="join" class="lb-btn">Join the board</button></div>'
+        : '<button type="button" data-lb="toggle" class="lb-btn">' + (s.optIn ? 'Leave the board' : 'Join the board') + '</button>') + '</div>';
     root.innerHTML = toggle + '<div id="lb-table" class="text-sm text-slate-400 mt-4">Loading the board...</div>';
     if (loading) return;
     loading = true;
@@ -92,7 +96,7 @@
       if (!table) return;
       if (!players.length) { table.textContent = 'No one is on the board yet. Join to be the first!'; return; }
       table.innerHTML = '<div class="overflow-x-auto"><table class="lb-table"><thead><tr><th>#</th><th>Hunter</th><th>Region</th><th>Seals</th><th>Ascensions</th><th>Combat Power</th><th>Hours</th></tr></thead><tbody>' +
-        players.map((p, i) => '<tr class="' + (p.key === me ? 'lb-me' : '') + '"><td>' + (i + 1) + '</td><td><div class="font-bold text-slate-100">' + esc(p.name) + '</div><div class="text-[11px] text-slate-400">' + esc(p.title) + '</div></td>' +
+        players.map((p, i) => '<tr class="' + (p.key === myTag ? 'lb-me' : '') + '"><td>' + (i + 1) + '</td><td><div class="font-bold text-slate-100">' + esc(p.name) + '</div><div class="text-[11px] text-slate-400">' + esc(p.title) + '</div></td>' +
           '<td>' + p.region + '</td><td>' + p.seals + '</td><td>' + p.ascensions + '</td><td class="font-mono">' + formatNumber(p.power) + '</td><td>' + p.hours + '</td></tr>').join('') +
         '</tbody></table></div><div class="text-[11px] text-slate-500 mt-2">Ranked by region, then Seals, then Combat Power. The board updates every few minutes.</div>';
     } catch (e) {
@@ -111,7 +115,14 @@
       saveGameToStorage();
       renderBoard();
     }
-    if (b.getAttribute('data-lb') === 'join') { s.optIn = true; send(true); saveGameToStorage(); const c = document.getElementById('lb-invite'); if (c) c.remove(); }
+    if (b.getAttribute('data-lb') === 'join') {
+      const nameIn = document.getElementById('lb-name');
+      if (nameIn) {
+        const n = nameIn.value.replace(/[<>#,]/g, '').trim().slice(0, 20);
+        if (!n) { nameIn.focus(); nameIn.placeholder = 'Type a name first'; return; }
+        gameState.hunterName = n;
+      }
+      s.optIn = true; send(true); saveGameToStorage(); const c = document.getElementById('lb-invite'); if (c) c.remove(); if (gameState.activeTab === 'leaderboard') renderBoard(); }
     if (b.getAttribute('data-lb') === 'no') { s.optIn = false; saveGameToStorage(); const c = document.getElementById('lb-invite'); if (c) c.remove(); }
   });
 
@@ -119,11 +130,13 @@
   function maybeInvite() {
     const s = lb();
     if (s.optIn !== null && s.optIn !== undefined) return;
+    if (document.getElementById('lb-invite')) return;
     if (document.body.classList.contains('stealth') || document.getElementById('intro-card') || document.getElementById('away-card')) return;
-    if (!(gameState.hunterName || '').trim()) return;
+    const needsName = !(gameState.hunterName || '').trim();
     const c = document.createElement('div');
     c.id = 'lb-invite';
     c.innerHTML = '<div class="lb-invite-text"><strong>Join the friends leaderboard?</strong> Share your hunter name and progress with the others playing.</div>' +
+      (needsName ? '<input id="lb-name" maxlength="20" placeholder="Your hunter name" class="lb-name">' : '') +
       '<button type="button" data-lb="join" class="lb-btn">Join</button><button type="button" data-lb="no" class="lb-later">No thanks</button>';
     document.body.appendChild(c);
   }
@@ -143,5 +156,6 @@
   setTimeout(() => { lb(); send(false); }, 5000);
   setInterval(() => send(false), 60 * 1000);
   setTimeout(maybeInvite, 20000);
+  setInterval(maybeInvite, 30000); // try again later if a card was in the way
   window.leaderboardSendNow = () => send(true);
 })();
