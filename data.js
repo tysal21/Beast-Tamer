@@ -785,6 +785,21 @@ const SEAL_LOGS = [
   'KEEPER PATTERN: 99%. YOU ARE ALMOST WHAT I WAS WAITING FOR.'
 ];
 
+/**
+ * The Pack: true-born hybrids (bred, never threaded) join the hunter once the bond-weaving rite is learned.
+ * The rite needs both Region 2 (the Archive's records) and Seal 5 (a Core that can read them).
+ * Each hybrid keeps its normal bonuses; a slotted one also lends its Pack ability.
+ */
+const PACK_CONFIG = { slots: 3, riteRegion: 1, riteSeal: 5 };
+const PACK_ABILITIES = {
+  viperhawk: { name: 'Swift Strike', desc: 'Fights cost 20% less Stamina', icon: 'fa-feather', value: 0.20 },
+  venompincer: { name: 'Paralytic', desc: '+3% odds in every fight you can already win', icon: 'fa-syringe', value: 0.03 },
+  tuskpion: { name: 'Trample', desc: '+15% Meat/sec', icon: 'fa-drumstick-bite', value: 0.15 },
+  viperwyrm: { name: 'Scale Ward', desc: 'Wounds heal 30% faster', icon: 'fa-shield-heart', value: 0.30 },
+  gryphowyrm: { name: 'Updraft', desc: 'Expeditions come back 20% faster', icon: 'fa-wind', value: 0.20 },
+  scorpiodrake: { name: 'Heat Sense', desc: 'Eruption pots are 15% bigger', icon: 'fa-fire', value: 0.15 }
+};
+
 /** Seal Boons: permanent, stackable. Every Seal from boonsFromSeal offers three. */
 const SEAL_BOONS = [
   { id: 'might', name: 'Primal Might', desc: '+10% Combat Power', icon: 'fa-hand-fist', value: 0.10 },

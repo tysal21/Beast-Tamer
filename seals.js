@@ -7,6 +7,7 @@
   const root = document.getElementById('seal-extras');
   if (!root) return;
   let sig = '';
+  let note = '';
 
   function esc(s) { return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
 
@@ -88,22 +89,25 @@
   });
 
   // The log card that plays when a Seal breaks
-  function showLog(k) {
+  function showLog(k, custom) {
     if (document.body.classList.contains('stealth')) return;
     const old = document.getElementById('loom-log-card');
     if (old) old.remove();
     const c = document.createElement('div');
     c.id = 'loom-log-card';
-    c.innerHTML = '<div class="llc-box" role="dialog" aria-label="Loom log"><div class="llc-head">LOOM LOG · SEAL ' + k + '</div><div class="llc-text"></div><button type="button" class="llc-ok">Continue</button></div>';
+    const head = custom ? custom.head : 'LOOM LOG · SEAL ' + k;
+    const sub = custom ? (custom.sub || '') : '';
+    c.innerHTML = '<div class="llc-box" role="dialog" aria-label="Loom log"><div class="llc-head">' + esc(head) + '</div><div class="llc-text"></div>' + (sub ? '<div class="llc-sub">' + esc(sub) + '</div>' : '') + '<button type="button" class="llc-ok">Continue</button></div>';
     document.body.appendChild(c);
-    const text = getSealLog(k), el = c.querySelector('.llc-text');
+    const text = custom ? custom.text : getSealLog(k) + (custom === undefined && note ? '\n\n' + note : ''), el = c.querySelector('.llc-text');
     let i = 0;
     const timer = setInterval(() => { i += 2; el.textContent = text.slice(0, i); if (i >= text.length) clearInterval(timer); }, 30);
     c.addEventListener('click', e => { if (e.target === c || e.target.closest('.llc-ok')) { clearInterval(timer); c.remove(); } });
   }
 
   function tick() {
-    if (gameState.pendingSealLog) { const k = gameState.pendingSealLog; delete gameState.pendingSealLog; setTimeout(() => showLog(k), 1200); }
+    if (gameState.pendingSealLog) { const k = gameState.pendingSealLog; delete gameState.pendingSealLog; note = gameState.pendingSealNote || ''; delete gameState.pendingSealNote; setTimeout(() => showLog(k), 1200); }
+    else if (gameState.pendingLoomCard && !document.getElementById('loom-log-card')) { const card = gameState.pendingLoomCard; delete gameState.pendingLoomCard; setTimeout(() => showLog(0, card), 1500); }
     if (gameState.activeTab !== 'totem') return;
     const s = signature();
     if (s !== sig) { sig = s; render(); }
