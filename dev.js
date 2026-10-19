@@ -57,6 +57,15 @@
         const st = (typeof getExpeditionState === 'function') ? getExpeditionState() : null;
         if (!st || !st.active) return toast('no expedition out');
         st.active.endAt = Date.now() - 1000; toast('expedition is back'); } },
+    { label: 'Travel to the next world', run: () => {
+        gameState.riftOpen = true;
+        if (!performMigration()) { gameState.riftOpen = false; return toast('no world to travel to'); }
+        if (typeof applyWorldText === 'function') applyWorldText();
+        toast('welcome to ' + getWorld().name); } },
+    { label: 'Fill eruption charges', run: () => {
+        if (typeof getVolcano !== 'function') return toast('no volcano yet');
+        const v = getVolcano(); v.charges = WORLD_CONFIG.eruption.maxCharges; v.chargeAt = Date.now();
+        toast('eruption charges full'); } },
     { group: 'Time' },
     { label: 'Skip 10 minutes', run: () => { advanceSimulation(600, true); toast('skipped 10 minutes'); } },
     { label: 'Skip 1 hour', run: () => { advanceSimulation(3600, true); toast('skipped 1 hour'); } },

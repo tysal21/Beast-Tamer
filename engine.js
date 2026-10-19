@@ -971,6 +971,7 @@ function getCombatPowerBreakdown() {
   add('Trophy Weapon', getTrophyPowerMult());
   add('Apex Ladder (' + getApexDepth() + ' tamed this run)', getApexPowerMult());
   add('World Bonus', getWorldPowerMult());
+  add('Molten Heart', getMoltenHeartMult());
   add('Adrenaline', getAdrenalinePowerMult());
 
   return {
@@ -1215,6 +1216,151 @@ function openFrozenCache() {
   logCombatMessage(msg, jackpot ? 'relic' : 'win');
   showToast((jackpot ? 'Mammoth Cache! ' : 'Cache opened: ') + parts.join(', '), 'success', jackpot);
   return { jackpot, parts };
+}
+
+/** ---------- World 3: Eruption rounds ---------- */
+function getVolcano() {
+  if (!gameState.volcano) gameState.volcano = { charges: 0, chargeAt: null, round: null, last: null, auto: 0, stake: 1, shield: 0, heart: 0, stats: { rounds: 0, wins: 0, busts: 0, best: 0 } };
+  const v = gameState.volcano;
+  if (!v.stats) v.stats = { rounds: 0, wins: 0, busts: 0, best: 0 };
+  return v;
+}
+
+function isEruptionWorld() {
+  return getWorld().twist === 'eruption';
+}
+
+/** Charges build on the wall clock (offline too) while you are in the Volcano world */
+function tickVolcanoCharges(nowMs = Date.now() + PREVIEW_CLOCK.offsetMs) {
+  if (!isEruptionWorld()) return;
+  const v = getVolcano(), c = WORLD_CONFIG.eruption;
+  if (v.chargeAt === null || v.chargeAt === undefined) v.chargeAt = nowMs;
+  if (v.charges >= c.maxCharges) { v.charges = c.maxCharges; v.chargeAt = nowMs; return; }
+  const gained = Math.floor((nowMs - v.chargeAt) / 1000 / c.chargeSec);
+  if (gained > 0) {
+    v.charges = Math.min(c.maxCharges, v.charges + gained);
+    v.chargeAt = v.charges >= c.maxCharges ? nowMs : v.chargeAt + gained * c.chargeSec * 1000;
+  }
+}
+
+function getNextChargeIn(nowMs = Date.now() + PREVIEW_CLOCK.offsetMs) {
+  const v = getVolcano(), c = WORLD_CONFIG.eruption;
+  if (v.charges >= c.maxCharges || v.chargeAt === null) return 0;
+  return Math.max(0, c.chargeSec - (nowMs - v.chargeAt) / 1000);
+}
+
+function getEruptionMultAt(sec) {
+  return Math.exp(WORLD_CONFIG.eruption.growth * Math.max(0, sec));
+}
+
+function getEruptionPrize(stake) {
+  const c = WORLD_CONFIG.eruption;
+  const rate = getMeatRate() / getTwistMeatMult();
+  return {
+    meat: Math.floor(Math.max(rate * c.prizeMeatSec, getClickYield() * 300) * stake),
+    cores: c.prizeCores * stake
+  };
+}
+
+function rollEruptionCrash() {
+  const c = WORLD_CONFIG.eruption;
+  const u = Math.max(1e-9, 1 - Math.random());
+  return Math.min(c.crashCap, Math.max(1.01, Math.pow(u, -1 / c.crashK)));
+}
+
+/** Start a round, staking 1 to 8 charges ("raise the steaks") */
+function startEruption(stake, nowMs = Date.now() + PREVIEW_CLOCK.offsetMs) {
+  if (!isEruptionWorld()) return false;
+  const v = getVolcano(), c = WORLD_CONFIG.eruption;
+  tickVolcanoCharges(nowMs);
+  stake = Math.floor(stake || v.stake || 1);
+  if (v.round || stake < 1 || stake > c.maxCharges || v.charges < stake) return false;
+  const prize = getEruptionPrize(stake);
+  v.charges -= stake;
+  v.stake = stake;
+  v.round = { stake, startAt: nowMs, crash: rollEruptionCrash(), meat: prize.meat, cores: prize.cores };
+  v.last = null;
+  return true;
+}
+
+function getEruptionRoundMult(nowMs = Date.now() + PREVIEW_CLOCK.offsetMs) {
+  const r = getVolcano().round;
+  if (!r) return 1;
+  return Math.min(r.crash, getEruptionMultAt((nowMs - r.startAt) / 1000));
+}
+
+function cashOutEruption(atMult, nowMs = Date.now() + PREVIEW_CLOCK.offsetMs) {
+  const v = getVolcano();
+  const r = v.round;
+  if (!r) return null;
+  const m = atMult || getEruptionMultAt((nowMs - r.startAt) / 1000);
+  if (m >= r.crash) return resolveEruptionBust();
+  v.round = null;
+  const meat = Math.floor(r.meat * m);
+  const cores = Math.floor(r.cores * m);
+  addMeat(meat);
+  addMaterial('magma_core', cores);
+  v.stats.rounds++; v.stats.wins++; v.stats.best = Math.max(v.stats.best || 0, m);
+  v.last = { win: true, mult: m, crash: r.crash, meat, cores, stake: r.stake };
+  logCombatMessage('🌋 <strong>CASHED OUT at x' + m.toFixed(2) + '!</strong> +' + formatNumber(meat) + ' Meat, +' + formatNumber(cores) + ' Magma Cores. (It would have blown at x' + r.crash.toFixed(2) + '.)', 'win');
+  return v.last;
+}
+
+function resolveEruptionBust() {
+  const v = getVolcano(), c = WORLD_CONFIG.eruption;
+  const r = v.round;
+  if (!r) return null;
+  v.round = null;
+  const pct = Math.min(c.scorchMax, c.scorchPerCharge * r.stake) * getScorchShieldMult();
+  const lost = Math.min(gameState.stamina, Math.floor(getMaxStamina() * pct));
+  gameState.stamina = Math.max(0, gameState.stamina - lost);
+  v.stats.rounds++; v.stats.busts++;
+  v.last = { win: false, mult: r.crash, crash: r.crash, stamina: lost, pct, stake: r.stake };
+  logCombatMessage('💥 <strong>ERUPTION at x' + r.crash.toFixed(2) + '!</strong> The pot is lost and you are Scorched escaping the blast: -' + formatNumber(lost) + ' Stamina.', 'loss');
+  return v.last;
+}
+
+/** Called often: blows the round when its time comes, or auto cashes out at your target */
+function tickEruption(nowMs = Date.now() + PREVIEW_CLOCK.offsetMs) {
+  tickVolcanoCharges(nowMs);
+  const v = getVolcano();
+  const r = v.round;
+  if (!r) return null;
+  const m = getEruptionMultAt((nowMs - r.startAt) / 1000);
+  if (v.auto > 1 && v.auto < r.crash && m >= v.auto) return cashOutEruption(v.auto, nowMs);
+  if (m >= r.crash) return resolveEruptionBust();
+  return null;
+}
+
+function getShieldCost() {
+  const c = WORLD_CONFIG.eruption, v = getVolcano();
+  return (v.shield || 0) >= c.shieldMax ? null : Math.ceil(c.shieldCost * Math.pow(c.shieldGrowth, v.shield || 0));
+}
+
+/** Heat Shield: each level cuts the Stamina lost to a bust */
+function getScorchShieldMult() {
+  return Math.max(0, 1 - WORLD_CONFIG.eruption.shieldCut * (getVolcano().shield || 0));
+}
+
+function getHeartCost() {
+  const c = WORLD_CONFIG.eruption;
+  return Math.ceil(c.heartCost * Math.pow(c.heartGrowth, getVolcano().heart || 0));
+}
+
+function buyVolcanoUpgrade(kind) {
+  const v = getVolcano();
+  const cost = kind === 'shield' ? getShieldCost() : kind === 'heart' ? getHeartCost() : null;
+  if (!cost || getMaterial('magma_core') < cost) return false;
+  const mats = getExpeditionState().materials;
+  mats.magma_core = Math.max(0, (mats.magma_core || 0) - cost);
+  if (kind === 'shield') v.shield = (v.shield || 0) + 1; else v.heart = (v.heart || 0) + 1;
+  return true;
+}
+
+/** Molten Heart: permanent Combat Power from Magma Cores */
+function getMoltenHeartMult() {
+  const v = gameState.volcano;
+  return 1 + WORLD_CONFIG.eruption.heartPerLevel * ((v && v.heart) || 0);
 }
 
 /** ---------- The Titan ---------- */
@@ -2123,7 +2269,7 @@ function getTotalCombatPower() {
   const hunter = getHunterPower();
   const base = hunter + getTotalBeastPower() * getLeadershipMult(hunter);
   // Fishing: Codex power bonus and Abyssal Fervor meal
-  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts') * getTrophyPowerMult() * getWorldPowerMult() * getApexPowerMult() * getAdrenalinePowerMult() * (gameState.devPowerMult || 1));
+  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts') * getTrophyPowerMult() * getWorldPowerMult() * getApexPowerMult() * getAdrenalinePowerMult() * getMoltenHeartMult() * (gameState.devPowerMult || 1));
 }
 
 function getBaseMeatRate() {
@@ -2688,6 +2834,7 @@ function saveGameToStorage() {
       worldRecords: gameState.worldRecords || {},
       riftOpen: !!gameState.riftOpen,
       tundra: gameState.tundra || null,
+      volcano: gameState.volcano || null,
       expedition: gameState.expedition || null,
       gear: gameState.gear || null,
       unlocks: gameState.unlocks || {},
@@ -2798,6 +2945,7 @@ function loadGameFromStorage() {
       gameState.riftOpen = !!data.riftOpen;
       if (data.gear && typeof data.gear === 'object') gameState.gear = { pieces: data.gear.pieces || {} };
       if (data.expedition && typeof data.expedition === 'object') gameState.expedition = Object.assign({ active: null, materials: {}, honing: 0, trips: 0 }, data.expedition);
+      if (data.volcano && typeof data.volcano === 'object') { gameState.volcano = Object.assign(getVolcano(), data.volcano); gameState.volcano.stats = Object.assign({ rounds: 0, wins: 0, busts: 0, best: 0 }, data.volcano.stats || {}); }
       if (data.tundra && typeof data.tundra === 'object') gameState.tundra = Object.assign(getTundra(), data.tundra, { caches: Array.isArray(data.tundra.caches) ? data.tundra.caches : [] });
       applyWorld();
       // Saves that already Ascended get the Totem right away
