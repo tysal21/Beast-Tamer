@@ -195,7 +195,7 @@
       { el: '#totem-unlocks', text: 'Every 5th layer is a <strong>Seal</strong> with a Guardian to beat. Seals unlock new features.' }
     ],
     world: [
-      { el: '#world-content', text: 'Climb the Apex Ladder to wake this world\'s <strong>Titan</strong>. Beat it to open the Rift to a new world.' }
+      { el: '#world-content', text: 'Climb the Apex Ladder to wake this region\'s <strong>Titan</strong>. Slay it to open the Rift to the next region.' }
     ]
   };
 
