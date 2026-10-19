@@ -1595,10 +1595,10 @@ function renderMenagerie() {
       const powerLabel = effectivePower > 0 ? '+' + formatNumber(effectivePower) + ' Pwr' : 'Apex Ruler';
 
       const card = document.createElement('div');
-      card.className = 'bg-primal-800/90 border border-primal-700/80 rounded-xl p-2.5 flex items-center space-x-3 shadow-inner hover:border-amber-500/40 transition-colors';
+      card.className = 'bg-primal-800/90 border border-primal-700/80 rounded-xl p-2.5 flex flex-col gap-1.5 shadow-inner hover:border-amber-500/40 transition-colors';
       card.innerHTML =
-        '<img src="' + getBeastArt(beast, true) + '" alt="' + beast.name + '" class="menagerie-thumb is-tamed" style="filter:' + (beast.imageFilter || 'none') + '" onerror="this.onerror=null; this.src=\'' + beast.fallbackImage + '\';" />' +
-        '<div class="flex-1 min-w-0">' +
+        '<div class="pack-art"><img src="' + getBeastArt(beast, true) + '" alt="' + beast.name + '" style="filter:' + (beast.imageFilter || 'none') + '" onerror="this.onerror=null; this.src=\'' + beast.fallbackImage + '\';" /></div>' +
+        '<div class="min-w-0">' +
           '<div class="flex items-center justify-between gap-1 mb-0.5">' +
             '<h4 class="font-bold text-xs text-slate-100 truncate">' + beast.name + '</h4>' +
             '<span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Lvl ' + pLvl + '</span>' +
