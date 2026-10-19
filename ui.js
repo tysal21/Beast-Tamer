@@ -3519,7 +3519,7 @@ function renderWorldTab() {
     '<div class="bg-gradient-to-br from-sky-950/40 via-primal-850 to-primal-900 border border-sky-700/50 rounded-2xl p-5 sm:p-6 shadow-xl">' +
       '<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-950/90 border border-sky-600/50 text-sky-300 text-xs font-mono font-bold"><i class="fa-solid ' + w.icon + '"></i> World ' + (getWorldIndex() + 1) + '</div>' +
       '<h2 class="font-cinzel text-2xl sm:text-3xl font-bold text-white tracking-wide mt-1">' + w.name + '</h2>' +
-      '<p class="text-xs text-slate-400 max-w-2xl">' + w.blurb + '</p>' + twistHtml +
+      '<p class="text-xs text-slate-400 max-w-2xl">' + w.blurb + '</p>' + twistHtml + (w.twist === 'eruption' ? eruptionTwistHtml() : '') +
       (getWorldIndex() > 0 ? '<div class="text-xs text-amber-200 mt-2"><i class="fa-solid fa-star mr-1"></i>World Bonus: Meat/s x' + formatNumber(getWorldMeatMult()) + ', Combat Power x' + getWorldPowerMult().toFixed(1) + '</div>' : '') +
     '</div>' +
     '<div class="grid lg:grid-cols-2 gap-6">' +
@@ -3580,7 +3580,8 @@ function renderTundraStrip() {
 
 function getWorldSignature() {
   const bz = getBlizzardState();
-  return [gameState.world, getApexDepth(), gameState.riftOpen, !!getTitanBoss(), migrateArmedUntil > Date.now(), gameState.isBattling, bz.active, Math.floor(bz.nextIn / 60)].join('|');
+  const vv = gameState.volcano || {};
+  return [gameState.world, getApexDepth(), gameState.riftOpen, vv.heart, vv.shield, getMaterial('magma_core'), (vv.stats || {}).rounds, !!getTitanBoss(), migrateArmedUntil > Date.now(), gameState.isBattling, bz.active, Math.floor(bz.nextIn / 60)].join('|');
 }
 
 function updateWorldLive() {
@@ -3615,6 +3616,11 @@ function updateWorldLive() {
       gameState.selectedBeastIndex = TITAN_SLOT;
       updateBeastSelectorOptions();
       switchTab('hunt');
+    } else if (act === 'heart' || act === 'shield') {
+      if (buyVolcanoUpgrade(act)) { sound.playBuy(); saveGameToStorage(); }
+      worldSignature = '';
+      renderWorldTab();
+      return;
     } else if (act === 'migrate') {
       if (migrateArmedUntil > Date.now()) {
         migrateArmedUntil = 0;
@@ -3643,6 +3649,148 @@ function updateWorldLive() {
   setInterval(updateWorldLive, 1000);
 })();
 
+
+/**
+ * ================= WORLD 3: ERUPTION ROUNDS UI =================
+ * A strip under the header (like the blizzard strip). The frame is rebuilt only when its state changes;
+ * the climbing multiplier and the shaking are updated in place every 100ms, so buttons never move under a click.
+ */
+let eruptionSig = '';
+function eruptionChargeDots(n, max) {
+  let s = '';
+  for (let i = 0; i < max; i++) s += '<span class="erupt-dot' + (i < n ? ' on' : '') + '"></span>';
+  return s;
+}
+
+function renderEruptionStrip(force) {
+  const el = document.getElementById('eruption-banner');
+  if (!el) return;
+  if (!isEruptionWorld()) { el.classList.add('hidden'); eruptionSig = ''; return; }
+  el.classList.remove('hidden');
+  tickVolcanoCharges();
+  const v = getVolcano(), c = WORLD_CONFIG.eruption;
+  // Never ask for more charges than you have: the stake shrinks to fit
+  if (!v.round && v.charges > 0 && (v.stake || 1) > v.charges) v.stake = v.charges;
+  const stake = Math.max(1, Math.min(c.maxCharges, v.stake || 1));
+  const canStart = !v.round && v.charges >= stake;
+  const sig = [!!v.round, v.round ? v.round.startAt : 0, v.charges, stake, v.auto, v.last ? v.last.mult + ':' + v.last.win : '', Math.floor(getNextChargeIn() / 60), Math.floor(Math.log10(Math.max(1, getMeatRate())) * 4)].join('|');
+  if (!force && sig === eruptionSig) return;
+  eruptionSig = sig;
+  let html;
+  if (v.round) {
+    const r = v.round;
+    html =
+      '<div class="erupt-round">' +
+        '<div class="erupt-mult-wrap"><div class="erupt-label"><i class="fa-solid fa-volcano mr-1"></i>ERUPTION BUILDING · ' + r.stake + ' charge' + (r.stake > 1 ? 's' : '') + ' staked</div>' +
+        '<div id="erupt-mult" class="erupt-mult">x1.00</div>' +
+        '<div class="erupt-pot">Pot now: <span id="erupt-pot-meat">+' + formatNumber(r.meat) + '</span> Meat, <span id="erupt-pot-cores">+' + r.cores + '</span> Magma Cores' +
+          (v.auto > 1 ? ' · auto cash-out at x' + v.auto : '') + '</div></div>' +
+        '<button data-erupt="cash" class="erupt-cash"><i class="fa-solid fa-hand-holding-dollar mr-1"></i>CASH OUT</button>' +
+      '</div>';
+  } else {
+    const prize = getEruptionPrize(stake);
+    const next = getNextChargeIn();
+    let last = '';
+    if (v.last) {
+      last = v.last.win
+        ? '<div class="erupt-last win"><i class="fa-solid fa-circle-check mr-1"></i>Cashed out at x' + v.last.mult.toFixed(2) + ': +' + formatNumber(v.last.meat) + ' Meat, +' + formatNumber(v.last.cores) + ' Magma Cores. It would have blown at x' + v.last.crash.toFixed(2) + '.</div>'
+        : '<div class="erupt-last bust"><i class="fa-solid fa-burst mr-1"></i>It blew at x' + v.last.crash.toFixed(2) + '! Pot lost, and you were Scorched: -' + formatNumber(v.last.stamina) + ' Stamina.</div>';
+    }
+    const autoOpts = c.autoOptions.map(a => '<option value="' + a + '"' + (a === (v.auto || 0) ? ' selected' : '') + '>' + (a ? 'x' + a : 'Off') + '</option>').join('');
+    html =
+      '<div class="erupt-idle">' +
+        '<div class="erupt-charges"><div class="erupt-label"><i class="fa-solid fa-volcano mr-1"></i>Eruption charges ' + v.charges + '/' + c.maxCharges + '</div>' +
+          '<div class="erupt-dots">' + eruptionChargeDots(v.charges, c.maxCharges) + '</div>' +
+          '<div class="erupt-sub">' + (v.charges >= c.maxCharges ? 'Full. Spend some so pressure keeps building.' : 'Next charge in ' + formatDuration(next)) + '</div></div>' +
+        '<div class="erupt-stake"><div class="erupt-label">Raise the steaks</div>' +
+          '<div class="erupt-stepper"><button data-erupt="less" ' + (stake <= 1 ? 'disabled' : '') + '>-</button><span>' + stake + '</span><button data-erupt="more" ' + (stake >= Math.min(c.maxCharges, Math.max(1, v.charges)) ? 'disabled' : '') + '>+</button></div>' +
+          '<div class="erupt-sub">Pot: +' + formatNumber(prize.meat) + ' Meat, +' + prize.cores + ' Cores</div></div>' +
+        '<div class="erupt-go"><button data-erupt="start" ' + (canStart ? '' : 'disabled') + ' class="erupt-start"><i class="fa-solid fa-fire mr-1"></i>Start eruption</button>' +
+          '<label class="erupt-sub">Auto cash-out <select data-erupt="auto">' + autoOpts + '</select></label></div>' +
+      '</div>' + last;
+  }
+  el.className = 'mb-4 erupt-strip' + (v.round ? ' live' : '');
+  el.innerHTML = html;
+  updateEruptionLive();
+}
+
+function updateEruptionLive() {
+  const el = document.getElementById('eruption-banner');
+  if (!el || !isEruptionWorld()) return;
+  const before = getVolcano().round;
+  const res = tickEruption();
+  if (before && !getVolcano().round) {
+    // The round just ended (auto cash-out or blast)
+    if (res && res.win) { try { sound.playWin(); } catch (e) { /* audio blocked */ } showToast('Cashed out at x' + res.mult.toFixed(2) + '!', 'success'); }
+    else if (res) {
+      try { sound.playTone(90, 'sawtooth', 0.5, 0.2); } catch (e) { /* audio blocked */ }
+      el.classList.add('erupt-blast');
+      setTimeout(() => el.classList.remove('erupt-blast'), 700);
+      showToast('ERUPTION at x' + res.crash.toFixed(2) + '! Scorched: -' + formatNumber(res.stamina) + ' Stamina', 'error');
+    }
+    saveGameToStorage();
+    renderEruptionStrip(true);
+    return;
+  }
+  const r = getVolcano().round;
+  if (!r) return;
+  const m = getEruptionRoundMult();
+  const mEl = document.getElementById('erupt-mult');
+  if (mEl) mEl.textContent = 'x' + m.toFixed(2);
+  const pm = document.getElementById('erupt-pot-meat'), pc = document.getElementById('erupt-pot-cores');
+  if (pm) pm.textContent = '+' + formatNumber(Math.floor(r.meat * m));
+  if (pc) pc.textContent = '+' + formatNumber(Math.floor(r.cores * m));
+  // The shake only follows the multiplier: it builds tension but never warns you
+  const level = Math.min(5, Math.floor(Math.log2(m) * 1.6));
+  el.dataset.shake = String(level);
+}
+
+function eruptionTwistHtml() {
+  const v = getVolcano(), c = WORLD_CONFIG.eruption;
+  const shieldCost = getShieldCost(), heartCost = getHeartCost(), cores = getMaterial('magma_core');
+  const st = v.stats || {};
+  return '<div class="text-xs text-orange-200 mt-2 space-y-1">' +
+    '<div><i class="fa-solid fa-volcano mr-1"></i><strong>Eruption rounds:</strong> the volcano stores 1 charge per hour (up to ' + c.maxCharges + '), even while you are away. Stake charges and start a round: the multiplier climbs until it blows. Cash out first to win the pot times the multiplier. Wait too long and you lose the pot and get Scorched (-' + Math.round(c.scorchPerCharge * 100) + '% max Stamina per charge staked, up to ' + Math.round(c.scorchMax * 100) + '%).</div>' +
+    '<div><i class="fa-solid fa-chart-line mr-1"></i>Rounds so far: ' + (st.rounds || 0) + ' · cashed out ' + (st.wins || 0) + ' · blown ' + (st.busts || 0) + (st.best ? ' · best cash-out x' + st.best.toFixed(2) : '') + '</div>' +
+    '</div>' +
+    '<div class="grid sm:grid-cols-2 gap-3 mt-3">' +
+      '<div class="p-3 rounded-lg border border-orange-800/60 bg-orange-950/20 text-xs"><div class="font-bold text-orange-200"><i class="fa-solid fa-heart-pulse mr-1"></i>Molten Heart · Lv ' + (v.heart || 0) + '</div>' +
+        '<div class="text-slate-300 my-1">+' + Math.round(c.heartPerLevel * 100) + '% Combat Power per level, forever (now x' + getMoltenHeartMult().toFixed(2) + ').</div>' +
+        '<button data-world-action="heart" ' + (cores >= heartCost ? '' : 'disabled') + ' class="px-3 py-1.5 rounded bg-orange-700 hover:bg-orange-600 text-white font-bold border border-orange-400/60 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Feed it · ' + formatNumber(heartCost) + ' Cores</button></div>' +
+      '<div class="p-3 rounded-lg border border-orange-800/60 bg-orange-950/20 text-xs"><div class="font-bold text-orange-200"><i class="fa-solid fa-shield-halved mr-1"></i>Heat Shield · Lv ' + (v.shield || 0) + '/' + c.shieldMax + '</div>' +
+        '<div class="text-slate-300 my-1">Each level cuts the Stamina you lose when you get Scorched by ' + Math.round(c.shieldCut * 100) + '% (now ' + Math.round(getScorchShieldMult() * 100) + '% of normal).</div>' +
+        (shieldCost ? '<button data-world-action="shield" ' + (cores >= shieldCost ? '' : 'disabled') + ' class="px-3 py-1.5 rounded bg-orange-700 hover:bg-orange-600 text-white font-bold border border-orange-400/60 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Temper it · ' + formatNumber(shieldCost) + ' Cores</button>' : '<div class="text-emerald-300 font-bold">Maxed</div>') + '</div>' +
+    '</div>' +
+    '<div class="text-[11px] text-slate-400 mt-2">You have <strong class="text-orange-300">' + formatNumber(cores) + ' Magma Cores</strong>.</div>';
+}
+
+(function initEruption() {
+  const el = document.getElementById('eruption-banner');
+  if (!el) return;
+  el.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-erupt]');
+    if (!b || b.disabled) return;
+    const v = getVolcano(), c = WORLD_CONFIG.eruption;
+    const act = b.getAttribute('data-erupt');
+    if (act === 'less') v.stake = Math.max(1, (v.stake || 1) - 1);
+    if (act === 'more') v.stake = Math.min(c.maxCharges, (v.stake || 1) + 1);
+    if (act === 'start' && startEruption(v.stake || 1)) { try { sound.playTone(140, 'sawtooth', 0.25, 0.12); } catch (err) { /* audio blocked */ } }
+    if (act === 'cash') {
+      const res = cashOutEruption();
+      if (res && res.win) { try { sound.playWin(); } catch (err) { /* audio blocked */ } if (typeof confettiBurst === 'function' && res.mult >= 3) confettiBurst(); }
+    }
+    saveGameToStorage();
+    renderEruptionStrip(true);
+  });
+  el.addEventListener('change', (e) => {
+    const s = e.target.closest('select[data-erupt="auto"]');
+    if (!s) return;
+    getVolcano().auto = parseFloat(s.value) || 0;
+    saveGameToStorage();
+    renderEruptionStrip(true);
+  });
+  setInterval(() => { renderEruptionStrip(false); updateEruptionLive(); }, 100);
+})();
 
 /**
  * ================= EXPEDITIONS UI =================

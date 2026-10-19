@@ -826,6 +826,20 @@ const WORLD_CONFIG = {
     // Frozen Caches: one per blizzard that passes, thaw on their own or chip with Stamina
     maxCaches: 3, cacheThawSec: 900, chipStamina: 5, chipSec: 120,
     meatSec: 300, jackpotMeatSec: 1800, jackpotChance: 0.05, shardsPerLayer: 3
+  },
+  // World 3 twist: Eruption rounds. Charges build safely over time; spend them on a rocket-style round:
+  // the multiplier climbs until the volcano blows. Cash out first to win the pot x multiplier.
+  eruption: {
+    chargeSec: 3600, maxCharges: 8,          // +1 charge per hour (offline too), up to 8
+    growth: 0.055,                           // multiplier = e^(growth x seconds): x2 at ~13s, x5 at ~29s, x10 at ~42s
+    crashK: 0.95, crashCap: 100,             // chance the round survives to x M is M^-0.95 (slightly in your favor)
+    prizeMeatSec: 900,                       // each staked charge: 15 minutes of Meat income...
+    prizeCores: 3,                           // ...and 3 Magma Cores, both multiplied when you cash out
+    scorchPerCharge: 0.10, scorchMax: 0.80,  // bust: lose 10% of max Stamina per staked charge (8 charges = 80%)
+    autoOptions: [0, 1.5, 2, 3, 5, 10],      // auto cash-out targets (0 = off)
+    // The camp shakes harder as the multiplier climbs, but it never tells you when it will blow
+    shieldMax: 5, shieldCut: 0.15, shieldCost: 8, shieldGrowth: 2,   // Heat Shield: -15% Scorch per level
+    heartPerLevel: 0.04, heartCost: 12, heartGrowth: 1.25   // Molten Heart: +4% Combat Power per level, forever
   }
 };
 
@@ -859,9 +873,25 @@ const WORLDS = [
              desc: 'A mountain of living ice. Beat it to open the way onward.' }
   },
   {
-    id: 'volcano', name: 'Ashen Volcano', icon: 'fa-volcano', color: 'orange', comingSoon: true,
-    blurb: 'Lava flats, salamander drakes and obsidian golems. Coming in a future update.',
-    hardness: 40, filter: 'hue-rotate(-25deg) saturate(1.8) contrast(1.15)', twist: null
+    id: 'volcano', name: 'Ashen Volcano', icon: 'fa-volcano', color: 'orange',
+    blurb: 'Lava flats and ash storms. The volcano builds pressure while you are away: ride its eruptions for huge hauls.',
+    hardness: 12, filter: 'hue-rotate(-25deg) saturate(1.8) contrast(1.15)', twist: 'eruption',
+    beasts: [
+      { name: 'Cinder Hound', desc: 'A soot-black hound with embers for eyes; its breath scorches the trail.' },
+      { name: 'Ashwing Boar', desc: 'A tusked flier that rides the hot updrafts above the lava flats.' },
+      { name: 'Magma Scorpion', desc: 'Its shell is cooled basalt; molten rock glows through every crack.' },
+      { name: 'Obsidian Wyrm', desc: 'Three glassy heads rise from the caldera, each one hotter than the last.' }
+    ],
+    gens: [
+      { name: 'Ember Snares', desc: 'Wire loops strung over warm vents where small game gathers.' },
+      { name: 'Salamander Pack', desc: 'Fire lizards that flush prey out of the ash.' },
+      { name: 'Lava Pit Traps', desc: 'Thin crusts over molten pits that swallow whole herds.' },
+      { name: 'Sulfur Bait Vents', desc: 'Stinking vents that lure beasts in from miles away.' },
+      { name: 'Scorched Dens', desc: 'Captured lava tubes full of dozing fire beasts.' },
+      { name: 'Basalt Harpoon Rigs', desc: 'Stone harpoons that pin drakes to the cooling rock.' }
+    ],
+    titan: { name: 'Magma Sovereign', baseIndex: 1, mult: 7.5, filter: 'hue-rotate(-30deg) saturate(2.2) contrast(1.3) brightness(0.95) drop-shadow(0 0 14px #f97316)',
+             desc: 'A living eruption with wings of ash. Beat it to open the way to the deep.' }
   },
   {
     id: 'abyss', name: 'Sunken Abyss', icon: 'fa-water', color: 'indigo', comingSoon: true,
@@ -902,7 +932,8 @@ const MATERIALS = {
   hawk_feather: { name: 'Hawk Feathers', icon: 'fa-feather', color: 'text-amber-300' },
   scorpion_chitin: { name: 'Scorpion Chitin', icon: 'fa-shield-halved', color: 'text-orange-400' },
   wyrm_obsidian: { name: 'Wyrm Obsidian', icon: 'fa-gem', color: 'text-violet-300' },
-  apex_shard: { name: 'Apex Shards', icon: 'fa-star', color: 'text-fuchsia-300' }
+  apex_shard: { name: 'Apex Shards', icon: 'fa-star', color: 'text-fuchsia-300' },
+  magma_core: { name: 'Magma Cores', icon: 'fa-fire', color: 'text-orange-400' }
 };
 
 /** Weapon Honing: permanent +% Hunter Power, paid in materials */
