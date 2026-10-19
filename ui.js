@@ -295,6 +295,32 @@ function buyAscensionExpansion(expId) {
 }
 
 /** Full rebuild of the Altar panel (cards + stats). Safe to call from anywhere. */
+/** The headline effect of a perk at a given rank, for the Altar's "now -> next" line */
+/** How much one more level of something would raise total Combat Power, in % (applies, measures, undoes) */
+function previewPowerGain(apply, undo) {
+  const before = getTotalCombatPower();
+  apply();
+  const after = getTotalCombatPower();
+  undo();
+  return before > 0 ? (after / before - 1) * 100 : 0;
+}
+
+function formatPowerGain(pct) {
+  return '+' + (pct >= 10 ? pct.toFixed(0) : pct.toFixed(1)) + '% Combat Power';
+}
+
+function getPerkEffectText(perk, r) {
+  switch (perk.id) {
+    case 'feral_bloodline': return '+' + (r * 25) + '% Meat/s';
+    case 'instinctive_butchery': return '+' + (r * 2) + '% of Meat/s per click';
+    case 'primal_vigor': return '+' + Math.round(r * HUNTER_CONFIG.vigorMultPerRank * 100) + '% Hunter Power';
+    case 'catalytic_warmth': return '+' + Math.round(r * HUNTER_CONFIG.warmthHybridPerRank * 100) + '% Hybrid Power';
+    case 'trophy_resonance': return '+' + (r * 20) + '% relic strength';
+    case 'primordial_soul': return '+' + (r * 20) + '% Bloodstones';
+    default: return 'Rank ' + r;
+  }
+}
+
 function renderAscensionAltar() {
   if (!elements.panelAscend) return;
 
@@ -319,6 +345,8 @@ function renderAscensionAltar() {
             '<div class="font-cinzel font-bold text-sm text-slate-100">' + perk.name + '</div>' +
             '<div class="text-[11px] font-mono text-rose-300">' + rankText + '</div>' +
             '<p class="text-[11px] text-slate-400 mt-1 leading-snug">' + perk.desc + '</p>' +
+            '<div class="text-[11px] font-mono mt-1"><span class="text-slate-300">' + (lvl > 0 ? 'Now ' + getPerkEffectText(perk, lvl) : 'Not awakened') + '</span>' +
+              (isMaxed ? '' : ' <span class="text-slate-500">→</span> <span class="text-emerald-300 font-bold">' + getPerkEffectText(perk, lvl + 1) + '</span>') + '</div>' +
           '</div>' +
         '</div>' +
         (isMaxed
@@ -946,7 +974,7 @@ function renderFrame(meatRate) {
   const beastPower = getTotalBeastPower();
   // Includes Fish Codex / Abyssal Fervor bonuses, same number the fights use
   const totalPower = getTotalCombatPower();
-  const fishPowerMult = (hunterPower + beastPower) > 0 ? totalPower / (hunterPower + beastPower) : 1;
+  const fishPowerMult = (hunterPower + beastPower) > 0 ? totalPower / (hunterPower + beastPower * getLeadershipMult(hunterPower)) : 1;
   const maxStamina = getMaxStamina();
   const regenInterval = getStaminaRegenInterval();
 
@@ -973,7 +1001,7 @@ function renderFrame(meatRate) {
   // Keep the Menagerie in sync with Beast Mastery, nursery levels and hybrids waking up
   if (beastPower !== lastMenageriePower) renderMenagerie();
   renderPowerBreakdown();
-  elements.hudPowerSplit.textContent = '(Hunter: ' + formatNumber(hunterPower) + ' + Beasts: ' + formatNumber(beastPower) + ')' +
+  elements.hudPowerSplit.textContent = '(Hunter: ' + formatNumber(hunterPower) + ' + Beasts: ' + formatNumber(beastPower) + (beastPower > 0 ? ' × Lead ' + getLeadershipMult(hunterPower).toFixed(2) : '') + ')' +
     (fishPowerMult > 1.0005 ? ' ×' + fishPowerMult.toFixed(2) + ' Bonuses' : '');
 
   // Buffs bar display (Adrenaline + Fishing meals)
@@ -1088,7 +1116,7 @@ function renderFrame(meatRate) {
   // Disciplines
   const bruteCost = getBruteConditioningCost();
   elements.trainBruteLvl.textContent = gameState.bruteConditioningLevel;
-  elements.trainBruteYield.textContent = '+' + getBrutePowerPerLevel();
+  elements.trainBruteYield.textContent = '+' + getBrutePowerPerLevel() + ' & +' + Math.round(HUNTER_CONFIG.bruteMultPerLevel * 100) + '%';
   elements.trainBruteCost.textContent = formatNumber(bruteCost);
   elements.btnBuyBrute.disabled = gameState.meat < bruteCost;
 
@@ -1128,11 +1156,12 @@ function renderFrame(meatRate) {
   // Sparring Active Ring
   const sparCost = getSparringCost();
   const sparStaminaCost = getSparringStaminaCost();
-  const scorpiodrakeLvl = getActiveHybridLevel('scorpiodrake');
-  const sparPct = gameState.sparringLevel * (scorpiodrakeLvl > 0 ? 5 : 2);
+  const sparPct = Math.round(gameState.sparringLevel * getSparPerLevel() * 100);
   elements.sparringLevel.textContent = gameState.sparringLevel;
   elements.sparringCostMeat.textContent = formatNumber(sparCost);
-  elements.sparringTotalMultiplier.textContent = '+' + sparPct + '%';
+  elements.sparringTotalMultiplier.textContent = '+' + sparPct + '% (next level: ' + formatPowerGain(previewPowerGain(() => gameState.sparringLevel++, () => gameState.sparringLevel--)) + ')';
+  const bruteGainEl = document.getElementById('train-brute-gain');
+  if (bruteGainEl) bruteGainEl.textContent = formatPowerGain(previewPowerGain(() => gameState.bruteConditioningLevel++, () => gameState.bruteConditioningLevel--));
   const sparStamEl = document.getElementById('sparring-cost-stamina');
   if (sparStamEl) sparStamEl.textContent = sparStaminaCost;
   const btPct = Math.round(getSparBreakthroughChance() * 100);
@@ -1768,8 +1797,7 @@ elements.btnSpar.addEventListener('click', () => {
     const breakthroughChance = getSparBreakthroughChance();
 
     const isBreakthrough = Math.random() < breakthroughChance;
-    const scorpiodrakeLvl = getActiveHybridLevel('scorpiodrake');
-    const sparPct = gameState.sparringLevel * (scorpiodrakeLvl > 0 ? 5 : 2);
+    const sparPct = Math.round(gameState.sparringLevel * getSparPerLevel() * 100);
 
     if (isBreakthrough) {
       gameState.adrenalineFocusRemaining = 60;
@@ -2744,7 +2772,7 @@ function renderPowerBreakdown(force) {
   let html = '<div class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Where your Combat Power comes from</div>';
   html += head('Hunter', formatNumber(b.hunterTotal));
   b.hunter.forEach(r => { html += row(r.label, '+' + formatNumber(r.value)); });
-  if (b.sparLevel > 0) html += row('Sparring Lvl ' + b.sparLevel, x(b.sparMult), 'text-emerald-300');
+  b.hunterMults.forEach(r => { html += row(r.label, x(r.mult), 'text-emerald-300'); });
   html += head('Beasts', formatNumber(b.beastTotal));
   if (!b.beasts.length) html += row('No beasts tamed this run', '0');
   b.beasts.forEach(r => { html += row(r.label, '+' + formatNumber(r.value)); });

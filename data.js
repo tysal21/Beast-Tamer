@@ -461,7 +461,7 @@ const HYBRID_CATALOG = [
     basePower: 150000,
     icon: 'fa-skull-crossbones',
     color: '#ef4444',
-    desc: '+150,000 Base Power. Boosts Sparring multiplier gains (+5%/lvl) and +25% Meat/sec per level.'
+    desc: '+150,000 Base Power. Sparring gives +6% Hunter Power per level instead of +3% and +25% Meat/sec per level.'
   }
 ];
 
@@ -485,7 +485,7 @@ const ASCENSION_PERKS = [
     baseCost: 8,
     costScale: 1.75,
     maxLevel: null,
-    desc: '+50% base Click Meat & +0.5% of passive Meat/sec added to clicks per rank.'
+    desc: '+50% base Click Meat & +2% of passive Meat/sec added to every click per rank. The perk for active players.'
   },
   {
     id: 'primal_vigor',
@@ -493,8 +493,8 @@ const ASCENSION_PERKS = [
     icon: 'fa-heart-pulse',
     baseCost: 10,
     costScale: 2.0,
-    maxLevel: 5,
-    desc: '+25 Base Hunter Power & -10% Training Discipline Meat costs per rank (Max 5).'
+    maxLevel: 10,
+    desc: '+15% Hunter Power per rank (which also raises Leadership) & -10% Training costs per rank (discount caps at 50%).'
   },
   {
     id: 'catalytic_warmth',
@@ -502,8 +502,8 @@ const ASCENSION_PERKS = [
     icon: 'fa-temperature-arrow-up',
     baseCost: 12,
     costScale: 2.1,
-    maxLevel: 5,
-    desc: '-10% Hybrid Egg gestation time & -12% Parent Nursery Meat costs per rank (Max 5).'
+    maxLevel: 10,
+    desc: '+10% Hybrid Power per rank, -10% egg gestation time & -12% Nursery costs per rank (time and cost cuts cap at 50% / 60%).'
   },
   {
     id: 'trophy_resonance',
@@ -511,8 +511,8 @@ const ASCENSION_PERKS = [
     icon: 'fa-gem',
     baseCost: 15,
     costScale: 2.3,
-    maxLevel: 5,
-    desc: '+20% Relic passive effectiveness & +25% relative Relic drop chance per rank (Max 5).'
+    maxLevel: 10,
+    desc: '+20% Relic passive effectiveness & +25% relative Relic drop chance per rank.'
   },
   {
     id: 'primordial_soul',
@@ -816,7 +816,7 @@ const PACKMASTER_CONFIG = {
 const WORLD_CONFIG = {
   titanAfterApexTier: 12,     // reach this Apex tier once (in any run) to awaken the world's Titan for good
   titanApexEquivalent: 13,    // the Titan's power: this Apex tier's base bracket...
-  titanExtraMult: 8.5,        // ...times this (or the world's own titan.mult). It does NOT grow with Ascensions: you grow into it over many runs
+  titanExtraMult: 21,        // ...times this (or the world's own titan.mult). It does NOT grow with Ascensions: you grow into it over many runs
   bonusMeatPerWorld: 3,       // World Bonus: Meat/s x3 per world opened (stacks)
   bonusPowerPerWorld: 0.5,    // World Bonus: +50% Combat Power per world opened
   blizzard: {
@@ -855,7 +855,7 @@ const WORLDS = [
       { name: 'Frozen Dens', desc: 'Captured ice caves full of sleeping beasts.' },
       { name: 'Glacier Harpoons', desc: 'Harpoon rigs that pin mammoths to the ice.' }
     ],
-    titan: { name: 'Glacial Colossus', baseIndex: 2, mult: 3.5, filter: 'hue-rotate(185deg) saturate(0.6) brightness(1.3) drop-shadow(0 0 12px #7dd3fc)',
+    titan: { name: 'Glacial Colossus', baseIndex: 2, mult: 6.5, filter: 'hue-rotate(185deg) saturate(0.6) brightness(1.3) drop-shadow(0 0 12px #7dd3fc)',
              desc: 'A mountain of living ice. Beat it to open the way onward.' }
   },
   {

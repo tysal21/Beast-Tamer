@@ -524,7 +524,7 @@ function getTotemGuardian() {
 /** The guardian of Seal k (used by the Totem and the Bestiary) */
 function getGuardianAt(k) {
   const base = BEAST_CATALOG[(k - 1) % BEAST_CATALOG.length];
-  const min = Math.floor(TOTEM_CONFIG.sealBaseMin * Math.pow(TOTEM_CONFIG.sealGrowth, k - 1));
+  const min = Math.floor(BOSS_SEAL_SCALE * TOTEM_CONFIG.sealBaseMin * Math.pow(TOTEM_CONFIG.sealGrowth, k - 1));
   return {
     id: 'totem_guardian_' + k,
     isGuardian: true,
@@ -875,14 +875,15 @@ function buyGeneratorBulk(gen) {
 function getCombatPowerBreakdown() {
   const hunter = [];
   hunter.push({ label: 'Base hunter', value: gameState.baseHunterPower });
-  const vigor = getAscensionPerkLevel('primal_vigor') * 25;
-  if (vigor > 0) hunter.push({ label: 'Primal Vigor perk', value: vigor });
   const w = getEquippedWeapon();
   if (w) hunter.push({ label: w.name, value: w.combatPower || 0 });
   const brute = gameState.bruteConditioningLevel * getBrutePowerPerLevel();
   if (brute > 0) hunter.push({ label: 'Brute Conditioning Lvl ' + gameState.bruteConditioningLevel, value: brute });
-  const sparPer = getActiveHybridLevel('scorpiodrake') > 0 ? 0.05 : 0.02;
-  const sparMult = 1 + gameState.sparringLevel * sparPer;
+  const hm = getHunterMultParts();
+  const hunterMults = [];
+  if (gameState.sparringLevel > 0) hunterMults.push({ label: 'Sparring Lvl ' + gameState.sparringLevel, mult: hm.sparring });
+  if (gameState.bruteConditioningLevel > 0) hunterMults.push({ label: 'Brute Conditioning +' + Math.round(HUNTER_CONFIG.bruteMultPerLevel * 100) + '%/lvl', mult: hm.brute });
+  if (hm.vigor > 1) hunterMults.push({ label: 'Primal Vigor perk', mult: hm.vigor });
 
   const beasts = [];
   for (const beast of BEAST_CATALOG) {
@@ -897,6 +898,8 @@ function getCombatPowerBreakdown() {
   const beastMults = [];
   if (gameState.beastMasteryLevel > 0) beastMults.push({ label: 'Beast Mastery Lvl ' + gameState.beastMasteryLevel, mult: getBeastMasteryMultiplier() });
   if (getLegacyRank('beast_bond') > 0) beastMults.push({ label: 'Beast Bond (Legacy)', mult: getLegacyMult('beast_bond') });
+  const leadership = getLeadershipMult();
+  beastMults.push({ label: 'Leadership (your Hunter Power)', mult: leadership });
 
   const mults = [];
   const add = (label, m) => { if (m > 1.0001) mults.push({ label, mult: m }); };
@@ -907,10 +910,11 @@ function getCombatPowerBreakdown() {
   add('Trophy Weapon', getTrophyPowerMult());
   add('Apex Ladder (' + getApexDepth() + ' tamed this run)', getApexPowerMult());
   add('World Bonus', getWorldPowerMult());
+  add('Adrenaline', getAdrenalinePowerMult());
 
   return {
-    hunter, sparLevel: gameState.sparringLevel, sparMult, hunterTotal: getHunterPower(),
-    beasts, beastMults, beastTotal: getTotalBeastPower(),
+    hunter, hunterMults, hunterTotal: getHunterPower(),
+    beasts, beastMults, beastTotal: Math.floor(getTotalBeastPower() * leadership),
     mults, total: getTotalCombatPower()
   };
 }
@@ -934,7 +938,7 @@ function getApexDepth() {
 /** Bracket minimum of Apex tier k before Weakpoint Anatomy and Ascension growth */
 function getApexBaseMin(k) {
   const wyrm = BEAST_CATALOG[BEAST_CATALOG.length - 1];
-  return Math.floor(wyrm.minPower * APEX_CONFIG.firstMult * Math.pow(APEX_CONFIG.growth, k - 1));
+  return Math.floor(wyrm.minPower * BOSS_APEX_SCALE * APEX_CONFIG.firstMult * Math.pow(APEX_CONFIG.growth, k - 1));
 }
 
 /** The next Apex boss to fight, shaped like a BEAST_CATALOG entry */
@@ -982,6 +986,11 @@ function getApexPowerMult() {
 /**
  * ================= WORLDS =================
  */
+/** Hunter rework: Leadership makes the pack stronger, so bosses scale up, more for later tiers (Apex builds on the Wyrm) */
+let BOSS_POWER_SCALE = 1;
+let BOSS_TIER_SCALE = [1.2, 1.5, 1.8, 1.9];
+let BOSS_SEAL_SCALE = 1.8;
+let BOSS_APEX_SCALE = 1.6; // the Apex Ladder (and Titans built on it) on top of the Wyrm's scale
 const BASE_BEASTS = BEAST_CATALOG.map(b => Object.assign({}, b));
 const BASE_GENS = GENERATOR_LADDER.map(g => Object.assign({}, g));
 const TITAN_SLOT = 97; // selectedBeastIndex value meaning "this world's Titan"
@@ -1002,8 +1011,9 @@ function applyWorld() {
     const ov = (w.beasts && w.beasts[i]) || {};
     b.name = ov.name || base.name;
     b.desc = ov.desc || base.desc;
-    b.minPower = Math.floor(base.minPower * w.hardness);
-    b.maxPower = Math.floor(base.maxPower * w.hardness);
+    const sc = w.hardness * BOSS_POWER_SCALE * (BOSS_TIER_SCALE[i] || 1);
+    b.minPower = Math.floor(base.minPower * sc);
+    b.maxPower = Math.floor(base.maxPower * sc);
     b.rewardPower = Math.floor(base.rewardPower * Math.sqrt(w.hardness));
     b.imageFilter = w.filter || '';
   });
@@ -1021,6 +1031,9 @@ function applyWorld() {
     });
   }
 }
+
+// Apply the current world (and the boss power scale) as soon as the engine loads
+applyWorld();
 
 /** Permanent World Bonus from every world you've opened (World 2 = 1 opened) */
 function getWorldsOpened() {
@@ -1688,15 +1701,50 @@ function getGeneratorCost(gen) {
   return Math.floor(gen.baseCost * Math.pow(gen.costScale, n0) * Math.pow(1 + g * OVERDRIVE_COST_EASE[1], n1) * Math.pow(1 + g * OVERDRIVE_COST_EASE[2], n2));
 }
 
-function getHunterPower() {
-  const vigorBonus = getAscensionPerkLevel('primal_vigor') * 25;
+/** Hunter rework: Training and Primal Vigor scale Hunter Power by %, and Hunter Power leads the pack */
+const HUNTER_CONFIG = {
+  bruteMultPerLevel: 0.02,     // Brute Conditioning: +2% Hunter Power per level (plus its flat power)
+  sparPerLevel: 0.03,          // Sparring: +3% Hunter Power per level
+  sparPerLevelScorpio: 0.06,   // ...with an awake Scorpiodrake
+  vigorMultPerRank: 0.15,      // Primal Vigor perk: +15% Hunter Power per rank
+  leadershipPerDoubling: 0.15, // every doubling of Hunter Power: +15% Beast Power
+  leadershipScale: 100,
+  adrenalineMeat: 1.40,        // Adrenaline (spar breakthrough): Meat/s x1.40
+  adrenalinePower: 1.10,       // ...and Combat Power x1.10
+  warmthHybridPerRank: 0.10,   // Catalytic Warmth perk: +10% hybrid power per rank
+  butcheryPerRank: 0.02        // Instinctive Butchery perk: +2% of Meat/s per click per rank
+};
+
+function getSparPerLevel() {
+  return getActiveHybridLevel('scorpiodrake') > 0 ? HUNTER_CONFIG.sparPerLevelScorpio : HUNTER_CONFIG.sparPerLevel;
+}
+
+function getHunterRawPower() {
   const equippedWeapon = getEquippedWeapon();
   const weaponPower = equippedWeapon ? (equippedWeapon.combatPower || 0) : 0;
-  const rawPower = gameState.baseHunterPower + vigorBonus + weaponPower + (gameState.bruteConditioningLevel * getBrutePowerPerLevel());
-  const scorpiodrakeLvl = getActiveHybridLevel('scorpiodrake');
-  const perLevelMult = scorpiodrakeLvl > 0 ? 0.05 : 0.02;
-  const sparringMultiplier = 1 + (gameState.sparringLevel * perLevelMult);
-  return Math.floor(rawPower * sparringMultiplier);
+  return gameState.baseHunterPower + weaponPower + (gameState.bruteConditioningLevel * getBrutePowerPerLevel());
+}
+
+function getHunterMultParts() {
+  return {
+    sparring: 1 + gameState.sparringLevel * getSparPerLevel(),
+    brute: 1 + gameState.bruteConditioningLevel * HUNTER_CONFIG.bruteMultPerLevel,
+    vigor: 1 + getAscensionPerkLevel('primal_vigor') * HUNTER_CONFIG.vigorMultPerRank
+  };
+}
+
+function getHunterPower() {
+  const m = getHunterMultParts();
+  return Math.floor(getHunterRawPower() * m.sparring * m.brute * m.vigor);
+}
+
+/** Leadership: Beast Power multiplier from Hunter Power (+15% per doubling) */
+function getLeadershipMult(hunterPower = getHunterPower()) {
+  return 1 + HUNTER_CONFIG.leadershipPerDoubling * Math.log2(1 + Math.max(0, hunterPower) / HUNTER_CONFIG.leadershipScale);
+}
+
+function getAdrenalinePowerMult() {
+  return gameState.adrenalineFocusRemaining > 0 ? HUNTER_CONFIG.adrenalinePower : 1;
 }
 
 /** Hybrids stay dormant (no Beast Power) until both parents are tamed in the current run. Passives always apply. */
@@ -1707,7 +1755,7 @@ function isHybridAwake(hybrid) {
 function getHybridRawPower(hybrid) {
   const hLvl = getHybridLevel(hybrid.id);
   if (hLvl <= 0) return 0;
-  const full = Math.floor(hybrid.basePower * (1 + ((hLvl - 1) * 0.20)));
+  const full = Math.floor(hybrid.basePower * (1 + ((hLvl - 1) * 0.20)) * (1 + getAscensionPerkLevel('catalytic_warmth') * HUNTER_CONFIG.warmthHybridPerRank));
   if (isHybridAwake(hybrid)) return full;
   // Pack Alpha (Hunter's Legacy capstone): dormant hybrids still lend part of their power
   return hasLegacyCapstone('pack_alpha') ? Math.floor(full * LEGACY_CONFIG.packAlphaShare) : 0;
@@ -1741,9 +1789,10 @@ function getTotalBeastPower() {
 }
 
 function getTotalCombatPower() {
-  const base = getHunterPower() + getTotalBeastPower();
+  const hunter = getHunterPower();
+  const base = hunter + getTotalBeastPower() * getLeadershipMult(hunter);
   // Fishing: Codex power bonus and Abyssal Fervor meal
-  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts') * getTrophyPowerMult() * getWorldPowerMult() * getApexPowerMult());
+  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts') * getTrophyPowerMult() * getWorldPowerMult() * getApexPowerMult() * getAdrenalinePowerMult());
 }
 
 function getBaseMeatRate() {
@@ -1770,7 +1819,7 @@ function getMeatRate(withAdrenalineOverride = null) {
     : gameState.adrenalineFocusRemaining > 0;
 
   if (hasAdrenaline) {
-    rate *= 1.25;
+    rate *= HUNTER_CONFIG.adrenalineMeat;
   }
   if (gameState.tamedBeasts['chimera_wyrm']) {
     const cLvl = getParentLevel('chimera_wyrm');
@@ -1820,7 +1869,7 @@ function getClickYield() {
   // Ascension Perk: Instinctive Butchery (+0.5% passive/click & +50% click yield per rank)
   const butcheryLvl = getAscensionPerkLevel('instinctive_butchery');
   if (butcheryLvl > 0) {
-    percentBonus += (butcheryLvl * 0.005);
+    percentBonus += (butcheryLvl * HUNTER_CONFIG.butcheryPerRank);
   }
 
   const passiveRate = getMeatRate();
