@@ -658,3 +658,27 @@ body:has(.erupt-strip.live) .scene-crater-glow { animation-duration: 0.9s; }
 body:has(.erupt-strip.live) .scene-lava { opacity: 1 !important; }
 @media (prefers-reduced-motion: reduce) { .scene-aurora, .scene-crater-glow { animation: none; } }
 body.stealth #scene { display: none !important; }
+
+/* ================= SEAL REWORK ================= */
+.boon-card { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left; padding: 12px; border-radius: 12px; cursor: pointer;
+  background: rgb(var(--p800)); border: 1px solid rgb(var(--accent) / 0.45); color: rgb(var(--s100)); }
+.boon-card:hover { border-color: rgb(var(--accent)); box-shadow: 0 0 14px rgb(var(--accent) / 0.35); }
+.boon-card i { color: rgb(var(--accent)); font-size: 18px; }
+.boon-card .boon-name { font-weight: 800; font-size: 14px; }
+.boon-card .boon-desc { font-size: 12px; color: rgb(var(--s300)); }
+.boon-card .boon-owned { font-size: 10px; color: rgb(var(--s400)); font-family: monospace; }
+.boon-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700;
+  background: rgb(var(--accent) / 0.14); border: 1px solid rgb(var(--accent) / 0.5); color: rgb(var(--s100)); }
+.boon-chip i { color: rgb(var(--accent)); }
+.boon-chip.primordial { background: rgb(168 85 247 / 0.15); border-color: rgb(192 132 252 / 0.6); }
+.boon-chip.primordial i { color: #c084fc; }
+.loom-log { font: 12px/1.45 ui-monospace, Menlo, monospace; color: #9fe7c7; background: rgb(0 0 0 / 0.35); border: 1px solid rgb(52 211 153 / 0.25);
+  border-radius: 6px; padding: 6px 9px; letter-spacing: 0.02em; }
+.loom-log-k { color: #34d399; font-weight: 800; margin-right: 8px; }
+#loom-log-card { position: fixed; inset: 0; z-index: 74; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgb(0 0 0 / 0.72); }
+#loom-log-card .llc-box { width: 100%; max-width: 460px; background: #050a08; border: 1px solid rgb(52 211 153 / 0.5); border-radius: 8px; padding: 18px 20px;
+  box-shadow: 0 0 40px rgb(52 211 153 / 0.18); font-family: ui-monospace, Menlo, monospace; }
+#loom-log-card .llc-head { color: #34d399; font-weight: 800; font-size: 12px; letter-spacing: 0.2em; margin-bottom: 10px; }
+#loom-log-card .llc-text { color: #c8f5e3; font-size: 15px; line-height: 1.55; min-height: 70px; }
+#loom-log-card .llc-ok { margin-top: 14px; padding: 6px 16px; border-radius: 6px; border: 1px solid rgb(52 211 153 / 0.6); background: transparent; color: #9fe7c7; cursor: pointer; font-family: inherit; }
+body.stealth #loom-log-card { display: none !important; }

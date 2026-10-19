@@ -72,6 +72,7 @@
     'eruption rounds': 'forecast rounds', 'eruption': 'forecast', 'erupt': 'forecast', 'volcano': 'market', 'magma cores': 'bonus points', 'magma core': 'bonus point',
     'magma': 'market', 'molten heart': 'reserve fund', 'heat shield': 'risk insurance', 'scorched': 'penalized', 'cash out': 'finalize', 'cashed out': 'finalized', 'cash-out': 'finalize', 'cores': 'points', 'core': 'point',
     'charges': 'allocations', 'charge': 'allocation', 'raise the steaks': 'set allocation', 'blew': 'closed', 'blown': 'closed', 'blast': 'correction', 'lava': 'market', 'ash': 'archive', 'ashen': 'archived',
+    'boons': 'benefits', 'boon': 'benefit', 'primordial': 'premium', 'loom logs': 'system logs', 'loom': 'system', 'awakened strike': 'priority push', 'awakens': 'upgrades', 'awaken': 'upgrade', 'core': 'server',
     'roars': 'notes', 'bite': 'fee', 'sting': 'fee', 'pits': 'channels', 'dens': 'branches', 'den': 'branch'
   };
 

@@ -15,7 +15,7 @@
     try {
       if (typeof isEruptionWorld === 'function' && isEruptionWorld()) {
         const v = getVolcano();
-        if (!v.round && v.charges >= WORLD_CONFIG.eruption.maxCharges) items.push({ key: 'charges', text: 'Eruption charges are full (' + v.charges + '/' + WORLD_CONFIG.eruption.maxCharges + ')', go: 'camp', icon: 'fa-volcano' });
+        if (!v.round && v.charges >= getMaxEruptionCharges()) items.push({ key: 'charges', text: 'Eruption charges are full (' + v.charges + '/' + getMaxEruptionCharges() + ')', go: 'camp', icon: 'fa-volcano' });
       }
       if (typeof isExpeditionReady === 'function' && isExpeditionReady()) items.push({ key: 'expedition', text: 'Your expedition is back', go: 'expedition', icon: 'fa-compass' });
       if (typeof getWorld === 'function' && getWorld().twist === 'blizzard') {
@@ -24,6 +24,8 @@
       }
       if (typeof getTotemGuardian === 'function' && isTotemUnlocked() && getTotemGuardian()) items.push({ key: 'seal', text: 'A Seal Guardian is waiting at the Totem', go: 'totem', icon: 'fa-shield-halved' });
       if (typeof getTitanBoss === 'function' && getTitanBoss()) items.push({ key: 'titan', text: getWorld().titan.name + ' is awake', go: 'world', icon: 'fa-mountain' });
+      if (gameState.boonChoices && gameState.boonChoices.length) items.push({ key: 'boon', text: 'A Seal Boon is waiting to be chosen', go: 'totem', icon: 'fa-star' });
+      if (typeof canAwaken === 'function' && canAwaken()) items.push({ key: 'awaken', text: 'The Awakened Strike is ready', go: 'totem', icon: 'fa-bolt-lightning' });
       if (gameState.incubator && gameState.incubator.remaining <= 0) items.push({ key: 'egg', text: 'An egg is ready to hatch', go: 'forge', icon: 'fa-egg' });
     } catch (e) { /* a system may not exist yet on this save */ }
     return items;

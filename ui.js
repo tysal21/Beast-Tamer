@@ -3672,7 +3672,7 @@ function renderEruptionStrip(force) {
   const v = getVolcano(), c = WORLD_CONFIG.eruption;
   // Never ask for more charges than you have: the stake shrinks to fit
   if (!v.round && v.charges > 0 && (v.stake || 1) > v.charges) v.stake = v.charges;
-  const stake = Math.max(1, Math.min(c.maxCharges, v.stake || 1));
+  const stake = Math.max(1, Math.min(getMaxEruptionCharges(), v.stake || 1));
   const canStart = !v.round && v.charges >= stake;
   const sig = [!!v.round, v.round ? v.round.startAt : 0, v.charges, stake, v.auto, v.last ? v.last.mult + ':' + v.last.win : '', Math.floor(getNextChargeIn() / 60), Math.floor(Math.log10(Math.max(1, getMeatRate())) * 4)].join('|');
   if (!force && sig === eruptionSig) return;
@@ -3700,11 +3700,11 @@ function renderEruptionStrip(force) {
     const autoOpts = c.autoOptions.map(a => '<option value="' + a + '"' + (a === (v.auto || 0) ? ' selected' : '') + '>' + (a ? 'x' + a : 'Off') + '</option>').join('');
     html =
       '<div class="erupt-idle">' +
-        '<div class="erupt-charges"><div class="erupt-label"><i class="fa-solid fa-volcano mr-1"></i>Eruption charges ' + v.charges + '/' + c.maxCharges + '</div>' +
-          '<div class="erupt-dots">' + eruptionChargeDots(v.charges, c.maxCharges) + '</div>' +
-          '<div class="erupt-sub">' + (v.charges >= c.maxCharges ? 'Full. Spend some so pressure keeps building.' : 'Next charge in ' + formatDuration(next)) + '</div></div>' +
+        '<div class="erupt-charges"><div class="erupt-label"><i class="fa-solid fa-volcano mr-1"></i>Eruption charges ' + v.charges + '/' + getMaxEruptionCharges() + '</div>' +
+          '<div class="erupt-dots">' + eruptionChargeDots(v.charges, getMaxEruptionCharges()) + '</div>' +
+          '<div class="erupt-sub">' + (v.charges >= getMaxEruptionCharges() ? 'Full. Spend some so pressure keeps building.' : 'Next charge in ' + formatDuration(next)) + '</div></div>' +
         '<div class="erupt-stake"><div class="erupt-label">Raise the steaks</div>' +
-          '<div class="erupt-stepper"><button data-erupt="less" ' + (stake <= 1 ? 'disabled' : '') + '>-</button><span>' + stake + '</span><button data-erupt="more" ' + (stake >= Math.min(c.maxCharges, Math.max(1, v.charges)) ? 'disabled' : '') + '>+</button></div>' +
+          '<div class="erupt-stepper"><button data-erupt="less" ' + (stake <= 1 ? 'disabled' : '') + '>-</button><span>' + stake + '</span><button data-erupt="more" ' + (stake >= Math.min(getMaxEruptionCharges(), Math.max(1, v.charges)) ? 'disabled' : '') + '>+</button></div>' +
           '<div class="erupt-sub">Pot: +' + formatNumber(prize.meat) + ' Meat, +' + prize.cores + ' Cores</div></div>' +
         '<div class="erupt-go"><button data-erupt="start" ' + (canStart ? '' : 'disabled') + ' class="erupt-start"><i class="fa-solid fa-fire mr-1"></i>Start eruption</button>' +
           '<label class="erupt-sub">Auto cash-out <select data-erupt="auto">' + autoOpts + '</select></label></div>' +
@@ -3751,7 +3751,7 @@ function eruptionTwistHtml() {
   const shieldCost = getShieldCost(), heartCost = getHeartCost(), cores = getMaterial('magma_core');
   const st = v.stats || {};
   return '<div class="text-xs text-orange-200 mt-2 space-y-1">' +
-    '<div><i class="fa-solid fa-volcano mr-1"></i><strong>Eruption rounds:</strong> the volcano stores 1 charge per hour (up to ' + c.maxCharges + '), even while you are away. Stake charges and start a round: the multiplier climbs until it blows. Cash out first to win the pot times the multiplier. Wait too long and you lose the pot and get Scorched (-' + Math.round(c.scorchPerCharge * 100) + '% max Stamina per charge staked, up to ' + Math.round(c.scorchMax * 100) + '%).</div>' +
+    '<div><i class="fa-solid fa-volcano mr-1"></i><strong>Eruption rounds:</strong> the volcano stores 1 charge per hour (up to ' + getMaxEruptionCharges() + '), even while you are away. Stake charges and start a round: the multiplier climbs until it blows. Cash out first to win the pot times the multiplier. Wait too long and you lose the pot and get Scorched (-' + Math.round(c.scorchPerCharge * 100) + '% max Stamina per charge staked, up to ' + Math.round(c.scorchMax * 100) + '%).</div>' +
     '<div><i class="fa-solid fa-chart-line mr-1"></i>Rounds so far: ' + (st.rounds || 0) + ' · cashed out ' + (st.wins || 0) + ' · blown ' + (st.busts || 0) + (st.best ? ' · best cash-out x' + st.best.toFixed(2) : '') + '</div>' +
     '</div>' +
     '<div class="grid sm:grid-cols-2 gap-3 mt-3">' +
@@ -3774,7 +3774,7 @@ function eruptionTwistHtml() {
     const v = getVolcano(), c = WORLD_CONFIG.eruption;
     const act = b.getAttribute('data-erupt');
     if (act === 'less') v.stake = Math.max(1, (v.stake || 1) - 1);
-    if (act === 'more') v.stake = Math.min(c.maxCharges, (v.stake || 1) + 1);
+    if (act === 'more') v.stake = Math.min(getMaxEruptionCharges(), (v.stake || 1) + 1);
     if (act === 'start' && startEruption(v.stake || 1)) { try { sound.playTone(140, 'sawtooth', 0.25, 0.12); } catch (err) { /* audio blocked */ } }
     if (act === 'cash') {
       const res = cashOutEruption();
@@ -3799,6 +3799,7 @@ function eruptionTwistHtml() {
 const expSel = { region: null, partner: null, duration: 'long' };
 let expSignature = '';
 let expRecallArmedUntil = 0;
+let expRecallSlot = 0;
 
 function matChip(id, n, need) {
   const m = MATERIALS[id];
@@ -3873,7 +3874,7 @@ function workbenchHtml() {
 
 function getExpeditionSignature() {
   const st = getExpeditionState();
-  return [JSON.stringify(st.materials), st.honing, st.active ? st.active.region + st.active.endAt : '-', isExpeditionReady(), JSON.stringify(expSel),
+  return [JSON.stringify(st.materials), st.honing, [0, 1].map(i => { const p = getParty(i); return p ? p.region + p.endAt : '-'; }).join(','), getExpeditionSlots(), isExpeditionReady(0), isExpeditionReady(1), expRecallSlot, JSON.stringify(expSel),
     Object.keys(gameState.tamedBeasts).join(','), gameState.bestApexDepth || 0, expRecallArmedUntil > Date.now(), JSON.stringify(getGearState().pieces), gearSel.charm, getClimateId()].join('|');
 }
 
@@ -3888,31 +3889,38 @@ function renderExpeditionTab() {
   // Inventory
   const inv = Object.keys(MATERIALS).map(id => matChip(id, getMaterial(id))).join('');
 
-  // Current expedition
+  // Current expeditions (a second party opens at Seal 5)
+  const slots = getExpeditionSlots();
+  const partyHtml = (i) => {
+  const a = getParty(i);
   let current;
-  const a = st.active;
   if (a) {
     const region = EXPEDITION_REGIONS.find(r => r.id === a.region);
     const p = a.partner ? BEAST_CATALOG.find(b => b.id === a.partner) : null;
-    const ready = isExpeditionReady();
-    const armed = expRecallArmedUntil > Date.now();
+    const ready = isExpeditionReady(i);
+    const armed = expRecallArmedUntil > Date.now() && expRecallSlot === i;
     current =
       '<div class="flex items-center gap-4">' +
         (p ? '<div class="pack-art !h-24 w-28 shrink-0"><img src="' + getBeastArt(p, true) + '" alt="' + p.name + '" style="filter:' + (p.imageFilter || 'none') + '"></div>' : '<div class="w-20 h-20 shrink-0 rounded-xl bg-primal-900 border border-primal-700 flex items-center justify-center text-3xl text-amber-400"><i class="fa-solid fa-person-hiking"></i></div>') +
         '<div class="min-w-0 flex-1">' +
           '<div class="font-cinzel text-xl text-slate-100"><i class="fa-solid ' + region.icon + ' mr-1 text-slate-400"></i>' + region.name + '</div>' +
           '<div class="text-xs text-slate-400">' + (p ? 'Your ' + p.name + ' is with you (it adds no Combat Power until you return).' : 'The hunter went alone.') + '</div>' +
-          '<div class="mt-2 h-3 rounded-full bg-primal-900 border border-primal-700 overflow-hidden"><div id="exp-progress" class="h-full bg-gradient-to-r from-amber-700 to-amber-400" style="width:0%"></div></div>' +
-          '<div class="flex justify-between text-[11px] font-mono mt-1"><span id="exp-timeleft" class="text-slate-300"></span><span class="text-slate-400">Haul: ' + matChip(region.material, a.yield) + '</span></div>' +
+          '<div class="mt-2 h-3 rounded-full bg-primal-900 border border-primal-700 overflow-hidden"><div id="exp-progress-' + i + '" class="h-full bg-gradient-to-r from-amber-700 to-amber-400" style="width:0%"></div></div>' +
+          '<div class="flex justify-between text-[11px] font-mono mt-1"><span id="exp-timeleft-' + i + '" class="text-slate-300"></span><span class="text-slate-400">Haul: ' + matChip(region.material, a.yield) + '</span></div>' +
         '</div>' +
       '</div>' +
       '<div class="flex gap-2 mt-3">' +
-        '<button data-exp-action="collect" ' + (ready ? '' : 'disabled') + ' class="flex-1 py-2.5 rounded-lg bt-btn-seal text-base disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">' + (ready ? 'Collect the haul' : 'Still exploring...') + '</button>' +
-        (ready ? '' : '<button data-exp-action="recall" class="px-3 py-2 rounded-lg border text-xs font-bold cursor-pointer ' + (armed ? 'bg-red-800 border-red-400 text-white' : 'bg-primal-800 border-primal-600 text-slate-300') + '">' + (armed ? 'Click again: return with nothing' : 'Recall') + '</button>') +
+        '<button data-exp-action="collect" data-slot="' + i + '" ' + (ready ? '' : 'disabled') + ' class="flex-1 py-2.5 rounded-lg bt-btn-seal text-base disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">' + (ready ? 'Collect the haul' : 'Still exploring...') + '</button>' +
+        (ready ? '' : '<button data-exp-action="recall" data-slot="' + i + '" class="px-3 py-2 rounded-lg border text-xs font-bold cursor-pointer ' + (armed ? 'bg-red-800 border-red-400 text-white' : 'bg-primal-800 border-primal-600 text-slate-300') + '">' + (armed ? 'Click again: return with nothing' : 'Recall') + '</button>') +
       '</div>';
   } else {
-    current = '<div class="text-sm text-slate-400 py-6 text-center"><i class="fa-solid fa-compass text-2xl text-slate-500 mb-2 block"></i>No expedition is out. Plan one below.</div>';
+    current = '<div class="text-sm text-slate-400 py-6 text-center"><i class="fa-solid fa-compass text-2xl text-slate-500 mb-2 block"></i>' + (slots > 1 ? 'Party ' + (i + 1) + ' is at camp.' : 'No expedition is out.') + ' Plan one below.</div>';
   }
+  return current;
+  };
+  let current = '';
+  for (let i = 0; i < slots; i++) current += (slots > 1 ? '<div class="text-[11px] uppercase tracking-wider text-slate-500 ' + (i ? 'mt-4 pt-4 border-t border-primal-700' : '') + ' mb-2">Party ' + (i + 1) + '</div>' : '') + partyHtml(i);
+  const freeSlot = [0, 1].slice(0, slots).some(i => !getParty(i));
 
   // Planner
   const regions = EXPEDITION_REGIONS.map(r => {
@@ -3927,8 +3935,8 @@ function renderExpeditionTab() {
   }).join('');
   const partners = ['<button data-exp-partner="" class="px-3 py-2 rounded-lg border text-xs font-bold cursor-pointer ' + (!expSel.partner ? 'border-amber-500 bg-amber-950/30 text-amber-200' : 'border-primal-700 bg-primal-900/60 text-slate-300') + '"><i class="fa-solid fa-person-hiking mr-1"></i>Hunter alone</button>']
     .concat(BEAST_CATALOG.filter(b => gameState.tamedBeasts[b.id]).map(b => {
-      const sel = expSel.partner === b.id, match = b.id === expSel.region;
-      return '<button data-exp-partner="' + b.id + '" class="flex items-center gap-2 pl-1 pr-3 py-1 rounded-lg border text-xs font-bold cursor-pointer ' + (sel ? 'border-amber-500 bg-amber-950/30 text-amber-200' : 'border-primal-700 bg-primal-900/60 text-slate-300') + '">' +
+      const sel = expSel.partner === b.id, match = b.id === expSel.region, away = isAwayOnExpedition(b.id);
+      return '<button data-exp-partner="' + b.id + '" ' + (away ? 'disabled title="Already out on an expedition"' : '') + ' class="disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 pl-1 pr-3 py-1 rounded-lg border text-xs font-bold cursor-pointer ' + (sel ? 'border-amber-500 bg-amber-950/30 text-amber-200' : 'border-primal-700 bg-primal-900/60 text-slate-300') + '">' +
         '<img src="' + getBeastArt(b, true) + '" alt="" class="w-10 h-8 object-contain" style="filter:' + (b.imageFilter || 'none') + '">' + b.name +
         '<span class="font-mono ' + (match ? 'text-emerald-300' : 'text-slate-500') + '">' + (match ? '+100%' : '+50%') + '</span></button>';
     })).join('');
@@ -3941,7 +3949,7 @@ function renderExpeditionTab() {
     '<div class="text-xs uppercase tracking-wider text-slate-500 mt-4 mb-2">How long</div><div class="flex flex-wrap gap-2">' + durations + '</div>' +
     '<div class="flex flex-wrap items-center justify-between gap-3 mt-4 pt-3 border-t border-primal-700">' +
       '<div class="text-sm text-slate-300">Brings back ' + (region ? matChip(region.material, preview) : '') + '</div>' +
-      '<button data-exp-action="start" ' + (st.active || !region ? 'disabled' : '') + ' class="px-5 py-2.5 rounded-lg bt-btn-seal text-base cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">' + (st.active ? 'One expedition at a time' : 'Set out') + '</button>' +
+      '<button data-exp-action="start" ' + (!freeSlot || !region ? 'disabled' : '') + ' class="px-5 py-2.5 rounded-lg bt-btn-seal text-base cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">' + (freeSlot ? 'Set out' : (slots > 1 ? 'Both parties are out' : 'One expedition at a time (a second party opens at Seal 5)')) + '</button>' +
     '</div>';
 
   // Honing
@@ -3976,28 +3984,34 @@ function updateExpeditionLive(fromRender) {
   const badge = document.getElementById('tab-expedition-badge');
   const st = getExpeditionState();
   const ready = isExpeditionReady();
+  const anyOut = !!(getParty(0) || getParty(1));
   if (badge) {
-    badge.classList.toggle('hidden', !st.active);
+    badge.classList.toggle('hidden', !anyOut);
     badge.textContent = ready ? 'Ready!' : 'Out';
-    badge.className = (st.active ? '' : 'hidden ') + 'text-[9px] px-1.5 py-0.2 rounded font-mono border ' + (ready ? 'bg-emerald-900 text-emerald-200 border-emerald-500 font-bold' : 'bg-amber-950 text-amber-300 border-amber-700');
+    badge.className = (anyOut ? '' : 'hidden ') + 'text-[9px] px-1.5 py-0.2 rounded font-mono border ' + (ready ? 'bg-emerald-900 text-emerald-200 border-emerald-500 font-bold' : 'bg-amber-950 text-amber-300 border-amber-700');
   }
   // One toast when an expedition comes home
-  if (st.active && ready && !st.active.notified) {
-    st.active.notified = true;
-    showToast('Your expedition is back! Collect it on the Expeditions tab.', 'success', true);
-  }
+  [0, 1].forEach(i => {
+    const p = getParty(i);
+    if (p && isExpeditionReady(i) && !p.notified) {
+      p.notified = true;
+      showToast('Your expedition is back! Collect it on the Expeditions tab.', 'success', true);
+    }
+  });
   if (gameState.activeTab !== 'expedition') return;
   const sig = getExpeditionSignature();
   if (!fromRender && sig !== expSignature) { expSignature = sig; renderExpeditionTab(); return; }
   if (fromRender) expSignature = sig;
-  const a = st.active;
-  const bar = document.getElementById('exp-progress');
-  const tl = document.getElementById('exp-timeleft');
-  if (a && bar && tl) {
-    const total = (a.endAt - a.startAt) / 1000, left = getExpeditionTimeLeft();
-    bar.style.width = Math.min(100, (1 - left / total) * 100) + '%';
-    tl.textContent = left > 0 ? formatDuration(left) + ' left' : 'Back at camp!';
-  }
+  [0, 1].forEach(i => {
+    const a = getParty(i);
+    const bar = document.getElementById('exp-progress-' + i);
+    const tl = document.getElementById('exp-timeleft-' + i);
+    if (a && bar && tl) {
+      const total = (a.endAt - a.startAt) / 1000, left = getExpeditionTimeLeft(Date.now(), i);
+      bar.style.width = Math.min(100, (1 - left / total) * 100) + '%';
+      tl.textContent = left > 0 ? formatDuration(left) + ' left' : 'Back at camp!';
+    }
+  });
 }
 
 (function initExpeditions() {
@@ -4016,10 +4030,11 @@ function updateExpeditionLive(fromRender) {
     else {
       const act = t.getAttribute('data-exp-action');
       if (act === 'start' && startExpedition(expSel.region, expSel.duration, expSel.partner)) { sound.playClick(); renderMenagerie(); }
-      if (act === 'collect' && collectExpedition(false)) { sound.playWin(); if (typeof confettiBurst === 'function') confettiBurst(); renderMenagerie(); }
+      const slot = parseInt(t.getAttribute('data-slot') || '0', 10);
+      if (act === 'collect' && collectExpedition(false, slot)) { sound.playWin(); if (typeof confettiBurst === 'function') confettiBurst(); renderMenagerie(); }
       if (act === 'recall') {
-        if (expRecallArmedUntil > Date.now()) { expRecallArmedUntil = 0; collectExpedition(true); renderMenagerie(); }
-        else expRecallArmedUntil = Date.now() + 4000;
+        if (expRecallArmedUntil > Date.now() && expRecallSlot === slot) { expRecallArmedUntil = 0; collectExpedition(true, slot); renderMenagerie(); }
+        else { expRecallArmedUntil = Date.now() + 4000; expRecallSlot = slot; }
       }
       if (act === 'hone' && honeWeapon()) sound.playWin();
       saveGameToStorage();
