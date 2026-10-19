@@ -370,7 +370,7 @@ function renderAscensionAltar() {
   // Expansion cards
   if (elements.expansionsContainer) {
     elements.expansionsContainer.innerHTML = '';
-    ASCENSION_EXPANSIONS.forEach(exp => {
+    ASCENSION_EXPANSIONS.filter(exp => !exp.hidden).forEach(exp => {
       const owned = !!(gameState.unlockedExpansions && gameState.unlockedExpansions[exp.id]);
       const meetsReq = gameState.ascensionCount >= exp.reqAscensions;
 
