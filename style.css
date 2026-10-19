@@ -223,7 +223,7 @@
   --ink: #2a1e14;
   --ink-soft: #5a4632;
   --world-bg: url('assets/backgrounds/camp-wilds.webp');
-  --world-bg-filter: none;
+  --world-bg-filter: brightness(1.6); /* "none" here made the whole filter invalid, so the painting was never dimmed */
 }
 
 /* World 2: Frozen Tundra (slate ice and aurora) */
@@ -642,3 +642,19 @@ body.stealth .hub-subrow:not(.hub-subrow-empty)::before { content: 'Pages: '; co
 .hub-subrow .nav-tab-btn.feature-new::before { top: -6px; right: -4px; }
 #hub-bar { padding-top: 6px; }
 .hub-btn.hub-new::before { top: -6px; right: -4px; }
+
+/* ================= REGION SCENERY ================= */
+#scene { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+#scene-svg { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.9; }
+#scene-fx { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* Regions without a painting: the drawn scene is the whole backdrop, a little dimmer so cards stay readable */
+body.scene-unpainted::before { display: none; }
+body.scene-unpainted #scene-svg { opacity: 0.75; }
+.scene-aurora { animation: auroraDrift 14s ease-in-out infinite alternate; transform-origin: center; }
+@keyframes auroraDrift { from { transform: translateX(-40px) scaleY(0.9); opacity: 0.7; } to { transform: translateX(40px) scaleY(1.1); opacity: 1; } }
+.scene-crater-glow { animation: craterPulse 4s ease-in-out infinite; }
+@keyframes craterPulse { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
+body:has(.erupt-strip.live) .scene-crater-glow { animation-duration: 0.9s; }
+body:has(.erupt-strip.live) .scene-lava { opacity: 1 !important; }
+@media (prefers-reduced-motion: reduce) { .scene-aurora, .scene-crater-glow { animation: none; } }
+body.stealth #scene { display: none !important; }
