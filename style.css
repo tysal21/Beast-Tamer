@@ -696,3 +696,5 @@ body.stealth #loom-log-card { display: none !important; }
   padding: 12px 14px; border-radius: 10px; background: var(--paper); color: var(--ink); box-shadow: 0 12px 30px rgb(0 0 0 / 0.5); font-size: 13px; }
 #lb-invite .lb-later { color: var(--ink-soft); }
 body.stealth #lb-invite { display: none !important; }
+#lb-invite .lb-name { flex: 1; min-width: 140px; padding: 6px 8px; border: 1px solid var(--paper-shade); border-radius: 6px; background: #fffaf0; color: var(--ink); }
+.lb-name-page { padding: 6px 8px; border-radius: 8px; border: 1px solid rgb(var(--p600)); background: rgb(var(--p900)); color: rgb(var(--s100)); }
