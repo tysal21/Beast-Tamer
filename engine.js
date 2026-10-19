@@ -502,7 +502,9 @@ const FEATURE_UNLOCKS = [
   { id: 'totem', tab: 'totem', check: () => gameState.ascensionCount > 0 || getWorldIndex() > 0 || isTotemUnlocked(),
     intro: 'The Primal Totem has risen: your Combat Power wears it down, even while you are away.' },
   { id: 'world', tab: 'world', check: () => (gameState.bestApexDepth || 0) >= 4 || getWorldIndex() > 0 || gameState.riftOpen,
-    intro: 'The Regions tab is open: a Titan sleeps beyond Apex Tier 12.' }
+    intro: 'The Regions tab is open: a Titan sleeps beyond Apex Tier 12.' },
+  { id: 'pack', tab: 'pack', check: () => checkPackRite(),
+    intro: 'The Pack is open: bring up to 3 true-born hybrids along, each with its own ability.' },
 ];
 
 function isFeatureUnlocked(id) {
@@ -815,6 +817,7 @@ function applySealRework(k, quiet) {
     }
   }
   if (k >= SEAL_CONFIG.boonsFromSeal) rollBoonChoice(k);
+  if (!quiet && k === PACK_CONFIG.riteSeal && getWorldIndex() < PACK_CONFIG.riteRegion) gameState.pendingSealNote = 'MAKER RECORDS DETECTED. LOCATION: ARCHIVE FRAGMENT. UNREADABLE FROM HERE.';
 }
 
 /** Older saves: give them everything their broken Seals have earned under the rework */
@@ -823,6 +826,51 @@ function migrateSealRework() {
   gameState.sealRework = 1;
   const s = (gameState.totem && gameState.totem.sealsBroken) || 0;
   for (let k = 1; k <= s; k++) applySealRework(k, true);
+}
+
+/**
+ * ================= THE PACK (true-borns) =================
+ */
+function isPackUnlocked() {
+  return !!gameState.packRite;
+}
+/** The rite: the Archive (Region 2) holds the makers' records, and Seal 5 lets the Core read them. Whichever comes second triggers it. */
+function checkPackRite() {
+  if (gameState.packRite) return true;
+  const seals = (gameState.totem && gameState.totem.sealsBroken) || 0;
+  if (getWorldIndex() >= PACK_CONFIG.riteRegion && seals >= PACK_CONFIG.riteSeal) {
+    gameState.packRite = true;
+    gameState.pendingLoomCard = { head: 'THE BOND-WEAVING RITE', text: 'ARCHIVE ACCESS: GRANTED. KEEPER RITE DECODED. BOND WITHOUT THREAD.', sub: 'Your true-born hybrids can now join the Pack. Each one lends its own ability while it runs with you.' };
+    logCombatMessage('🧬 <strong>THE BOND-WEAVING RITE.</strong> The Core reads the makers\' records in the Archive: how to bond without a thread. Your true-born hybrids can now join <strong>the Pack</strong>.', 'relic');
+    return true;
+  }
+  return false;
+}
+function getPackState() {
+  if (!gameState.pack || !Array.isArray(gameState.pack.slots)) gameState.pack = { slots: [] };
+  // Hybrids reset when you cross a Rift: drop any slotted one you no longer have
+  gameState.pack.slots = gameState.pack.slots.filter(id => gameState.hybrids && gameState.hybrids[id]).slice(0, PACK_CONFIG.slots);
+  return gameState.pack;
+}
+function isInPack(id) {
+  return isPackUnlocked() && getPackState().slots.includes(id);
+}
+function addToPack(id) {
+  const p = getPackState();
+  if (!isPackUnlocked() || !gameState.hybrids || !gameState.hybrids[id] || p.slots.includes(id) || p.slots.length >= PACK_CONFIG.slots) return false;
+  p.slots.push(id);
+  return true;
+}
+function removeFromPack(id) {
+  const p = getPackState();
+  const i = p.slots.indexOf(id);
+  if (i < 0) return false;
+  p.slots.splice(i, 1);
+  return true;
+}
+/** The value of a Pack ability if that hybrid is slotted, else 0 */
+function getPackAbility(id) {
+  return isInPack(id) ? PACK_ABILITIES[id].value : 0;
 }
 
 /**
@@ -1379,7 +1427,7 @@ function getEruptionPrize(stake) {
   const c = WORLD_CONFIG.eruption;
   const rate = getMeatRate() / getTwistMeatMult();
   return {
-    meat: Math.floor(Math.max(rate * c.prizeMeatSec, getClickYield() * 300) * stake),
+    meat: Math.floor(Math.max(rate * c.prizeMeatSec, getClickYield() * 300) * stake * (1 + getPackAbility('scorpiodrake'))),
     cores: c.prizeCores * stake
   };
 }
@@ -1558,6 +1606,9 @@ function performMigration() {
   applyWorld();
   const to = getWorld();
   gameState.worldRecords[to.id] = gameState.worldRecords[to.id] || { arrivedAt: Date.now() };
+  if (getWorldIndex() === PACK_CONFIG.riteRegion && !gameState.packRite && ((gameState.totem && gameState.totem.sealsBroken) || 0) < PACK_CONFIG.riteSeal) {
+    gameState.pendingLoomCard = { head: 'THE ARCHIVE', text: 'THE ICE HOLDS RECORDS IN A SCRIPT THE CORE CANNOT YET READ.', sub: 'Break Seal ' + PACK_CONFIG.riteSeal + ' and the Core will be able to read them.' };
+  }
   logCombatMessage('🌀 <strong>RIFT CROSSED.</strong> Welcome to the <strong>' + to.name + '</strong>. Region Bonus: Meat/s x' + formatNumber(getWorldMeatMult()) + ', Combat Power x' + getWorldPowerMult().toFixed(1) + '.', 'unlock');
   showToast('Welcome to the ' + to.name + '!', 'success', true);
   renderAfterReset();
@@ -1929,7 +1980,7 @@ function getStaminaRegenRate(withAdrenalineOverride = null) {
 }
 
 function getBossStaminaCost(beast = getSelectedFightTarget()) {
-  return (beast && beast.staminaCost) || 10;
+  return Math.max(1, Math.ceil(((beast && beast.staminaCost) || 10) * (1 - getPackAbility('viperhawk'))));
 }
 
 function getWoundedDuration(beast = getSelectedFightTarget()) {
@@ -1943,7 +1994,7 @@ function getWoundedDuration(beast = getSelectedFightTarget()) {
   const relicDur = hasRelic('chitin_carapace') ? baseDur / (1 + mult) : baseDur;
   const dur = softLimit(relicDur * (1 - Math.min(0.5, getFishCodexBonus('wound'))) * getLegacyReduction('thick_hide') * (1 - getArmorWoundCut()), WOUND_SOFT_MIN_SEC);
   // A desperate swing at a Titan you're too weak for leaves a deep wound
-  const healed = dur / getBoonMult('mending');
+  const healed = dur / getBoonMult('mending') / (1 + getPackAbility('viperwyrm'));
   if (isTitanUnderdog(beast)) return Math.max(TITAN_UNDERDOG_WOUND_MIN_SEC, healed * TITAN_UNDERDOG_WOUND_MULT);
   return healed;
 }
@@ -2151,7 +2202,7 @@ function startExpedition(regionId, durationId, partnerId) {
   if (slot < 0 || !region || !d || !isRegionOpen(region)) return false;
   if (partnerId && (!gameState.tamedBeasts[partnerId] || isAwayOnExpedition(partnerId))) return false;
   const now = Date.now();
-  st[EXPEDITION_SLOT_KEYS[slot]] = { region: regionId, duration: durationId, partner: partnerId || null, startAt: now, endAt: now + d.sec * 1000, yield: getExpeditionYield(regionId, durationId, partnerId) };
+  st[EXPEDITION_SLOT_KEYS[slot]] = { region: regionId, duration: durationId, partner: partnerId || null, startAt: now, endAt: now + d.sec * 1000 * (1 - getPackAbility('gryphowyrm')), yield: getExpeditionYield(regionId, durationId, partnerId) };
   const p = partnerId ? BEAST_CATALOG.find(b => b.id === partnerId) : null;
   logCombatMessage('🧭 <strong>Expedition set out</strong> to ' + region.name + (p ? ' with your ' + p.name : '') + ' (' + d.label + ').', 'default');
   return true;
@@ -2462,6 +2513,7 @@ function getMeatRate(withAdrenalineOverride = null) {
     rate *= (1 + (bloodlineLvl * 0.25));
   }
   rate *= getBoonMult('harvest');
+  rate *= 1 + getPackAbility('tuskpion');
 
   // Fishing: Codex bonuses and Smoked Feast meal
   rate *= (1 + getFishCodexBonus('meat'));
@@ -2553,7 +2605,7 @@ function calculateWinChance(beast) {
   const base = calculateBaseWinChance(beast);
   // Hunter's Eye charm: flat bonus to odds you already have (never turns 0% into a chance)
   if (isTitanUnderdog(beast)) return base;
-  return base > 0 ? Math.min(0.98, base + getCharmBonus('odds')) : 0;
+  return base > 0 ? Math.min(0.98, base + getCharmBonus('odds') + getPackAbility('venompincer')) : 0;
 }
 
 /** Fighting a Titan below its minimum power (only possible with the Magma Stinger) */
@@ -2992,6 +3044,8 @@ function saveGameToStorage() {
       primordial: gameState.primordial || {},
       boons: gameState.boons || {},
       boonChoices: gameState.boonChoices || [],
+      pack: gameState.pack || null,
+      packRite: !!gameState.packRite,
       sealRework: gameState.sealRework || 0,
       tutorial: gameState.tutorial || null,
       hunterName: gameState.hunterName || '',
@@ -3118,6 +3172,8 @@ function loadGameFromStorage() {
       gameState.primordial = (data.primordial && typeof data.primordial === 'object') ? data.primordial : {};
       gameState.boons = (data.boons && typeof data.boons === 'object') ? data.boons : {};
       gameState.boonChoices = Array.isArray(data.boonChoices) ? data.boonChoices : [];
+      gameState.pack = (data.pack && Array.isArray(data.pack.slots)) ? data.pack : { slots: [] };
+      gameState.packRite = !!data.packRite;
       gameState.sealRework = data.sealRework || 0;
       if (data.volcano && typeof data.volcano === 'object') { gameState.volcano = Object.assign(getVolcano(), data.volcano); gameState.volcano.stats = Object.assign({ rounds: 0, wins: 0, busts: 0, best: 0 }, data.volcano.stats || {}); }
       if (data.tundra && typeof data.tundra === 'object') gameState.tundra = Object.assign(getTundra(), data.tundra, { caches: Array.isArray(data.tundra.caches) ? data.tundra.caches : [] });

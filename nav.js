@@ -8,7 +8,7 @@
   const HUBS = [
     { id: 'camp', label: 'Camp', icon: 'fa-campground', tabs: ['camp', 'fish'] },
     { id: 'hunt', label: 'Hunt', icon: 'fa-crosshairs', tabs: ['hunt', 'relics'] },
-    { id: 'pack', label: 'Pack', icon: 'fa-paw', tabs: ['forge', 'expedition'] },
+    { id: 'pack', label: 'Pack', icon: 'fa-paw', tabs: ['forge', 'expedition', 'pack'] },
     { id: 'totem', label: 'Totem', icon: 'fa-monument', tabs: ['totem', 'legacy'] },
     { id: 'journey', label: 'Journey', icon: 'fa-route', tabs: ['ascend', 'world', 'leaderboard'] }
   ];
