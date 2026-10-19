@@ -835,7 +835,7 @@ const WORLD_CONFIG = {
     crashK: 0.95, crashCap: 100,             // chance the round survives to x M is M^-0.95 (slightly in your favor)
     prizeMeatSec: 900,                       // each staked charge: 15 minutes of Meat income...
     prizeCores: 3,                           // ...and 3 Magma Cores, both multiplied when you cash out
-    scorchPerCharge: 0.10, scorchMax: 0.60,  // bust: lose 10% of max Stamina per staked charge (max 60%)
+    scorchPerCharge: 0.10, scorchMax: 0.80,  // bust: lose 10% of max Stamina per staked charge (8 charges = 80%)
     autoOptions: [0, 1.5, 2, 3, 5, 10],      // auto cash-out targets (0 = off)
     // The camp shakes harder as the multiplier climbs, but it never tells you when it will blow
     shieldMax: 5, shieldCut: 0.15, shieldCost: 8, shieldGrowth: 2,   // Heat Shield: -15% Scorch per level
