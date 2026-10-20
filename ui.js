@@ -1084,7 +1084,7 @@ function renderFrame(meatRate) {
 
   const clickYield = getClickYield();
   elements.labelClickYield.textContent = formatNumber(clickYield);
-  elements.btnForageText.textContent = 'FORAGE & HUNT (+' + formatNumber(clickYield) + ' Meat)';
+  elements.btnForageText.textContent = 'Click the fire to hunt (+' + formatNumber(clickYield) + ' Meat)';
 
   // Armory UI updates
   const equipped = getEquippedWeapon();
@@ -1296,7 +1296,7 @@ function renderFrame(meatRate) {
     elements.beastStatusRibbon.textContent = 'TAMED • TROPHY EXPEDITION';
     elements.beastStatusRibbon.className = 'absolute bottom-0 inset-x-0 bg-emerald-950/90 text-[10px] text-center font-mono py-0.5 text-emerald-300 border-t border-emerald-700/60 font-bold';
   } else {
-    elements.beastStatusRibbon.textContent = 'WILD UNTAMED APEX';
+    elements.beastStatusRibbon.textContent = 'WILD · UNTAMED';
     elements.beastStatusRibbon.className = 'absolute bottom-0 inset-x-0 bg-primal-900/90 text-[10px] text-center font-mono py-0.5 text-slate-400 border-t border-primal-700';
   }
 
@@ -1482,6 +1482,10 @@ function renderGeneratorsLadder() {
     const canAfford = gameState.meat >= cost;
 
     const card = document.createElement('div');
+    // Station art: the generator's own picture when it has one, else a drawn placeholder disc with its icon
+    const art = gen.image
+      ? '<img src="' + gen.image + '" alt="" class="station-img" style="filter:' + (gen.imageFilter || 'none') + '" onerror="this.style.display=\'none\'">'
+      : '<span class="station-placeholder"><i class="fa-solid ' + (gen.icon || 'fa-campground') + '"></i></span>';
     if (isUnlocked) {
       const eachYieldStr = gen.yieldPerSec < 1 ? gen.yieldPerSec.toFixed(1) : formatNumber(gen.yieldPerSec);
       // Milestone Overdrive: current multiplier (applied to the total) and the next threshold
@@ -1489,66 +1493,41 @@ function renderGeneratorsLadder() {
       const totalYieldVal = count * gen.yieldPerSec * milestoneMult;
       const totalYieldStr = totalYieldVal > 0 && totalYieldVal < 10 ? totalYieldVal.toFixed(1) : formatNumber(totalYieldVal);
       const nextMilestone = GENERATOR_MILESTONES.find(m => count < m.count);
-      const overdriveHtml = milestoneMult > 1
-        ? '<span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/50 px-1.5 py-0.5 rounded-full" title="Milestone Overdrive: this generator\'s output is multiplied">' +
-            '<i class="fa-solid fa-bolt"></i>' + (Math.round(milestoneMult * 100) / 100) + 'x Overdrive' +
-          '</span>'
-        : '';
-      const nextMilestoneHtml = nextMilestone
-        ? '<span class="text-[10px] text-slate-500">Next: ' + (Math.round(milestoneMult * nextMilestone.mult * (hasLegacyCapstone('feast_of_plenty') ? LEGACY_CONFIG.feastMult : 1) * 100) / 100) + 'x at ' + nextMilestone.count + ' (' + count + '/' + nextMilestone.count + ')</span>'
-        : '<span class="text-[10px] font-bold text-amber-400">MAX OVERDRIVE</span>';
+      const prevCount = [...GENERATOR_MILESTONES].reverse().find(m => count >= m.count);
+      const stars = GENERATOR_MILESTONES.map(m => '<i class="fa-solid fa-star' + (count >= m.count ? ' lit' : '') + '" data-tip="' + m.count + ' owned: Overdrive x' + m.totalMult + '"></i>').join('');
+      const nextMult = nextMilestone ? Math.round(milestoneMult * nextMilestone.mult * (hasLegacyCapstone('feast_of_plenty') ? LEGACY_CONFIG.feastMult : 1) * 100) / 100 : 0;
+      const pct = nextMilestone ? Math.min(100, (count - (prevCount ? prevCount.count : 0)) / (nextMilestone.count - (prevCount ? prevCount.count : 0)) * 100) : 100;
+      const nextHtml = nextMilestone
+        ? '<div class="station-next"><div class="station-bar"><span style="width:' + pct.toFixed(1) + '%"></span></div><span>' + count + '/' + nextMilestone.count + ' for x' + nextMult + '</span></div>'
+        : '<div class="station-next max">MAX OVERDRIVE</div>';
       const disabledAttr = canAfford ? '' : 'disabled';
 
-      const iconInnerHtml = gen.image
-        ? '<img src="' + gen.image + '" alt="' + gen.name + '" class="w-full h-full object-contain p-0.5" style="filter:' + (gen.imageFilter || 'none') + '" onerror="this.style.display=\'none\'" />'
-        : '<i class="fa-solid ' + gen.icon + '"></i>';
-
-      card.className = 'bg-primal-800/90 border border-primal-700 rounded-xl p-3 sm:p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-inner hover:border-amber-500/30 transition-colors';
+      card.className = 'station-card';
+      card.setAttribute('data-tip', gen.desc + ' +' + eachYieldStr + ' Meat/s each.');
       card.innerHTML =
-        '<div class="flex items-center space-x-3">' +
-          '<div class="w-10 h-10 rounded-lg bg-amber-950/80 border border-amber-700/60 flex items-center justify-center text-amber-400 text-lg shadow-inner overflow-hidden flex-shrink-0">' +
-            iconInnerHtml +
-          '</div>' +
-          '<div>' +
-            '<div class="flex items-center gap-2">' +
-              '<span class="font-bold text-slate-100 text-sm">' + gen.name + '</span>' +
-              '<span class="text-xs bg-primal-700 text-amber-300 font-mono px-2 py-0.5 rounded-full font-bold">' +
-                'Owned: <span class="gen-count font-bold">' + count + '</span>' +
-              '</span>' +
-            '</div>' +
-            '<div class="text-xs text-slate-400 mt-0.5">' + gen.desc + '</div>' +
-            '<div class="text-[11px] text-emerald-400 font-mono mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">' +
-              '<span>+' + eachYieldStr + ' Meat/s each (Total: +' + totalYieldStr + '/s)</span>' +
-              overdriveHtml +
-              nextMilestoneHtml +
-            '</div>' +
-          '</div>' +
+        '<div class="station-art">' + art +
+          '<span class="station-count gen-count" aria-label="Owned">' + count + '</span>' +
+          (milestoneMult > 1 ? '<span class="station-od">x' + (Math.round(milestoneMult * 100) / 100) + '</span>' : '') +
         '</div>' +
-        '<button data-gen-id="' + gen.id + '" class="btn-buy-gen w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg transition-all border border-amber-500/50 flex items-center justify-center gap-2 font-mono cursor-pointer" ' + disabledAttr + '>' +
-          '<span>Deploy' + (bulk.qty > 1 ? ' x' + bulk.qty : '') + '</span>' +
-          '<span class="text-amber-200 flex items-center gap-1 font-bold">' +
-            '<i class="fa-solid fa-drumstick-bite text-[11px]"></i>' +
-            '<span class="gen-cost">' + formatNumber(cost) + '</span>' +
-          '</span>' +
-        '</button>';
+        '<div class="station-body">' +
+          '<div class="station-name">' + gen.name + '</div>' +
+          '<div class="station-stars">' + stars + '</div>' +
+          '<div class="station-yield">+' + totalYieldStr + ' Meat/s</div>' +
+          nextHtml +
+          '<button data-gen-id="' + gen.id + '" class="btn-buy-gen station-buy" ' + disabledAttr + '>' +
+            '<span>Build' + (bulk.qty > 1 ? ' x' + bulk.qty : '') + '</span>' +
+            '<span class="station-cost"><i class="fa-solid fa-drumstick-bite"></i><span class="gen-cost">' + formatNumber(cost) + '</span></span>' +
+          '</button>' +
+        '</div>';
     } else {
-      card.className = 'bg-primal-800/40 border border-dashed border-primal-700/60 rounded-xl p-3 sm:p-3.5 flex items-center justify-between opacity-50 grayscale cursor-not-allowed';
+      card.className = 'station-card locked';
+      card.setAttribute('data-tip', gen.desc);
       card.innerHTML =
-        '<div class="flex items-center space-x-3">' +
-          '<div class="w-10 h-10 rounded-lg bg-primal-900 border border-slate-700 flex items-center justify-center text-slate-600 text-lg">' +
-            '<i class="fa-solid fa-lock"></i>' +
-          '</div>' +
-          '<div>' +
-            '<div class="flex items-center gap-2">' +
-              '<span class="font-bold text-slate-400 text-sm">' + gen.name + '</span>' +
-              '<span class="text-[10px] bg-red-950/80 text-red-400 font-mono px-2 py-0.5 rounded border border-red-800/60">' +
-                gen.reqLabel +
-              '</span>' +
-            '</div>' +
-            '<div class="text-xs text-slate-500 mt-0.5">' + gen.desc + '</div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="text-xs font-mono text-slate-500 bg-primal-900 px-3 py-1.5 rounded border border-primal-800">Locked</div>';
+        '<div class="station-art">' + art + '<span class="station-lock"><i class="fa-solid fa-lock"></i></span></div>' +
+        '<div class="station-body">' +
+          '<div class="station-name">' + gen.name + '</div>' +
+          '<div class="station-req">' + gen.reqLabel + '</div>' +
+        '</div>';
     }
 
     elements.generatorsContainer.appendChild(card);
@@ -3548,7 +3527,7 @@ function renderWorldTab() {
   const bz = getBlizzardState();
   const twistHtml = w.twist === 'blizzard'
     ? '<div class="text-xs text-sky-200 mt-2 space-y-1"><div><i class="fa-solid fa-wind mr-1"></i><strong>Blizzards:</strong> every ' + Math.round(WORLD_CONFIG.blizzard.everySec / 60) + ' minutes a blizzard freezes your camp for ' + Math.round(WORLD_CONFIG.blizzard.lastSec / 60) + ' minutes (Meat/s x' + Math.min(1, WORLD_CONFIG.blizzard.meatMult + getRegionPerkRank('whiteout_stalker') * REGION_PERK_FX.whiteoutPerRank).toFixed(1) + '). ' + (bz.active ? 'One is raging now.' : 'Next in ' + formatDuration(bz.nextIn) + '.') + '</div>' +
-      '<div><i class="fa-solid fa-fire mr-1"></i><strong>Stoke the Hearth:</strong> during a blizzard, Forage clicks and Stoke (' + WORLD_CONFIG.blizzard.stokeStamina + ' Stamina) fill your Warmth. Full Warmth thaws your camp and ends the slowdown early.</div>' +
+      '<div><i class="fa-solid fa-fire mr-1"></i><strong>Stoke the Hearth:</strong> during a blizzard, hunting from the campfire and Stoke (' + WORLD_CONFIG.blizzard.stokeStamina + ' Stamina) fill your Warmth. Full Warmth thaws your camp and ends the slowdown early.</div>' +
       '<div><i class="fa-solid fa-cube mr-1"></i><strong>Frozen Caches:</strong> every blizzard leaves one behind (hold up to ' + getMaxFrozenCaches() + '). Each thaws in ' + Math.round(WORLD_CONFIG.blizzard.cacheThawSec / 60) + ' minutes, or chip the ice with Stamina. Inside: Meat, Totem Shards or Apex Fangs, and rarely a Mammoth Cache with all three.</div></div>'
     : '';
 
@@ -3584,7 +3563,7 @@ function renderTundraStrip() {
   if (raging) {
     const w = Math.round(getWarmthPct() * 100);
     left = '<div class="flex-1 min-w-[220px]"><div class="font-bold text-sky-100"><i class="fa-solid fa-snowflake fa-spin mr-1"></i>BLIZZARD! Meat/s x' + c.meatMult + ' for ' + formatDuration(bz.secsLeft) + '</div>' +
-      '<div class="text-[11px] text-sky-200/80">Forage clicks and Stoke warm the hearth. Fill it to thaw your camp early.</div>' +
+      '<div class="text-[11px] text-sky-200/80">Hunting from the campfire and Stoke warm the camp. Fill it to thaw your camp early.</div>' +
       '<div class="flex items-center gap-2 mt-1"><div class="flex-1 h-2.5 rounded-full bg-sky-950 border border-sky-700 overflow-hidden"><div class="h-full bg-gradient-to-r from-amber-500 to-orange-500" style="width:' + w + '%"></div></div>' +
       '<span class="font-mono text-[11px] text-amber-200">' + w + '%</span>' +
       '<button data-tundra="stoke" ' + (gameState.stamina >= c.stokeStamina ? '' : 'disabled') + ' class="px-2 py-1 rounded bg-orange-700 hover:bg-orange-600 text-white text-[11px] font-bold border border-orange-400/60 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"><i class="fa-solid fa-fire mr-1"></i>Stoke (' + c.stokeStamina + ' Stamina)</button></div></div>';

@@ -54,7 +54,7 @@
     'wounded': 'on leave', 'wound': 'leave', 'adrenaline': 'overtime', 'slay': 'close', 'slain': 'closed',
     'roar': 'note', 'wild': 'pending', 'wilds': 'main office', 'primal': 'core', 'primeval': 'senior',
     'legacy': 'tenure', 'insight': 'feedback', 'beat': 'complete', 'defeated': 'completed',
-    'wanted': 'pending', 'untamed': 'unapproved', 'sprite': 'icon', 'lair': 'office',
+    'wanted': 'pending', 'alive': 'open', 'the campfire': 'Quick Entry', 'campfire': 'quick entry form', 'the fire': 'the form', 'stations': 'workstreams', 'station': 'workstream', 'build': 'add', 'untamed': 'unapproved', 'sprite': 'icon', 'lair': 'office',
     'chimera': 'vendor', 'chimeras': 'vendors', 'viper': 'vendor', 'vipers': 'vendors', 'boar': 'vendor', 'hawk': 'vendor',
     'grizzly': 'vendor', 'scorpion': 'vendor', 'scorpions': 'vendors', 'wyrm': 'vendor', 'wyrms': 'vendors', 'hound': 'vendor', 'hounds': 'vendors',
     'wolf': 'courier', 'wolves': 'couriers', 'serpent': 'client', 'dragon': 'client', 'mammoths': 'clients', 'mammoth': 'client',

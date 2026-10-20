@@ -169,7 +169,7 @@
   // ---------- 3. Tutorial ----------
   const TUTORIAL = {
     camp: [
-      { el: '#btn-forage', text: 'Click <strong>Forage</strong> to gather Meat by hand. Meat is your main currency.' },
+      { el: '#btn-forage', text: 'Click the <strong>campfire</strong> to hunt for Meat by hand. Meat is your main currency.' },
       { el: '#generators-container', text: 'Spend Meat on <strong>generators</strong>. They gather Meat for you every second, even while you are away.' },
       { el: '#generators-container', text: 'Own <strong>5 Snare Lines</strong> (or craft a weapon) to open the <strong>Hunt</strong>, where you fight and tame beasts.' }
     ],
