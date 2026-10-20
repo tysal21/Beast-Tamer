@@ -1090,6 +1090,17 @@ function renderFrame(meatRate) {
   const equipped = getEquippedWeapon();
   const nextWeapon = WEAPONS_CATALOG[gameState.weaponTier];
 
+  // Weapon pictures: what you hold, and a dim preview of the next one
+  const setArt = (el, w, fallback) => {
+    if (!el) return;
+    const key = w && w.image ? w.image : fallback;
+    if (el.dataset.art === key) return;
+    el.dataset.art = key;
+    el.innerHTML = w && w.image ? '<img src="' + w.image + '" alt="' + w.name + '">' : '<i class="fa-solid ' + fallback + '"></i>';
+  };
+  setArt(elements.armoryEquippedIcon, equipped, 'fa-hand-fist');
+  setArt(document.getElementById('armory-next-art'), nextWeapon, 'fa-crown');
+
   if (equipped) {
     elements.armoryTierBadge.textContent = 'Tier ' + equipped.tier + ': ' + equipped.name;
     elements.armoryEquippedName.textContent = equipped.name;

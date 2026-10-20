@@ -13,7 +13,7 @@
       items: [
         { icon: 'fa-fire', head: 'A new camp', text: 'Hunt by clicking the campfire, and watch it burn low when a blizzard rolls in. Your generators are now stations, with four stars for their Overdrives.' },
         { icon: 'fa-scroll', head: 'Wanted posters', text: 'Every beast you hunt gets a wanted poster, your odds are a dial, and the tracks above it show your trail. Click a track to pick that beast.' },
-        { icon: 'fa-snowflake', head: 'The Tundra beasts, painted', text: 'The Hoarwolf, Tuskram, Rimeclaw and Lumen Mammoth have their own art, wild and tamed.' }
+        { icon: 'fa-palette', head: 'New art everywhere', text: 'The Tundra beasts (Hoarwolf, Tuskram, Rimeclaw, Lumen Mammoth), every camp station, all nine weapons in the Armory, and the Primeval Behemoth itself.' }
       ]
     },
     {

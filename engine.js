@@ -1567,7 +1567,7 @@ function getTitanBoss() {
     // A Titan uses its own art when it has some; otherwise the Region 1 picture of its base beast, recoloured
     image: w.titan.image || BASE_BEASTS[w.titan.baseIndex].image,
     fallbackImage: base.fallbackImage,
-    imageFilter: w.titan.filter,
+    imageFilter: w.titan.image ? (w.titan.artFilter || '') : w.titan.filter,
     minPower: min,
     maxPower: min * APEX_CONFIG.maxMult,
     rewardPower: 0,
