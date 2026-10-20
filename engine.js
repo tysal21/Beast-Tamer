@@ -1953,17 +1953,31 @@ function getStationFreeLevels() {
   return n;
 }
 
+/** Every station's level in one pass (free levels only count once a station is unlocked, and unlocking can chain) */
+function getGeneratorLevelMap(free = getStationFreeLevels()) {
+  const lv = {};
+  GENERATOR_LADDER.forEach(gen => {
+    const owned = gameState.generators[gen.id] || 0;
+    let unlocked = true;
+    if (gen.reqTargetId && (lv[gen.reqTargetId] || 0) < gen.reqCount) unlocked = false;
+    if (gen.reqBeastId && !gameState.tamedBeasts[gen.reqBeastId]) unlocked = false;
+    lv[gen.id] = free > 0 && unlocked ? owned + free : owned;
+  });
+  return lv;
+}
+
 /** A station's level: what you built plus the free levels (only once it's unlocked). Output and stars use this. */
 function getGeneratorLevel(genOrId) {
-  const gen = typeof genOrId === 'string' ? GENERATOR_LADDER.find(g => g.id === genOrId) : genOrId;
-  if (!gen) return 0;
-  const owned = gameState.generators[gen.id] || 0;
+  const id = typeof genOrId === 'string' ? genOrId : (genOrId && genOrId.id);
+  if (!id) return 0;
   const free = getStationFreeLevels();
-  return free > 0 && isGeneratorUnlocked(gen) ? owned + free : owned;
+  if (free <= 0) return gameState.generators[id] || 0;
+  return getGeneratorLevelMap(free)[id] || 0;
 }
 
 /** Overdrive stars: the base four plus any the Legacy Map has opened (each with its running total) */
 function getGeneratorMilestones() {
+  if (!LEGACY_CONFIG.extraMilestones.some(m => hasLegacy(m.node))) return GENERATOR_MILESTONES;
   const list = GENERATOR_MILESTONES.slice();
   let total = list[list.length - 1].totalMult;
   LEGACY_CONFIG.extraMilestones.forEach(m => {
@@ -1980,11 +1994,11 @@ function getFeastMult() {
   return hasLegacy('master_butcher') ? LEGACY_CONFIG.feastMultMaster : LEGACY_CONFIG.feastMult;
 }
 
-function getGeneratorMilestoneMultiplier(genId) {
-  const count = getGeneratorLevel(genId);
-  const feast = getFeastMult();
+function getGeneratorMilestoneMultiplier(genId, level, milestones, feastMult) {
+  const count = level === undefined ? getGeneratorLevel(genId) : level;
+  const feast = feastMult === undefined ? getFeastMult() : feastMult;
   let mult = 1;
-  for (const m of getGeneratorMilestones()) {
+  for (const m of (milestones || getGeneratorMilestones())) {
     if (count >= m.count) mult *= m.mult * feast;
   }
   return mult;
@@ -2714,9 +2728,12 @@ function getTotalCombatPower() {
 
 function getBaseMeatRate() {
   let total = 0;
+  const free = getStationFreeLevels();
+  const levels = free > 0 ? getGeneratorLevelMap(free) : null;
+  const ms = getGeneratorMilestones(), feast = getFeastMult();
   GENERATOR_LADDER.forEach(gen => {
-    const count = getGeneratorLevel(gen);
-    const milestoneMult = getGeneratorMilestoneMultiplier(gen.id);
+    const count = levels ? levels[gen.id] : (gameState.generators[gen.id] || 0);
+    const milestoneMult = getGeneratorMilestoneMultiplier(gen.id, count, ms, feast);
     total += count * gen.yieldPerSec * milestoneMult;
   });
   return total;
