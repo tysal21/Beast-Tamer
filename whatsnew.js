@@ -14,6 +14,7 @@
         { icon: 'fa-snowflake', head: 'Every region has its own currency', text: 'In the Frozen Tundra, Ascending pays in Rimestones instead of Bloodstones, and its Altar sells four Tundra-only perks: Whiteout Stalker, Hearthkeeper, Deep Caches and Recall.' },
         { icon: 'fa-mobile-screen-button', head: 'Play on your phone', text: 'Open Save / Play on phone at the bottom of the page and scan the QR code with your phone camera, or copy the transfer link and open it on any device.' },
         { icon: 'fa-paw', head: 'The Pack', text: 'Reach Region 2 and break Seal 5 (in either order) and the Loom teaches you to bring three hybrids along, each lending its own ability.' },
+        { icon: 'fa-circle-info', head: 'Hover for help', text: 'Not sure what something does? Hover over it (or press and hold on a phone) for a short explanation.' },
         { icon: 'fa-fish', head: 'Fishing rework', text: 'Every fish has its own storage, so a full basket never costs you a rare catch. Legendaries are a little easier, idle lines are slower, and gear now says what it uses up.' }
       ]
     }
