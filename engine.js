@@ -1564,7 +1564,8 @@ function getTitanBoss() {
     tier: 'Titan',
     baseId: base.id,
     name: w.titan.name,
-    image: base.image,
+    // A Titan uses its own art when it has some; otherwise the Region 1 picture of its base beast, recoloured
+    image: w.titan.image || BASE_BEASTS[w.titan.baseIndex].image,
     fallbackImage: base.fallbackImage,
     imageFilter: w.titan.filter,
     minPower: min,

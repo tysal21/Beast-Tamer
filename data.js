@@ -970,7 +970,8 @@ const WORLDS = [
       { name: 'Hoarwolf', desc: 'Arctic wolf and snowy owl: a silent pack hunter with a feathered ruff and eyes that see through blizzards.',
         image: 'assets/beasts/wild/hoarwolf.webp', tamedImage: 'assets/beasts/tamed/hoarwolf.webp' },
       { name: 'Tuskram', desc: 'Walrus and bighorn ram: a charging brute of tusks, curled horns and blubber.' },
-      { name: 'Rimeclaw', desc: 'Wolverine and king crab: a furious armored digger with frost-crusted pincers.' },
+      { name: 'Rimeclaw', desc: 'Wolverine and king crab: a furious armored digger with frost-crusted pincers.',
+        image: 'assets/beasts/wild/rimeclaw.webp', tamedImage: 'assets/beasts/tamed/rimeclaw.webp' },
       { name: 'Lumen Mammoth', desc: 'A long-extinct mammoth the Archive remembered, fused with glowing tissue from no world we know.' }
     ],
     gens: [
