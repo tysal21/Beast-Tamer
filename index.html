@@ -50,7 +50,7 @@
   </script>
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=20261020b">
+  <link rel="stylesheet" href="style.css?v=20261020c">
 </head>
 
 <body class="bg-primal-900 text-slate-200 font-sans min-h-screen selection:bg-primal-accent selection:text-white flex flex-col justify-between">
@@ -311,6 +311,21 @@
                 <i class="fa-solid fa-drumstick-bite text-[11px]"></i>
                 <span id="armory-next-cost">250</span>
               </span>
+            </button>
+          </div>
+          <!-- Legacy Map: Masterwork tempering (resets each Ascension) -->
+          <div id="masterwork-box" class="hidden mt-3 bg-gradient-to-r from-orange-950/40 to-primal-900 border border-orange-700/50 rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-10 h-10 rounded-lg bg-stone-900 border border-orange-600/60 flex items-center justify-center text-orange-300 text-lg"><i class="fa-solid fa-hammer"></i></div>
+              <div>
+                <div class="text-[10px] uppercase font-semibold text-orange-300">Masterwork &middot; this run</div>
+                <div id="masterwork-name" class="font-bold text-slate-100 text-sm">Untempered</div>
+                <div id="masterwork-bonus" class="text-[11px] text-emerald-400 font-mono">Temper your weapon for +5% Hunter Power</div>
+              </div>
+            </div>
+            <button id="btn-temper" class="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-orange-600 to-red-700 hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg border border-orange-500/50 flex items-center justify-center gap-2 font-mono cursor-pointer">
+              <span>Temper</span>
+              <span class="text-amber-200 flex items-center gap-1 font-bold"><i class="fa-solid fa-drumstick-bite text-[11px]"></i><span id="masterwork-cost">0</span></span>
             </button>
           </div>
           <!-- Seal 2: Trophy Weapon (permanent) -->
@@ -966,26 +981,37 @@
       <div id="world-content" class="space-y-6"></div>
     </div>
 
-    <!-- ================= TAB: HUNTER'S LEGACY (Seal 1) ================= -->
-    <div id="panel-legacy" class="tab-panel hidden max-w-6xl mx-auto w-full space-y-6">
+    <!-- ================= TAB: HUNTER'S LEGACY: THE LEGACY MAP (Seal 1) ================= -->
+    <div id="panel-legacy" class="tab-panel hidden max-w-6xl mx-auto w-full space-y-4">
       <div class="bg-gradient-to-br from-amber-950/40 via-primal-850 to-primal-900 border border-amber-700/50 rounded-2xl p-5 sm:p-6 shadow-xl">
         <div class="flex flex-wrap items-start justify-between gap-4">
           <div class="space-y-1">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/90 border border-amber-600/50 text-amber-300 text-xs font-mono font-bold">
-              <i class="fa-solid fa-sitemap"></i> Opened by Seal 1
+              <i class="fa-solid fa-paw"></i> The Legacy Map
             </div>
             <h2 class="font-cinzel text-2xl sm:text-3xl font-bold text-white tracking-wide">Hunter's Legacy</h2>
-            <p class="text-xs text-slate-400 max-w-xl">Spend Totem Shards on skills that last forever, even through Ascension. Rank 1 of a node opens the next one in its branch; a capstone opens once the three above it have rank 1.</p>
+            <p class="text-xs text-slate-400 max-w-xl">Spend Totem Shards on skills that last forever, through every Ascension and Rift. The palm holds your first skills; each toe is one part of the camp, and its claw holds the deepest. New rings open as you break Seals.</p>
+            <div id="legacy-rings" class="flex flex-wrap gap-1.5 pt-2"></div>
           </div>
           <div class="flex flex-col items-stretch gap-2 text-xs font-mono min-w-[200px]">
             <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">Totem Shards: <span id="legacy-shards" class="text-amber-300 font-bold">0</span></div>
-            <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">Spent in tree: <span id="legacy-spent" class="text-slate-200 font-bold">0</span></div>
+            <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">Spent on the map: <span id="legacy-spent" class="text-slate-200 font-bold">0</span></div>
             <button id="btn-legacy-respec" class="px-3 py-2 rounded-lg border border-slate-600 bg-primal-800 hover:bg-primal-700 text-slate-200 font-sans font-semibold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Respec</button>
             <div id="legacy-respec-note" class="text-[10px] text-slate-400 font-sans leading-snug"></div>
           </div>
         </div>
       </div>
-      <div id="legacy-tree" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"></div>
+      <div class="lm-wrap">
+        <div class="lm-main">
+          <div class="lm-toolbar">
+            <div id="legacy-areas" class="lm-areas"></div>
+            <div class="lm-zoom"><button type="button" data-lm-zoom="out" aria-label="Zoom out"><i class="fa-solid fa-magnifying-glass-minus"></i></button><button type="button" data-lm-zoom="in" aria-label="Zoom in"><i class="fa-solid fa-magnifying-glass-plus"></i></button></div>
+          </div>
+          <div id="legacy-map" class="lm-viewport"></div>
+        </div>
+        <aside id="legacy-detail" class="lm-detail" aria-live="polite"></aside>
+      </div>
+      <div id="legacy-tree"></div>
     </div>
 
     <!-- ================= TAB: PRIMAL FISHING DOCK (EXPANSION I) ================= -->
@@ -1357,21 +1383,22 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
   <!-- Modular Scripts: Data -> Engine -> UI -->
-  <script src="data.js?v=20261020b"></script>
-  <script src="engine.js?v=20261020b"></script>
-  <script src="ui.js?v=20261020b"></script>
-  <script src="stealth.js?v=20261020b"></script>
-  <script src="dev.js?v=20261020b"></script>
-  <script src="comforts.js?v=20261020b"></script>
-  <script src="nav.js?v=20261020b"></script>
-  <script src="scenery.js?v=20261020b"></script>
-  <script src="seals.js?v=20261020b"></script>
-  <script src="leaderboard.js?v=20261020b"></script>
-  <script src="pack.js?v=20261020b"></script>
-  <script src="qr.js?v=20261020b"></script>
-  <script src="transfer.js?v=20261020b"></script>
-  <script src="whatsnew.js?v=20261020b"></script>
-  <script src="tips.js?v=20261020b"></script>
-  <script src="makeover.js?v=20261020b"></script>
+  <script src="data.js?v=20261020c"></script>
+  <script src="engine.js?v=20261020c"></script>
+  <script src="ui.js?v=20261020c"></script>
+  <script src="legacymap.js?v=20261020c"></script>
+  <script src="stealth.js?v=20261020c"></script>
+  <script src="dev.js?v=20261020c"></script>
+  <script src="comforts.js?v=20261020c"></script>
+  <script src="nav.js?v=20261020c"></script>
+  <script src="scenery.js?v=20261020c"></script>
+  <script src="seals.js?v=20261020c"></script>
+  <script src="leaderboard.js?v=20261020c"></script>
+  <script src="pack.js?v=20261020c"></script>
+  <script src="qr.js?v=20261020c"></script>
+  <script src="transfer.js?v=20261020c"></script>
+  <script src="whatsnew.js?v=20261020c"></script>
+  <script src="tips.js?v=20261020c"></script>
+  <script src="makeover.js?v=20261020c"></script>
 </body>
 </html>

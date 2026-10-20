@@ -41,7 +41,11 @@
     ['#tab-btn-pack', 'Choose up to 3 true-born hybrids to bring along, each lending its own ability.'],
     ['#tab-btn-fish', 'Cast for fish, cook meals for short boosts and fill the Fish Codex for permanent ones.'],
     ['#tab-btn-totem', 'The Primal Totem, its Seals and what each Seal unlocks.'],
-    ['#tab-btn-legacy', 'Spend Totem Shards on skills that last forever.'],
+    ['#tab-btn-legacy', 'The Legacy Map: spend Totem Shards on skills that last forever, even through a Rift.'],
+    ['#legacy-rings', 'The map opens in rings as you break Seals: the palm at Seal 1, toe pads at Seal 3, toe tips at Seal 5, claws at Seal 7.'],
+    ['#btn-legacy-respec', 'Refund every Shard on the map and place them again. The first respec after each Ascension is free.'],
+    ['[data-lm-zoom]', 'Zoom the map. You can also drag it with the mouse.'],
+    ['#btn-temper', 'Masterwork: spend Meat to temper your weapon for more Hunter Power. Tempers last until you Ascend.'],
     ['#tab-btn-world', 'Your region, its Titan and the Rift to the next one.'],
     ['#tab-btn-ascend', () => 'Start a new run stronger and spend ' + cur().name + ' on perks.'],
     ['#tab-btn-leaderboard', 'See how your friends are doing.'],
@@ -77,7 +81,7 @@
     // ---- Fishing ----
     ['#fish-basket-count', 'Fish stored for cooking. Each species has its own space, so a rare catch never pushes anything out.'],
     ['#fish-codex-count', 'Species you\'ve caught at least once. Each gives a permanent bonus that grows as you catch more.'],
-    ['#fish-lines-count, #fish-line-next', 'Idle Lines catch a Common or Uncommon fish every 10 minutes, even while you\'re away.'],
+    ['#fish-lines-count, #fish-line-next', () => 'Idle Lines catch a Common or Uncommon fish' + (hasLegacy('deep_waters') ? ' (and now and then a Rare one)' : '') + ' every ' + Math.round(getLineIntervalSec() / 60) + ' minutes, even while you\'re away.'],
     ['#fish-rod-level, #fish-rod-effect', 'A better rod widens the catch zone and raises Rare, Legendary and Mythic odds.']
   ];
 

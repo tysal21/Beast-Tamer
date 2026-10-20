@@ -113,6 +113,8 @@ const gameState = {
 
   // Armory / Weapon progression
   weaponTier: 0,
+  temperLevel: 0, // Masterwork tempers (Legacy Map), reset each Ascension
+  quarryTimer: 0,  // Quarry Stations (Legacy Map): seconds toward the next hourly dig
 
   // Stamina system
   stamina: 30,
@@ -181,7 +183,7 @@ const gameState = {
   // Primal Totem (post-Wyrm, never reset by Ascension)
   totem: defaultTotemState(),
 
-  // Hunter's Legacy skill tree (opens at Seal 1, never reset by Ascension)
+  // Hunter's Legacy: the Legacy Map (opens at Seal 1, never reset by Ascension)
   legacy: defaultLegacyState(),
 
   // Seal 2 Trophy Weapon (permanent) and its Apex Fangs
@@ -267,7 +269,8 @@ function getFishCodexBonus(type) {
   for (const fish of FISH_CATALOG) {
     if (fish.codex.type === type) total += fish.codex.value * getFishMasteryShare(fish);
   }
-  return total;
+  // Codex Lore (Legacy Map): every Codex bonus +50% per rank
+  return total * getLegacyMult('codex_lore');
 }
 
 function isFishBuffActive(buffId) {
@@ -275,7 +278,8 @@ function isFishBuffActive(buffId) {
 }
 
 function getFishBuffMult(buffId) {
-  return isFishBuffActive(buffId) ? FISH_BUFFS[buffId].mult : 1;
+  // Hearty Meals (Legacy Map): meals are stronger
+  return isFishBuffActive(buffId) ? 1 + (FISH_BUFFS[buffId].mult - 1) * getLegacyMult('hearty_meals') : 1;
 }
 
 function getFishBasketCount() {
@@ -287,7 +291,8 @@ function getFishBasketCount() {
 
 /** Each species has its own storage slot */
 function getSpeciesCap(fish) {
-  return FISHING_CONFIG.speciesCap[fish.rarity] || 0;
+  // Deep Creels (Legacy Map): +50% storage per rank
+  return Math.ceil((FISHING_CONFIG.speciesCap[fish.rarity] || 0) * getLegacyMult('deep_creels'));
 }
 function isSpeciesFull(fish) {
   return ((gameState.fishing && gameState.fishing.basket[fish.id]) || 0) >= getSpeciesCap(fish);
@@ -298,6 +303,14 @@ function getBasketCapacity() {
 /** Idle Lines only catch Common and Uncommon fish: are all of those full? */
 function areLineFishFull() {
   return FISH_CATALOG.filter(f => f.rarity === 'common' || f.rarity === 'uncommon').every(isSpeciesFull);
+}
+/** Idle-line timing: one fish per line every this many seconds (Swift Lines makes it shorter) */
+function getLineIntervalSec() {
+  return FISHING_CONFIG.lines.catchIntervalSec / getLegacyMult('swift_lines');
+}
+/** How many idle lines you can set: 6, plus Deep Waters and Abyssal Line on the Legacy Map */
+function getMaxFishingLines() {
+  return FISHING_CONFIG.lines.maxLines + (hasLegacy('deep_waters') ? 1 : 0) + (hasLegacy('abyssal_line') ? 1 : 0);
 }
 
 function getFishCountByRarity(rarity) {
@@ -317,8 +330,9 @@ function getRodUpgradeCost() {
 
 function getNextLineCost() {
   const lines = FISHING_CONFIG.lines;
-  if (gameState.fishing.lines >= lines.maxLines) return null;
-  return lines.costs[gameState.fishing.lines];
+  const n = gameState.fishing.lines;
+  if (n >= getMaxFishingLines()) return null;
+  return n < lines.costs.length ? lines.costs[n] : LEGACY_CONFIG.extraLineCosts[n - lines.costs.length];
 }
 
 /** Skill-check settings for a fish, with the rod's wider catch zone applied */
@@ -334,7 +348,9 @@ function rollFish(allowedRarities = Object.keys(FISHING_CONFIG.rarityWeights)) {
   const rodBoost = 1 + gameState.fishing.rodLevel * FISHING_CONFIG.rod.rareWeightPerLevel;
   const weights = allowedRarities.map(r => {
     const w = FISHING_CONFIG.rarityWeights[r];
-    return (r === 'rare' || r === 'legendary' || r === 'mythic') ? w * rodBoost : w;
+    // Abyssal Line (Legacy Map): Legendary and Mythic bites twice as common
+    const abyss = (r === 'legendary' || r === 'mythic') && hasLegacy('abyssal_line') ? 2 : 1;
+    return (r === 'rare' || r === 'legendary' || r === 'mythic') ? w * rodBoost * abyss : w;
   });
   const total = weights.reduce((a, b) => a + b, 0);
   let roll = Math.random() * total;
@@ -442,7 +458,7 @@ function tickFishBuffs(dt) {
 function tickFishingLines(dt) {
   if (!isFishingUnlocked() || !gameState.fishing || gameState.fishing.lines <= 0) return 0;
   const f = gameState.fishing;
-  const interval = FISHING_CONFIG.lines.catchIntervalSec;
+  const interval = getLineIntervalSec();
   if (areLineFishFull()) {
     f.lineTimer = interval; // lines sit idle until you cook some of what they catch
     return 0;
@@ -452,7 +468,10 @@ function tickFishingLines(dt) {
   while (f.lineTimer >= interval) {
     if (areLineFishFull()) { f.lineTimer = interval; break; }
     f.lineTimer -= interval;
-    landFish(rollFish(['common', 'uncommon']));
+    // Deep Waters (Legacy Map): 1 catch in 10 is a Rare fish (if there's room for one)
+    const deep = hasLegacy('deep_waters') && Math.random() < LEGACY_CONFIG.deepWatersRare;
+    const rare = deep ? rollFish(['rare']) : null;
+    landFish(rare && !isSpeciesFull(rare) ? rare : rollFish(['common', 'uncommon']));
     caught++;
   }
   return caught;
@@ -649,9 +668,8 @@ function breakTotemLayer(quiet) {
   const t = gameState.totem;
   const layer = t.layer;
   const bonus = getTotemLayerBonus(layer);
-  const shards = TOTEM_CONFIG.shardsPerLayer * layer;
   t.bonuses[bonus.type] = (t.bonuses[bonus.type] || 0) + bonus.value;
-  t.shards += shards;
+  const shards = giveTotemShards(TOTEM_CONFIG.shardsPerLayer * layer);
   t.layer += 1;
   t.hpLeft = getTotemLayerHp(t.layer);
   if (!quiet) {
@@ -698,9 +716,8 @@ function breakTotemSeal(guardian) {
   const t = gameState.totem;
   const k = guardian.sealNumber;
   const stones = TOTEM_CONFIG.sealStones * k;
-  const shards = TOTEM_CONFIG.sealShards * k;
   t.sealsBroken += 1;
-  t.shards += shards;
+  const shards = giveTotemShards(TOTEM_CONFIG.sealShards * k);
   t.bonuses.power += TOTEM_CONFIG.sealPowerBonus;
   gameState.bloodstones += stones;
   t.layer += 1;
@@ -804,9 +821,10 @@ function awakenedStrike() {
   if (!canAwaken()) return null;
   const t = gameState.totem;
   t.awakenAt = Date.now();
-  const shards = SEAL_CONFIG.awakenShardsPerLayer * Math.max(1, t.layer);
-  t.shards += shards;
-  const broken = dealTotemDamage(getTotemDps() * SEAL_CONFIG.awakenDamageSec);
+  // Awakened Fury (Legacy Map): harder hits and more Shards
+  const fury = getLegacyMult('awakened_fury');
+  const shards = giveTotemShards(SEAL_CONFIG.awakenShardsPerLayer * Math.max(1, t.layer) * fury);
+  const broken = dealTotemDamage(getTotemDps() * SEAL_CONFIG.awakenDamageSec * fury);
   logCombatMessage('⚡ <strong>AWAKENED STRIKE!</strong> The Core answers your call: ' + (broken ? broken + ' layer' + (broken === 1 ? '' : 's') + ' shattered, ' : '') + '+' + formatNumber(shards) + ' Totem Shards.', 'relic');
   return { broken, shards };
 }
@@ -818,8 +836,7 @@ function applySealRework(k, quiet) {
   if (k >= SEAL_CONFIG.primordialFromSeal) {
     const r = awakenPrimordialRelic(quiet);
     if (!r && !quiet) {
-      const bonus = 200 * k;
-      gameState.totem.shards += bonus;
+      const bonus = giveTotemShards(200 * k);
       logCombatMessage('💠 Every relic you own is already Primordial. The Guardian leaves +' + formatNumber(bonus) + ' Totem Shards instead.', 'relic');
     }
   }
@@ -853,10 +870,14 @@ function checkPackRite() {
   }
   return false;
 }
+/** Pack size: 3, plus Fourth Bond and Fifth Bond on the Legacy Map */
+function getPackSlots() {
+  return PACK_CONFIG.slots + (hasLegacy('fourth_slot') ? 1 : 0) + (hasLegacy('fifth_slot') ? 1 : 0);
+}
 function getPackState() {
   if (!gameState.pack || !Array.isArray(gameState.pack.slots)) gameState.pack = { slots: [] };
   // Hybrids reset when you cross a Rift: drop any slotted one you no longer have
-  gameState.pack.slots = gameState.pack.slots.filter(id => gameState.hybrids && gameState.hybrids[id]).slice(0, PACK_CONFIG.slots);
+  gameState.pack.slots = gameState.pack.slots.filter(id => gameState.hybrids && gameState.hybrids[id]).slice(0, getPackSlots());
   return gameState.pack;
 }
 function isInPack(id) {
@@ -864,7 +885,7 @@ function isInPack(id) {
 }
 function addToPack(id) {
   const p = getPackState();
-  if (!isPackUnlocked() || !gameState.hybrids || !gameState.hybrids[id] || p.slots.includes(id) || p.slots.length >= PACK_CONFIG.slots) return false;
+  if (!isPackUnlocked() || !gameState.hybrids || !gameState.hybrids[id] || p.slots.includes(id) || p.slots.length >= getPackSlots()) return false;
   p.slots.push(id);
   return true;
 }
@@ -877,15 +898,16 @@ function removeFromPack(id) {
 }
 /** The value of a Pack ability if that hybrid is slotted, else 0 */
 function getPackAbility(id) {
-  return isInPack(id) ? PACK_ABILITIES[id].value : 0;
+  // Alpha Howl (Legacy Map): every Pack ability 50% stronger
+  return isInPack(id) ? PACK_ABILITIES[id].value * (hasLegacy('alpha_howl') ? 1.5 : 1) : 0;
 }
 
 /**
- * ================= HUNTER'S LEGACY SKILL TREE =================
+ * ================= HUNTER'S LEGACY: THE LEGACY MAP =================
  * Permanent (never reset by Ascension). Opens when Seal 1 is broken.
  */
 function defaultLegacyState() {
-  return { ranks: {}, freeRespec: false, insight: {} };
+  return { ranks: {}, freeRespec: false, insight: {}, echoes: {}, hybridMemory: {}, mapVersion: 1 };
 }
 
 function isLegacyUnlocked() {
@@ -897,21 +919,35 @@ function getLegacyRank(nodeId) {
   return gameState.legacy.ranks[nodeId] || 0;
 }
 
+/** Has this node at least rank 1? */
+function hasLegacy(nodeId) {
+  return getLegacyRank(nodeId) >= 1;
+}
+
+let LEGACY_NODE_INDEX = null;
 function getLegacyNode(nodeId) {
-  return LEGACY_NODES.find(n => n.id === nodeId) || null;
+  if (!LEGACY_NODE_INDEX) { LEGACY_NODE_INDEX = {}; LEGACY_NODES.forEach(n => { LEGACY_NODE_INDEX[n.id] = n; }); }
+  return LEGACY_NODE_INDEX[nodeId] || null;
+}
+
+function getLegacyRankCost(node, rank) {
+  return Math.round(node.baseCost * Math.pow(node.growth || LEGACY_CONFIG.costGrowth, rank));
+}
+
+function isLegacyNodeMaxed(node) {
+  return node.maxRank !== null && node.maxRank !== undefined && getLegacyRank(node.id) >= node.maxRank;
 }
 
 /** Cost of the next rank, or null when maxed */
 function getLegacyNodeCost(node) {
-  const rank = getLegacyRank(node.id);
-  if (rank >= node.maxRank) return null;
-  return Math.round(node.baseCost * Math.pow(LEGACY_CONFIG.costGrowth, rank));
+  if (isLegacyNodeMaxed(node)) return null;
+  return getLegacyRankCost(node, getLegacyRank(node.id));
 }
 
 /** Total Shards spent on one node */
 function getLegacyNodeSpent(node) {
   let total = 0;
-  for (let r = 0; r < getLegacyRank(node.id); r++) total += Math.round(node.baseCost * Math.pow(LEGACY_CONFIG.costGrowth, r));
+  for (let r = 0; r < getLegacyRank(node.id); r++) total += getLegacyRankCost(node, r);
   return total;
 }
 
@@ -919,9 +955,14 @@ function getLegacySpent() {
   return LEGACY_NODES.reduce((sum, n) => sum + getLegacyNodeSpent(n), 0);
 }
 
-/** A node opens once every node it requires has rank 1 */
+/** Is the node's Seal ring still closed? */
+function isLegacyNodeSealed(node) {
+  return ((gameState.totem && gameState.totem.sealsBroken) || 0) < (node.seal || 1);
+}
+
+/** A node opens once its Seal ring is open and every node it requires has rank 1 */
 function isLegacyNodeOpen(node) {
-  return node.requires.every(id => getLegacyRank(id) >= 1);
+  return !isLegacyNodeSealed(node) && node.requires.every(id => getLegacyRank(id) >= 1);
 }
 
 function canBuyLegacyRank(node) {
@@ -958,17 +999,53 @@ function respecLegacy() {
 /** 1 + rank x perRank for a node (multiplicative bonus helper) */
 function getLegacyMult(nodeId) {
   const node = getLegacyNode(nodeId);
-  return 1 + getLegacyRank(nodeId) * (node ? node.perRank : 0);
+  return 1 + getLegacyRank(nodeId) * (node ? (node.perRank || 0) : 0);
 }
 
 /** 1 - rank x perRank for a node (cost / duration reduction helper) */
 function getLegacyReduction(nodeId) {
   const node = getLegacyNode(nodeId);
-  return Math.max(0.1, 1 - getLegacyRank(nodeId) * (node ? node.perRank : 0));
+  return Math.max(0.1, 1 - getLegacyRank(nodeId) * (node ? (node.perRank || 0) : 0));
 }
 
 function hasLegacyCapstone(nodeId) {
   return getLegacyRank(nodeId) >= 1;
+}
+
+/** How full each part of the paw is (0..1, by ranks bought out of ranks available; endless nodes count as 1) */
+function getLegacyAreaFill(areaId) {
+  let have = 0, max = 0;
+  LEGACY_NODES.forEach(n => {
+    if (n.area !== areaId) return;
+    const cap = n.maxRank === null || n.maxRank === undefined ? 1 : n.maxRank;
+    max += cap;
+    have += Math.min(cap, getLegacyRank(n.id));
+  });
+  return max ? have / max : 0;
+}
+
+/** Shard Sense: every Totem Shard reward is multiplied by this */
+function getShardMult() {
+  return getLegacyMult('shard_sense');
+}
+
+/** Give Totem Shards (Shard Sense applied). Returns the amount given. */
+function giveTotemShards(n) {
+  const amount = Math.floor(n * getShardMult());
+  if (gameState.totem && amount > 0) gameState.totem.shards += amount;
+  return amount;
+}
+
+/** Older saves: the map arrives with a free respec, so every Shard already spent can be placed again */
+function migrateLegacyMap() {
+  if (!gameState.legacy) return;
+  const L = gameState.legacy;
+  if (!L.echoes) L.echoes = {};
+  if (!L.hybridMemory) L.hybridMemory = {};
+  if (!L.mapVersion) {
+    L.mapVersion = 1;
+    if (getLegacySpent() > 0) L.freeRespec = true;
+  }
 }
 
 /** Battle Insight: stacks earned by losing to this boss or guardian */
@@ -996,7 +1073,16 @@ function clearBattleInsight(beast) {
 
 /** Combat Power used against one specific boss or guardian (includes Battle Insight) */
 function getCombatPowerVs(beast) {
-  return Math.floor(getTotalCombatPower() * getBattleInsightMult(beast));
+  return Math.floor(getTotalCombatPower() * getBattleInsightMult(beast) * getLegacyVsMult(beast));
+}
+
+/** Legacy Map bonuses against one kind of foe: Apex Instinct (Apex and Titans), Titanbane (Titans and Seal Guardians) */
+function getLegacyVsMult(beast) {
+  if (!beast) return 1;
+  let m = 1;
+  if (beast.isApex || beast.isTitan) m *= getLegacyMult('apex_instinct');
+  if (beast.isTitan || beast.isGuardian || beast.sealNumber) m *= getLegacyMult('titanbane');
+  return m;
 }
 
 /** Totem damage from one Forage click */
@@ -1012,8 +1098,10 @@ function getGeneratorBulk(gen, mode = gameState.genBuyMode || 'x1') {
   let qty = 1;
   if (mode === 'x10') qty = 10;
   else if (mode === 'next') {
-    const nm = GENERATOR_MILESTONES.find(m => count < m.count);
-    qty = nm ? nm.count - count : 1;
+    // Up to the next star, counting the free levels from the Legacy Map
+    const lvl = getGeneratorLevel(gen);
+    const nm = getGeneratorMilestones().find(m => lvl < m.count);
+    qty = nm ? Math.max(1, nm.count - lvl) : 1;
   }
   let cost = 0;
   for (let i = 0; i < qty; i++) {
@@ -1118,6 +1206,7 @@ function getCombatPowerBreakdown() {
   if (gameState.bruteConditioningLevel > 0) hunterMults.push({ label: 'Brute Conditioning +' + Math.round(HUNTER_CONFIG.bruteMultPerLevel * 100) + '%/lvl', mult: hm.brute });
   if (hm.vigor > 1) hunterMults.push({ label: 'Primal Vigor perk', mult: hm.vigor });
   if (hm.honing > 1) hunterMults.push({ label: 'Weapon Honing Lvl ' + getHoningLevel(), mult: hm.honing });
+  if (hm.temper > 1) hunterMults.push({ label: 'Masterwork temper x' + getTemperLevel(), mult: hm.temper });
   if (hm.helm > 1) { const g = getActiveGear('helm'); hunterMults.push({ label: getGearName('helm', g.piece, g.climate) + (g.strength < 1 ? ' (off-climate, half)' : ''), mult: hm.helm }); }
 
   const beasts = [];
@@ -1143,6 +1232,8 @@ function getCombatPowerBreakdown() {
   add('Abyssal Fervor meal', getFishBuffMult('power'));
   add('Totem blessings and Seals', 1 + getTotemBonus('power'));
   add('Keen Instincts (Legacy)', getLegacyMult('keen_instincts'));
+  add('Heart of the Paw (Legacy)', getLegacyMult('primal_heart'));
+  add('The Long Hunt (Legacy)', getLegacyMult('long_hunt'));
   add('Trophy Weapon', getTrophyPowerMult());
   add('Apex Ladder (' + getApexDepth() + ' tamed this run)', getApexPowerMult());
   add('Region Bonus', getWorldPowerMult());
@@ -1218,7 +1309,8 @@ function getApexReward(k) {
 }
 
 function getApexPowerMult() {
-  return 1 + APEX_CONFIG.powerPerTier * getApexDepth();
+  // Apex Dominion (Legacy Map): each Apex gives a little more
+  return 1 + (APEX_CONFIG.powerPerTier + getLegacyRank('apex_dominion') * (getLegacyNode('apex_dominion') || {}).perRank) * getApexDepth();
 }
 
 /**
@@ -1388,8 +1480,8 @@ function openFrozenCache() {
   const roll = Math.random();
   if (jackpot || roll < 0.5) { addMeat(meat); parts.push('+' + formatNumber(meat) + ' Meat'); }
   if (isTotemUnlocked() && (jackpot || (roll >= 0.5 && roll < 0.75))) {
-    const shards = Math.max(10, c.shardsPerLayer * (gameState.totem.layer || 1));
-    gameState.totem.shards += shards; parts.push('+' + formatNumber(shards) + ' Totem Shards');
+    const shards = giveTotemShards(Math.max(10, c.shardsPerLayer * (gameState.totem.layer || 1)));
+    parts.push('+' + formatNumber(shards) + ' Totem Shards');
   }
   if (jackpot || roll >= 0.75 || parts.length === 0) {
     if (!gameState.trophy) gameState.trophy = { fangs: 0, level: 0 };
@@ -1606,6 +1698,15 @@ function performMigration() {
   rec.bestApex = Math.max(rec.bestApex || 0, gameState.bestApexDepth || 0);
 
   // Everything an Ascension resets
+  // Lasting Bonds (Legacy Map): each hybrid remembers part of its level for the next region
+  const share = getLegacyRank('lasting_bonds') * ((getLegacyNode('lasting_bonds') || {}).perRank || 0);
+  if (gameState.legacy) {
+    gameState.legacy.hybridMemory = {};
+    if (share > 0) for (const id in (gameState.hybrids || {})) {
+      const keep = Math.floor((gameState.hybrids[id].level || 1) * share);
+      if (keep > 1) gameState.legacy.hybridMemory[id] = keep;
+    }
+  }
   resetRunState();
   // ...plus the world's own economy
   gameState.bloodstones = 0;
@@ -1681,17 +1782,18 @@ function getApexStoneMult() {
 function tameApexBoss(boss) {
   gameState.apexDepth = getApexDepth() + 1;
   // Apex Shards (materials for the Apex grade of gear)
-  if (typeof addMaterial === 'function') addMaterial('apex_shard', EXPEDITION_CONFIG.apexShardsPerTier * boss.apexTier);
+  // Fang Hoard (Legacy Map): more Fangs and Apex Shards
+  const hoard = getLegacyMult('fang_hoard');
+  if (typeof addMaterial === 'function') addMaterial('apex_shard', EXPEDITION_CONFIG.apexShardsPerTier * boss.apexTier * hoard);
   // Apex Fangs for the Trophy Weapon
   if (!gameState.trophy) gameState.trophy = { fangs: 0, level: 0 };
-  const fangs = TROPHY_CONFIG.fangsPerTier * boss.apexTier;
+  const fangs = Math.floor(TROPHY_CONFIG.fangsPerTier * boss.apexTier * hoard);
   gameState.trophy.fangs += fangs;
   logCombatMessage('🦷 +' + fangs + ' Apex Fang' + (fangs === 1 ? '' : 's') + ' (' + formatNumber(gameState.trophy.fangs) + ' total).', 'default');
   if (gameState.apexDepth > (gameState.bestApexDepth || 0)) {
     // Deepest ever: a one-time Totem Shard reward
     gameState.bestApexDepth = gameState.apexDepth;
-    const shards = APEX_CONFIG.bestShardsPerTier * gameState.apexDepth;
-    if (gameState.totem) gameState.totem.shards += shards;
+    const shards = giveTotemShards(APEX_CONFIG.bestShardsPerTier * gameState.apexDepth);
     logCombatMessage('🏅 <strong>NEW DEEPEST APEX!</strong> Tier ' + boss.tier + ' reached for the first time: +' + formatNumber(shards) + ' Totem Shards.', 'relic');
   }
   logCombatMessage('👑 <strong>APEX TAMED!</strong> ' + boss.name + ' (Tier ' + boss.tier + ') joins your pack: Combat Power x' + getApexPowerMult().toFixed(2) + ' this run. Ascension ' + curName() + ' now x' + getApexStoneMult().toFixed(2) + '.', 'unlock');
@@ -1799,6 +1901,7 @@ function resetRunState() {
   gameState.meat = 0;
   gameState.runMeatEarned = 0;
   gameState.weaponTier = 0;
+  gameState.temperLevel = 0;
   gameState.campEnduranceLevel = 0;
   gameState.campRecoveryLevel = 0;
 
@@ -1843,23 +1946,55 @@ function renderAfterReset() {
 /**
  * Generator Milestone Helpers
  */
+/** Free station levels from the Legacy Map (Old Foundations, Deep Foundations, Endless Hearth) */
+function getStationFreeLevels() {
+  let n = 0;
+  for (const id in LEGACY_CONFIG.freeLevels) if (hasLegacy(id)) n += LEGACY_CONFIG.freeLevels[id];
+  return n;
+}
+
+/** A station's level: what you built plus the free levels (only once it's unlocked). Output and stars use this. */
+function getGeneratorLevel(genOrId) {
+  const gen = typeof genOrId === 'string' ? GENERATOR_LADDER.find(g => g.id === genOrId) : genOrId;
+  if (!gen) return 0;
+  const owned = gameState.generators[gen.id] || 0;
+  const free = getStationFreeLevels();
+  return free > 0 && isGeneratorUnlocked(gen) ? owned + free : owned;
+}
+
+/** Overdrive stars: the base four plus any the Legacy Map has opened (each with its running total) */
+function getGeneratorMilestones() {
+  const list = GENERATOR_MILESTONES.slice();
+  let total = list[list.length - 1].totalMult;
+  LEGACY_CONFIG.extraMilestones.forEach(m => {
+    if (!hasLegacy(m.node)) return;
+    total *= m.mult;
+    list.push({ count: m.count, mult: m.mult, totalMult: total, label: total + 'x Output', node: m.node });
+  });
+  return list;
+}
+
+/** Feast of Plenty's bonus per lit star (x1.25, or x1.5 with Master Butcher) */
+function getFeastMult() {
+  if (!hasLegacyCapstone('feast_of_plenty')) return 1;
+  return hasLegacy('master_butcher') ? LEGACY_CONFIG.feastMultMaster : LEGACY_CONFIG.feastMult;
+}
+
 function getGeneratorMilestoneMultiplier(genId) {
-  const count = gameState.generators[genId] || 0;
+  const count = getGeneratorLevel(genId);
+  const feast = getFeastMult();
   let mult = 1;
-  for (const m of GENERATOR_MILESTONES) {
-    if (count >= m.count) {
-      mult *= m.mult;
-      // Feast of Plenty (Hunter's Legacy capstone)
-      if (hasLegacyCapstone('feast_of_plenty')) mult *= LEGACY_CONFIG.feastMult;
-    }
+  for (const m of getGeneratorMilestones()) {
+    if (count >= m.count) mult *= m.mult * feast;
   }
   return mult;
 }
 
 function getNextGeneratorMilestone(genId) {
-  const count = gameState.generators[genId] || 0;
+  const count = getGeneratorLevel(genId);
+  const ms = getGeneratorMilestones();
   let prevTarget = 0;
-  for (const m of GENERATOR_MILESTONES) {
+  for (const m of ms) {
     if (count < m.count) {
       return {
         target: m.count,
@@ -1872,8 +2007,8 @@ function getNextGeneratorMilestone(genId) {
   }
   return {
     target: null,
-    prevTarget: 100,
-    label: 'MAX OVERDRIVE (' + GENERATOR_MILESTONES[GENERATOR_MILESTONES.length - 1].totalMult + 'x)',
+    prevTarget: ms[ms.length - 1].count,
+    label: 'MAX OVERDRIVE (' + ms[ms.length - 1].totalMult + 'x)',
     progressPct: 100
   };
 }
@@ -1904,7 +2039,15 @@ function getRelicEffectMultiplier(id) {
     mult *= (1 + resonanceLvl * 0.20);
   }
   if (isPrimordial(id)) mult *= 2;
+  // Legacy Map: Relic Polish and this relic's Echoes
+  mult *= getLegacyMult('relic_polish') * (1 + getRelicEchoes(id) * 0.10);
   return mult;
+}
+
+/** Relic Echoes (Legacy Map): how many Echoes a relic has (each +10%, up to 10) */
+const RELIC_ECHO_MAX = 10;
+function getRelicEchoes(id) {
+  return (gameState.legacy && gameState.legacy.echoes && gameState.legacy.echoes[id]) || 0;
 }
 
 function getMaxStamina() {
@@ -1938,7 +2081,7 @@ function getParentLevelCost(beastId) {
 function getEffectiveGestationSec(hybrid) {
   const warmthLvl = getAscensionPerkLevel('catalytic_warmth');
   const reduction = Math.min(0.50, warmthLvl * 0.10);
-  return Math.max(30, Math.floor(hybrid.gestationSec * (1 - reduction)));
+  return Math.max(30, Math.floor(hybrid.gestationSec * (1 - reduction) * getLegacyReduction('warm_nests')));
 }
 
 function getHybridLevel(hybridId) {
@@ -2040,7 +2183,8 @@ function getStaminaRegenRate(withAdrenalineOverride = null) {
 }
 
 function getBossStaminaCost(beast = getSelectedFightTarget()) {
-  return Math.max(1, Math.ceil(((beast && beast.staminaCost) || 10) * (1 - getPackAbility('viperhawk'))));
+  const nerves = beast && (beast.isApex || beast.isTitan) ? getLegacyReduction('steady_nerves') : 1;
+  return Math.max(1, Math.ceil(((beast && beast.staminaCost) || 10) * (1 - getPackAbility('viperhawk')) * nerves));
 }
 
 function getWoundedDuration(beast = getSelectedFightTarget()) {
@@ -2054,7 +2198,8 @@ function getWoundedDuration(beast = getSelectedFightTarget()) {
   const relicDur = hasRelic('chitin_carapace') ? baseDur / (1 + mult) : baseDur;
   const dur = softLimit(relicDur * (1 - Math.min(0.5, getFishCodexBonus('wound'))) * getLegacyReduction('thick_hide') * (1 - getArmorWoundCut()), WOUND_SOFT_MIN_SEC);
   // A desperate swing at a Titan you're too weak for leaves a deep wound
-  const healed = dur / getBoonMult('mending') / (1 + getPackAbility('viperwyrm'));
+  const nerves = beast && (beast.isApex || beast.isTitan) ? getLegacyReduction('steady_nerves') : 1;
+  const healed = dur * nerves / getBoonMult('mending') / (1 + getPackAbility('viperwyrm'));
   if (isTitanUnderdog(beast)) return Math.max(TITAN_UNDERDOG_WOUND_MIN_SEC, healed * TITAN_UNDERDOG_WOUND_MULT);
   return healed;
 }
@@ -2131,7 +2276,7 @@ function getWeakpointAnatomyReduction() {
 
 function isGeneratorUnlocked(gen) {
   if (gen.reqTargetId) {
-    const count = gameState.generators[gen.reqTargetId] || 0;
+    const count = getGeneratorLevel(gen.reqTargetId);
     if (count < gen.reqCount) return false;
   }
   if (gen.reqBeastId) {
@@ -2147,7 +2292,7 @@ function getGeneratorCost(gen) {
   // Overdrive also eases price growth: past 25 owned each unit's price climbs more slowly, and slower still past 50
   const g = gen.costScale - 1;
   const n0 = Math.min(count, 25), n1 = Math.min(Math.max(count - 25, 0), 25), n2 = Math.max(count - 50, 0);
-  return Math.floor(gen.baseCost * Math.pow(gen.costScale, n0) * Math.pow(1 + g * OVERDRIVE_COST_EASE[1], n1) * Math.pow(1 + g * OVERDRIVE_COST_EASE[2], n2) * getBoonCut('thrift'));
+  return Math.floor(gen.baseCost * Math.pow(gen.costScale, n0) * Math.pow(1 + g * OVERDRIVE_COST_EASE[1], n1) * Math.pow(1 + g * OVERDRIVE_COST_EASE[2], n2) * getBoonCut('thrift') * getLegacyReduction('brisk_builders'));
 }
 
 /** Hunter rework: Training and Primal Vigor scale Hunter Power by %, and Hunter Power leads the pack */
@@ -2180,13 +2325,14 @@ function getHunterMultParts() {
     brute: 1 + gameState.bruteConditioningLevel * HUNTER_CONFIG.bruteMultPerLevel,
     vigor: 1 + getAscensionPerkLevel('primal_vigor') * HUNTER_CONFIG.vigorMultPerRank,
     honing: (typeof getHoningPowerMult === 'function') ? getHoningPowerMult() : 1,
-    helm: (typeof getHelmPowerMult === 'function') ? getHelmPowerMult() : 1
+    helm: (typeof getHelmPowerMult === 'function') ? getHelmPowerMult() : 1,
+    temper: getTemperMult()
   };
 }
 
 function getHunterPower() {
   const m = getHunterMultParts();
-  return Math.floor(getHunterRawPower() * m.sparring * m.brute * m.vigor * m.honing * m.helm);
+  return Math.floor(getHunterRawPower() * m.sparring * m.brute * m.vigor * m.honing * m.helm * m.temper);
 }
 
 /** Leadership: Beast Power multiplier from Hunter Power (+15% per doubling) */
@@ -2250,7 +2396,7 @@ function getExpeditionYield(regionId, durationId, partnerId) {
   let mult = 1;
   if (partnerId) mult += partnerId === regionId ? c.matchBonus : c.partnerBonus;
   mult *= 1 + c.apexBonusPerTier * (gameState.bestApexDepth || 0);
-  return Math.floor(c.baseYield * d.mult * mult * getBoonMult('scout'));
+  return Math.floor(c.baseYield * d.mult * mult * getBoonMult('scout') * getLegacyMult('rich_veins'));
 }
 
 function startExpedition(regionId, durationId, partnerId) {
@@ -2389,14 +2535,18 @@ function getGearUpgrade(slotId) {
     return { cost, kind: 'craft' };
   }
   const eff = getGearEffLevel(p);
-  if (p.level >= c.levelsPerGrade) {
-    if (p.grade >= c.grades.length - 1) return null;
-    const each = Math.ceil(c.costBase * Math.pow(c.costGrowth, eff) * c.reforgeMult);
+  const thrift = getLegacyReduction('thrifty_smith');
+  const top = p.grade >= c.grades.length - 1;
+  // Apex Mastery (Legacy Map): the top grade goes 10 levels further
+  const cap = c.levelsPerGrade + (top && hasLegacy('apex_grade') ? LEGACY_CONFIG.gearExtraLevels : 0);
+  if (p.level >= cap) {
+    if (top) return null;
+    const each = Math.ceil(c.costBase * Math.pow(c.costGrowth, eff) * c.reforgeMult * thrift);
     const cost = {};
     c.grades[p.grade + 1].materials.forEach(m => { cost[m] = each; });
     return { cost, kind: 'reforge' };
   }
-  const each = Math.ceil(c.costBase * Math.pow(c.costGrowth, eff));
+  const each = Math.ceil(c.costBase * Math.pow(c.costGrowth, eff) * thrift);
   const cost = {};
   c.grades[p.grade].materials.forEach(m => { cost[m] = each; });
   return { cost, kind: 'level' };
@@ -2442,6 +2592,33 @@ function changeCharmBonus(bonusId) {
 }
 
 /** ---------- Weapon Honing ---------- */
+/**
+ * Masterwork (Legacy Map, Armory): temper your weapon with Meat. Each temper is +5% Hunter Power (+8% with Master Temper).
+ * Tempers belong to the run: they reset when you Ascend, so a late run's Meat always has somewhere to go.
+ */
+function isMasterworkUnlocked() {
+  return hasLegacy('masterwork');
+}
+function getTemperLevel() {
+  return isMasterworkUnlocked() ? (gameState.temperLevel || 0) : 0;
+}
+function getTemperMult() {
+  const per = hasLegacy('master_temper') ? LEGACY_CONFIG.temperPowerMaster : LEGACY_CONFIG.temperPower;
+  return 1 + getTemperLevel() * per;
+}
+function getTemperCost() {
+  return Math.floor(LEGACY_CONFIG.temperBase * Math.pow(LEGACY_CONFIG.temperGrowth, gameState.temperLevel || 0));
+}
+function canTemper() {
+  return isMasterworkUnlocked() && gameState.weaponTier > 0 && gameState.meat >= getTemperCost();
+}
+function temperWeapon() {
+  if (!canTemper()) return false;
+  gameState.meat -= getTemperCost();
+  gameState.temperLevel = (gameState.temperLevel || 0) + 1;
+  return true;
+}
+
 function getHoningLevel() {
   return getExpeditionState().honing || 0;
 }
@@ -2451,11 +2628,18 @@ function getHoningPowerMult() {
 }
 
 /** Materials the next honing level needs: { id: amount }, or null at max */
+/** Honing's top level: 25, or 40 with Honed Edge (Legacy Map) */
+function getHoningMaxLevel() {
+  return hasLegacy('honed_edge') ? LEGACY_CONFIG.honingMaxDeep : HONING_CONFIG.maxLevel;
+}
+
 function getHoningCost() {
   const lvl = getHoningLevel();
-  if (lvl >= HONING_CONFIG.maxLevel) return null;
+  if (lvl >= getHoningMaxLevel()) return null;
   const tier = HONING_CONFIG.tiers.find(t => lvl < t.upTo) || HONING_CONFIG.tiers[HONING_CONFIG.tiers.length - 1];
-  const each = Math.ceil(HONING_CONFIG.costBase * Math.pow(HONING_CONFIG.costGrowth, lvl));
+  // Past 25 (Honed Edge) the price climbs more gently: +10% a level
+  const base = HONING_CONFIG.costBase * Math.pow(HONING_CONFIG.costGrowth, Math.min(lvl, HONING_CONFIG.maxLevel)) * Math.pow(1.1, Math.max(0, lvl - HONING_CONFIG.maxLevel));
+  const each = Math.ceil(base * getLegacyReduction('thrifty_smith'));
   const cost = {};
   tier.materials.forEach(m => { cost[m] = each; });
   return cost;
@@ -2488,7 +2672,7 @@ function isHybridAwake(hybrid) {
 function getHybridRawPower(hybrid) {
   const hLvl = getHybridLevel(hybrid.id);
   if (hLvl <= 0) return 0;
-  const full = Math.floor(hybrid.basePower * (1 + ((hLvl - 1) * 0.20)) * (1 + getAscensionPerkLevel('catalytic_warmth') * HUNTER_CONFIG.warmthHybridPerRank));
+  const full = Math.floor(hybrid.basePower * (1 + ((hLvl - 1) * 0.20)) * (1 + getAscensionPerkLevel('catalytic_warmth') * HUNTER_CONFIG.warmthHybridPerRank) * getLegacyMult('strong_blood'));
   if (isHybridAwake(hybrid)) return full;
   // Pack Alpha (Hunter's Legacy capstone): dormant hybrids still lend part of their power
   return hasLegacyCapstone('pack_alpha') ? Math.floor(full * LEGACY_CONFIG.packAlphaShare) : 0;
@@ -2525,13 +2709,13 @@ function getTotalCombatPower() {
   const hunter = getHunterPower();
   const base = hunter + getTotalBeastPower() * getLeadershipMult(hunter);
   // Fishing: Codex power bonus and Abyssal Fervor meal
-  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts') * getTrophyPowerMult() * getWorldPowerMult() * getApexPowerMult() * getAdrenalinePowerMult() * getMoltenHeartMult() * getBoonMult('might') * (gameState.devPowerMult || 1));
+  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts') * getTrophyPowerMult() * getWorldPowerMult() * getApexPowerMult() * getAdrenalinePowerMult() * getMoltenHeartMult() * getBoonMult('might') * getLegacyMult('primal_heart') * getLegacyMult('long_hunt') * (gameState.devPowerMult || 1));
 }
 
 function getBaseMeatRate() {
   let total = 0;
   GENERATOR_LADDER.forEach(gen => {
-    const count = gameState.generators[gen.id] || 0;
+    const count = getGeneratorLevel(gen);
     const milestoneMult = getGeneratorMilestoneMultiplier(gen.id);
     total += count * gen.yieldPerSec * milestoneMult;
   });
@@ -2699,7 +2883,10 @@ function checkIncubatorHatch() {
     const hybrid = HYBRID_CATALOG.find(h => h.id === hybridId);
     gameState.incubator = null;
     if (!gameState.hybrids) gameState.hybrids = {};
-    gameState.hybrids[hybridId] = { level: 1 };
+    // Lasting Bonds (Legacy Map): a hybrid you raised in an earlier region hatches at the level it remembers
+    const mem = (gameState.legacy && gameState.legacy.hybridMemory) || {};
+    gameState.hybrids[hybridId] = { level: Math.max(1, mem[hybridId] || 1) };
+    delete mem[hybridId];
     sound.playWin();
     logCombatMessage(`🧬 <strong>HYBRID CHIMERA HATCHED!</strong> [<strong>${hybrid ? hybrid.name : hybridId}</strong>] has emerged from the incubator! Gained +${formatNumber(hybrid ? hybrid.basePower : 0)} Beast Power!`, 'unlock');
     showToast(`HYBRID HATCHED: ${hybrid ? hybrid.name : hybridId}!`, 'success', true);
@@ -2783,10 +2970,13 @@ function advanceSimulation(rawDt, isBulkCatchup = false) {
     const step = (nextExpiry > 0 && nextExpiry < remaining) ? nextExpiry : remaining;
     if (advanceSimulationCore(step, isBulkCatchup)) hatchedDuringCatchup = true;
     tickFishBuffs(step);
+    autoCookMeal();
     fishCaught += tickFishingLines(step);
     totemLayersBroken += dealTotemDamage(getTotemDps() * step, isBulkCatchup);
     remaining -= step;
   }
+  tickQuarryStations(dt);
+  autoResendExpeditions();
 
   if (isBulkCatchup && dt >= 15) {
     const meatEarned = Math.floor(gameState.meat - startMeat);
@@ -2808,6 +2998,52 @@ function advanceSimulation(rawDt, isBulkCatchup = false) {
       }
     }
   }
+}
+
+/** Camp Cook (Legacy Map): when the meal runs out, cook the same dish again if the basket allows */
+function autoCookMeal() {
+  if (!hasLegacy('auto_cook') || !gameState.fishing || !gameState.fishing.meal || getNextFishBuffExpiry() > 0) return false;
+  const recipe = FISH_RECIPES.find(r => r.id === gameState.fishing.meal);
+  return !!(recipe && canCookRecipe(recipe) && cookRecipe(recipe));
+}
+
+/** Quarry Stations (Legacy Map): every station at 150+ digs up 1 of each Expedition material an hour */
+function tickQuarryStations(dt) {
+  if (!hasLegacy('quarry_stations')) return 0;
+  gameState.quarryTimer = (gameState.quarryTimer || 0) + dt;
+  if (gameState.quarryTimer < 3600) return 0;
+  const hours = Math.floor(gameState.quarryTimer / 3600);
+  gameState.quarryTimer -= hours * 3600;
+  const n = getQuarryStationCount() * LEGACY_CONFIG.quarryPerHour * hours;
+  if (n > 0) EXPEDITION_REGIONS.forEach(r => addMaterial(r.material, n));
+  return n;
+}
+function getQuarryStationCount() {
+  return GENERATOR_LADDER.filter(g => getGeneratorLevel(g) >= LEGACY_CONFIG.quarryAt).length;
+}
+
+/** Trail Scouts (Legacy Map): a party that comes home goes straight back out (catching up on time away) */
+function autoResendExpeditions() {
+  if (!hasLegacy('auto_expedition') || typeof getExpeditionState !== 'function') return 0;
+  const st = getExpeditionState();
+  const now = Date.now();
+  let sent = 0;
+  for (let i = 0; i < getExpeditionSlots(); i++) {
+    for (let guard = 0; guard < 30; guard++) {
+      const a = st[EXPEDITION_SLOT_KEYS[i]];
+      if (!a || a.endAt > now) break;
+      const prev = { region: a.region, duration: a.duration, partner: a.partner, endAt: a.endAt };
+      collectExpedition(false, i);
+      const d = EXPEDITION_CONFIG.durations.find(x => x.id === prev.duration);
+      const region = EXPEDITION_REGIONS.find(r => r.id === prev.region);
+      if (!d || !region || !isRegionOpen(region)) break;
+      const partner = prev.partner && gameState.tamedBeasts[prev.partner] && !isAwayOnExpedition(prev.partner) ? prev.partner : null;
+      const start = Math.max(prev.endAt, now - MAX_OFFLINE_SECONDS * 1000); // chain trips over time away (same cap as offline progress)
+      st[EXPEDITION_SLOT_KEYS[i]] = { region: prev.region, duration: prev.duration, partner, startAt: start, endAt: start + d.sec * 1000 * (1 - getPackAbility('gryphowyrm')), yield: getExpeditionYield(prev.region, prev.duration, partner) };
+      sent++;
+    }
+  }
+  return sent;
 }
 
 /**
@@ -2847,6 +3083,24 @@ function rollRelicDrops(beast) {
     } else {
       showToast(`RELIC DROP: ${relic.name} acquired!`, 'success');
       logCombatMessage(`🏆 <strong>RELIC ACQUIRED!</strong> Found [<strong>${relic.name}</strong>]! ${relic.desc}`, 'relic');
+    }
+  }
+
+  // Relic Echoes (Legacy Map): with nothing new left to find, an owned relic can drop again as an Echo
+  if (!droppedAny && hasLegacy('relic_echoes')) {
+    const owned = beast.relics.map(id => RELIC_REGISTRY[id]).filter(r => r && gameState.ownedRelics[r.id] && getRelicEchoes(r.id) < RELIC_ECHO_MAX);
+    let echoRoll = Math.random();
+    for (const r of owned) {
+      const chance = Math.min(1, r.dropRate * dropMult);
+      if (echoRoll < chance) {
+        if (!gameState.legacy.echoes) gameState.legacy.echoes = {};
+        gameState.legacy.echoes[r.id] = getRelicEchoes(r.id) + 1;
+        droppedAny = true;
+        logCombatMessage('🔁 <strong>RELIC ECHO!</strong> Another [<strong>' + r.name + '</strong>] turns up. Echo ' + getRelicEchoes(r.id) + ': it is now ' + (getRelicEchoes(r.id) * 10) + '% stronger.', 'relic');
+        showToast('Relic Echo: ' + r.name + ' (' + getRelicEchoes(r.id) + '/' + RELIC_ECHO_MAX + ')', 'success');
+        break;
+      }
+      echoRoll -= chance;
     }
   }
 
@@ -3056,6 +3310,8 @@ function saveGameToStorage() {
       runMeatEarned: gameState.runMeatEarned,
       lifetimeMeat: gameState.lifetimeMeat,
       weaponTier: gameState.weaponTier,
+      temperLevel: gameState.temperLevel || 0,
+      quarryTimer: gameState.quarryTimer || 0,
       weaponLadderVersion: 2,
       stamina: gameState.stamina,
       generators: gameState.generators,
@@ -3136,6 +3392,8 @@ function loadGameFromStorage() {
         : gameState.runMeatEarned;
 
       if (typeof data.weaponTier === 'number') gameState.weaponTier = data.weaponTier;
+      gameState.temperLevel = (typeof data.temperLevel === 'number' && data.temperLevel >= 0) ? data.temperLevel : 0;
+      gameState.quarryTimer = (typeof data.quarryTimer === 'number' && data.quarryTimer >= 0) ? data.quarryTimer : 0;
       // Saves from before the 7-weapon armory: the Glaive moved from tier 4 to tier 7
       if (data.weaponLadderVersion !== 2 && gameState.weaponTier >= 4) gameState.weaponTier = 7;
       gameState.weaponTier = Math.max(0, Math.min(WEAPONS_CATALOG.length, gameState.weaponTier));
@@ -3201,7 +3459,9 @@ function loadGameFromStorage() {
         gameState.legacy = Object.assign(defaultLegacyState(), data.legacy);
         gameState.legacy.ranks = data.legacy.ranks || {};
         gameState.legacy.insight = data.legacy.insight || {};
+        gameState.legacy.mapVersion = data.legacy.mapVersion || 0;
       }
+      migrateLegacyMap();
       if (data.fightStats && typeof data.fightStats === 'object') gameState.fightStats = data.fightStats;
       if (['full', 'quick', 'skip'].includes(data.fightAnim)) gameState.fightAnim = data.fightAnim;
       if (data.bestiary && typeof data.bestiary === 'object') gameState.bestiary = data.bestiary;

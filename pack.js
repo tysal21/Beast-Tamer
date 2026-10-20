@@ -15,7 +15,7 @@
     const p = getPackState();
     const owned = HYBRID_CATALOG.filter(h => gameState.hybrids && gameState.hybrids[h.id]);
     const slots = [];
-    for (let i = 0; i < PACK_CONFIG.slots; i++) {
+    for (let i = 0; i < getPackSlots(); i++) {
       const id = p.slots[i];
       const h = id && HYBRID_CATALOG.find(x => x.id === id);
       if (h) {
@@ -31,7 +31,7 @@
     const list = owned.length ? owned.map(h => {
       const a = PACK_ABILITIES[h.id];
       const inPack = p.slots.includes(h.id);
-      const full = p.slots.length >= PACK_CONFIG.slots;
+      const full = p.slots.length >= getPackSlots();
       return '<div class="pack-row">' + hybridArtIcon(h) +
         '<div class="min-w-0 flex-1"><div class="font-bold text-slate-100">' + h.name + '</div>' +
         '<div class="text-xs text-slate-300"><i class="fa-solid ' + a.icon + ' mr-1 text-amber-400"></i>' + a.name + ': ' + a.desc + '</div></div>' +
@@ -44,7 +44,7 @@
       '<div class="bt-stone p-5"><h2 class="font-cinzel text-2xl sm:text-3xl text-slate-100"><i class="fa-solid fa-paw mr-2 text-amber-400"></i>The Pack</h2>' +
         '<p class="text-xs text-slate-400 max-w-2xl">Your hybrids are true-borns: bred, never spliced, so they carry no thread. The makers\' rite lets them run with you by choice. Each one keeps its normal bonuses; while it is in the Pack it also lends its own ability.</p></div>' +
       '<div class="grid lg:grid-cols-2 gap-6">' +
-        '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl space-y-2"><div class="font-cinzel text-lg text-slate-100 mb-1">Running with you (' + p.slots.length + '/' + PACK_CONFIG.slots + ')</div>' + slots.join('') + '</div>' +
+        '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl space-y-2"><div class="font-cinzel text-lg text-slate-100 mb-1">Running with you (' + p.slots.length + '/' + getPackSlots() + ')</div>' + slots.join('') + '</div>' +
         '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl space-y-2"><div class="font-cinzel text-lg text-slate-100 mb-1">Your true-borns</div>' + list +
           (missing.length && owned.length ? '<div class="text-[11px] text-slate-500 pt-1">Still to breed: ' + missing.map(h => h.name).join(', ') + '.</div>' : '') + '</div>' +
       '</div>' +
