@@ -1271,8 +1271,9 @@ function renderFrame(meatRate) {
     elements.beastRewardPower.className = 'text-emerald-400 font-mono';
   }
 
-  if (elements.beastPortraitImg.dataset.beastId !== activeBeast.id) {
-    elements.beastPortraitImg.dataset.beastId = activeBeast.id;
+  // Keyed by picture, not just id: a region can give the same beast slot new art
+  if (elements.beastPortraitImg.dataset.beastId !== activeBeast.id + '|' + activeBeast.image) {
+    elements.beastPortraitImg.dataset.beastId = activeBeast.id + '|' + activeBeast.image;
     elements.beastPortraitImg.alt = activeBeast.name + ' Portrait';
     elements.beastPortraitImg.onerror = () => {
       elements.beastPortraitImg.onerror = null;

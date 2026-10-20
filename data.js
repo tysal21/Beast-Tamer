@@ -967,7 +967,8 @@ const WORLDS = [
     blurb: 'The Archive fell here: the Loom\'s frozen gene library. Blizzards roll in and freeze your camp.',
     hardness: 6, filter: 'hue-rotate(185deg) saturate(0.7) brightness(1.15)', twist: 'blizzard',
     beasts: [
-      { name: 'Hoarwolf', desc: 'Arctic wolf and snowy owl: a silent pack hunter with a feathered ruff and eyes that see through blizzards.' },
+      { name: 'Hoarwolf', desc: 'Arctic wolf and snowy owl: a silent pack hunter with a feathered ruff and eyes that see through blizzards.',
+        image: 'assets/beasts/wild/hoarwolf.webp', tamedImage: 'assets/beasts/tamed/hoarwolf.webp' },
       { name: 'Tuskram', desc: 'Walrus and bighorn ram: a charging brute of tusks, curled horns and blubber.' },
       { name: 'Rimeclaw', desc: 'Wolverine and king crab: a furious armored digger with frost-crusted pincers.' },
       { name: 'Lumen Mammoth', desc: 'A long-extinct mammoth the Archive remembered, fused with glowing tissue from no world we know.' }
