@@ -804,7 +804,7 @@ const TROPHY_WEAPONS = [
 /** Apex Ladder: bosses past the Wyrm, reset each Ascension */
 const APEX_CONFIG = {
   powerPerTier: 0.12,  // each Apex tamed this run: +12% Combat Power (added up, so the ladder can never run away)
-  firstMult: 3,        // Tier 5 minimum = Wyrm minimum x this
+  firstMult: 5,        // Tier 5 minimum = Wyrm minimum x this (was 3; the Legacy Map makes you stronger, so the climb starts higher)
   growth: 1.5,         // each Apex tier's minimum = previous x this
   maxMult: 5,          // bracket max = min x this
   rewardShare: 0.02,   // taming gives Beast Power = 2% of that tier's minimum
@@ -1060,7 +1060,7 @@ const WORLDS = [
   {
     id: 'tundra', name: 'Frozen Tundra', icon: 'fa-snowflake', color: 'sky',
     blurb: 'The Archive fell here: the Loom\'s frozen gene library. Blizzards roll in and freeze your camp.',
-    hardness: 6, filter: 'hue-rotate(185deg) saturate(0.7) brightness(1.15)', twist: 'blizzard',
+    hardness: 7, filter: 'hue-rotate(185deg) saturate(0.7) brightness(1.15)', twist: 'blizzard',
     beasts: [
       { name: 'Hoarwolf', desc: 'Arctic wolf and snowy owl: a silent pack hunter with a feathered ruff and eyes that see through blizzards.',
         image: 'assets/beasts/wild/hoarwolf.webp', tamedImage: 'assets/beasts/tamed/hoarwolf.webp' },
@@ -1085,7 +1085,7 @@ const WORLDS = [
   {
     id: 'volcano', name: 'Ashen Volcano', icon: 'fa-volcano', color: 'orange',
     blurb: 'The Furnace, the Loom\'s power source, buried itself in this volcano. It builds pressure while you are away: ride its eruptions for huge hauls.',
-    hardness: 12, filter: 'hue-rotate(-25deg) saturate(1.8) contrast(1.15)', twist: 'eruption',
+    hardness: 16.5, filter: 'hue-rotate(-25deg) saturate(1.8) contrast(1.15)', twist: 'eruption',
     beasts: [
       { name: 'Cinderjackal', desc: 'Jackal and bombardier beetle: a scavenger that sprays scalding bursts from its flanks.' },
       { name: 'Ashback', desc: 'Vulture and giant tortoise: a slow fortress with a huge wingspan, nesting on lava rock.' },
