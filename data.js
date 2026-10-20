@@ -15,9 +15,10 @@ const GENERATOR_MILESTONES = [
 const GENERATOR_LADDER = [
   {
     id: 'snare_lines',
+    image: 'assets/stations/snare_lines.webp',
     name: 'Snare Lines',
     icon: 'fa-ring',
-    image: 'snare-lines.png',
+    // (old snare-lines.png replaced by the station art)
     baseCost: 25,
     costScale: 1.18,
     yieldPerSec: 0.5,
@@ -27,6 +28,7 @@ const GENERATOR_LADDER = [
   },
   {
     id: 'hunting_pack',
+    image: 'assets/stations/hunting_pack.webp',
     name: 'Hunting Pack',
     icon: 'fa-dog',
     baseCost: 400,
@@ -40,6 +42,7 @@ const GENERATOR_LADDER = [
   },
   {
     id: 'heavy_deadfalls',
+    image: 'assets/stations/heavy_deadfalls.webp',
     name: 'Heavy Deadfalls',
     icon: 'fa-cubes',
     baseCost: 6500,
@@ -53,6 +56,7 @@ const GENERATOR_LADDER = [
   },
   {
     id: 'pheromone_pits',
+    image: 'assets/stations/pheromone_pits.webp',
     name: 'Pheromone Bait Pits',
     icon: 'fa-flask-vial',
     baseCost: 120000,
@@ -67,6 +71,7 @@ const GENERATOR_LADDER = [
   },
   {
     id: 'subjugated_dens',
+    image: 'assets/stations/subjugated_dens.webp',
     name: 'Subjugated Dens',
     icon: 'fa-dungeon',
     baseCost: 2500000,
@@ -81,6 +86,7 @@ const GENERATOR_LADDER = [
   },
   {
     id: 'harpoon_rigs',
+    image: 'assets/stations/harpoon_rigs.webp',
     name: 'Colossal Harpoon Rigs',
     icon: 'fa-anchor',
     baseCost: 65000000,
@@ -292,6 +298,7 @@ const WEAPONS_CATALOG = [
   {
     tier: 1,
     name: 'Crude Spear',
+    image: 'assets/weapons/crude_spear.webp',
     cost: 250,
     flatBonus: 2,
     percentBonus: 0.0,
@@ -302,6 +309,7 @@ const WEAPONS_CATALOG = [
   {
     tier: 2,
     name: 'Recurve Bow',
+    image: 'assets/weapons/recurve_bow.webp',
     cost: 8500,
     flatBonus: 14,
     percentBonus: 0.01,
@@ -312,6 +320,7 @@ const WEAPONS_CATALOG = [
   {
     tier: 3,
     name: 'Steel Crossbow',
+    image: 'assets/weapons/steel_crossbow.webp',
     cost: 250000,
     flatBonus: 99,
     percentBonus: 0.02,
@@ -322,6 +331,7 @@ const WEAPONS_CATALOG = [
   {
     tier: 4,
     name: 'Bone-Tipped Lance',
+    image: 'assets/weapons/bone_tipped_lance.webp',
     cost: 900000,
     flatBonus: 249,
     percentBonus: 0.025,
@@ -332,6 +342,7 @@ const WEAPONS_CATALOG = [
   {
     tier: 5,
     name: 'Barbed Harpoon',
+    image: 'assets/weapons/barbed_harpoon.webp',
     cost: 2500000,
     flatBonus: 449,
     percentBonus: 0.0275,
@@ -342,6 +353,7 @@ const WEAPONS_CATALOG = [
   {
     tier: 6,
     name: 'Obsidian War-Hammer',
+    image: 'assets/weapons/obsidian_war_hammer.webp',
     cost: 7000000,
     flatBonus: 699,
     percentBonus: 0.03,
@@ -352,6 +364,7 @@ const WEAPONS_CATALOG = [
   {
     tier: 7,
     name: 'Beast-Bone Glaive',
+    image: 'assets/weapons/beast_bone_glaive.webp',
     cost: 30000000,
     flatBonus: 999,
     percentBonus: 0.035,
@@ -362,6 +375,7 @@ const WEAPONS_CATALOG = [
   {
     tier: 8,
     name: 'Ironhide Greataxe',
+    image: 'assets/weapons/ironhide_greataxe.webp',
     cost: 250000000,
     flatBonus: 2499,
     percentBonus: 0.0375,
@@ -372,6 +386,7 @@ const WEAPONS_CATALOG = [
   {
     tier: 9,
     name: 'Stormcaller Trident',
+    image: 'assets/weapons/stormcaller_trident.webp',
     cost: 3000000000,
     flatBonus: 5999,
     percentBonus: 0.04,
@@ -889,7 +904,7 @@ const LEGACY_BRANCHES = [
 const LEGACY_NODES = [
   // Butcher
   { id: 'cleavers_edge', branch: 'butcher', name: "Cleaver's Edge", icon: 'fa-utensils', maxRank: 5, baseCost: 25, perRank: 0.10, requires: [], desc: '+10% Meat/s per rank' },
-  { id: 'marrow_harvest', branch: 'butcher', name: 'Marrow Harvest', icon: 'fa-bone', maxRank: 3, baseCost: 50, perRank: 0.20, requires: ['cleavers_edge'], desc: '+20% base Forage click Meat per rank' },
+  { id: 'marrow_harvest', branch: 'butcher', name: 'Marrow Harvest', icon: 'fa-bone', maxRank: 3, baseCost: 50, perRank: 0.20, requires: ['cleavers_edge'], desc: '+20% base campfire hunt Meat per rank' },
   { id: 'smokehouse', branch: 'butcher', name: 'Smokehouse', icon: 'fa-fire-burner', maxRank: 3, baseCost: 80, perRank: 0.20, requires: ['marrow_harvest'], desc: 'Cooked meals last 20% longer per rank' },
   { id: 'feast_of_plenty', branch: 'butcher', name: 'Feast of Plenty', icon: 'fa-crown', maxRank: 1, baseCost: 300, capstone: true, requires: ['cleavers_edge', 'marrow_harvest', 'smokehouse'], desc: 'Every Overdrive milestone a generator has reached gives it an extra x1.25' },
   // Warden
@@ -959,7 +974,7 @@ const WORLDS = [
     id: 'wilds', name: 'Primal Wilds', icon: 'fa-tree', color: 'emerald',
     blurb: 'Where the Loom\'s Core came down. Its first crude splices of Earth\'s animals still stalk the jungle.',
     hardness: 1, filter: '', twist: null,
-    titan: { name: 'Primeval Behemoth', baseIndex: 3, filter: 'saturate(1.8) contrast(1.3) brightness(0.9) drop-shadow(0 0 12px #f59e0b)',
+    titan: { name: 'Primeval Behemoth', baseIndex: 3, image: 'assets/beasts/wild/primeval_behemoth.webp', artFilter: 'drop-shadow(0 0 12px #f59e0b)', filter: 'saturate(1.8) contrast(1.3) brightness(0.9) drop-shadow(0 0 12px #f59e0b)',
              desc: 'The Core\'s warden. Its thread is older than the forest it sleeps under. Sever it to tear open the Rift.' }
   },
   {
@@ -967,10 +982,14 @@ const WORLDS = [
     blurb: 'The Archive fell here: the Loom\'s frozen gene library. Blizzards roll in and freeze your camp.',
     hardness: 6, filter: 'hue-rotate(185deg) saturate(0.7) brightness(1.15)', twist: 'blizzard',
     beasts: [
-      { name: 'Hoarwolf', desc: 'Arctic wolf and snowy owl: a silent pack hunter with a feathered ruff and eyes that see through blizzards.' },
-      { name: 'Tuskram', desc: 'Walrus and bighorn ram: a charging brute of tusks, curled horns and blubber.' },
-      { name: 'Rimeclaw', desc: 'Wolverine and king crab: a furious armored digger with frost-crusted pincers.' },
-      { name: 'Lumen Mammoth', desc: 'A long-extinct mammoth the Archive remembered, fused with glowing tissue from no world we know.' }
+      { name: 'Hoarwolf', desc: 'Arctic wolf and snowy owl: a silent pack hunter with a feathered ruff and eyes that see through blizzards.',
+        image: 'assets/beasts/wild/hoarwolf.webp', tamedImage: 'assets/beasts/tamed/hoarwolf.webp' },
+      { name: 'Tuskram', desc: 'Walrus and bighorn ram: a charging brute of tusks, curled horns and blubber.',
+        image: 'assets/beasts/wild/tuskram.webp', tamedImage: 'assets/beasts/tamed/tuskram.webp' },
+      { name: 'Rimeclaw', desc: 'Wolverine and king crab: a furious armored digger with frost-crusted pincers.',
+        image: 'assets/beasts/wild/rimeclaw.webp', tamedImage: 'assets/beasts/tamed/rimeclaw.webp' },
+      { name: 'Lumen Mammoth', desc: 'A long-extinct mammoth the Archive remembered, fused with glowing tissue from no world we know.',
+        image: 'assets/beasts/wild/lumen_mammoth.webp', tamedImage: 'assets/beasts/tamed/lumen_mammoth.webp' }
     ],
     gens: [
       { name: 'Ice Snares', desc: 'Frozen wire loops buried in the snow.' },

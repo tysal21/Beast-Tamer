@@ -32,7 +32,8 @@
     ['#hub-btn-pack', 'Pack: the Beast Forge, Expeditions, and the true-borns that run with you.'],
     ['#hub-btn-totem', 'Totem: wear down the Primal Totem for Shards and break its Seals, then spend Shards in the Hunter\'s Legacy.'],
     ['#hub-btn-journey', 'Journey: Ascend, cross Rifts into new regions, and check the leaderboard.'],
-    ['#tab-btn-camp', 'Generators, weapons and Stamina upgrades.'],
+    ['#tab-btn-camp', 'The campfire, your stations, weapons and Stamina upgrades.'],
+    ['#btn-forage', 'Click the fire to hunt by hand. Each hunt brings in Meat, chips at the Totem, and in a blizzard warms the camp back up.'],
     ['#tab-btn-hunt', 'Pick a beast, check your odds and fight. Win to tame it.'],
     ['#tab-btn-forge', 'Level up your tamed beasts and breed hybrids of your own.'],
     ['#tab-btn-relics', 'Relics your tamed beasts have dropped, and the Bestiary of every beast you\'ve met.'],
@@ -46,9 +47,10 @@
     ['#tab-btn-leaderboard', 'See how your friends are doing.'],
 
     // ---- Hunt ----
-    ['#odds-percentage-text, #odds-meter-fill', 'Your chance to win this fight. It climbs from 0% at the beast\'s minimum power to 98% at its maximum. Lose and its thread lashes back: you are Wounded for a while.'],
+    ['.odds-dial-wrap, #odds-percentage-text, #odds-meter-fill', 'Your chance to win this fight. It climbs from 0% at the beast\'s minimum power to 98% at its maximum. Lose and its thread lashes back: you are Wounded for a while.'],
     ['#beast-power-min, #beast-power-max', 'The power this beast is beaten by. Below the minimum you can\'t win; at the maximum your odds are as good as they get (98%).'],
     ['#beast-reward-power', 'Beast Power this beast adds to your pack when you tame it. Re-fighting a tamed beast hunts for its relics instead.'],
+    ['.trail-step', 'Your trail: every beast you can hunt right now. Gold tracks are tamed, dashed ones are still wild. Click one to target it.'],
     ['#beast-status-ribbon', 'What kind of fight this is: a beast to tame, a trophy re-fight for relics, an Apex, a Totem Guardian or a Titan.'],
 
     // ---- Totem ----

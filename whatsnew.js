@@ -8,6 +8,15 @@
 (function () {
   const PATCH_NOTES = [
     {
+      id: '2026-10-21',
+      title: 'Fire and Frost',
+      items: [
+        { icon: 'fa-fire', head: 'A new camp', text: 'Hunt by clicking the campfire, and watch it burn low when a blizzard rolls in. Your generators are now stations, with four stars for their Overdrives.' },
+        { icon: 'fa-scroll', head: 'Wanted posters', text: 'Every beast you hunt gets a wanted poster, your odds are a dial, and the tracks above it show your trail. Click a track to pick that beast.' },
+        { icon: 'fa-palette', head: 'New art everywhere', text: 'The Tundra beasts (Hoarwolf, Tuskram, Rimeclaw, Lumen Mammoth), every camp station, all nine weapons in the Armory, and the Primeval Behemoth itself.' }
+      ]
+    },
+    {
       id: '2026-10-20',
       title: 'The Archive Wakes',
       items: [

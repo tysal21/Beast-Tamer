@@ -50,7 +50,7 @@
   </script>
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=20261019v">
+  <link rel="stylesheet" href="style.css?v=20261020a">
 </head>
 
 <body class="bg-primal-900 text-slate-200 font-sans min-h-screen selection:bg-primal-accent selection:text-white flex flex-col justify-between">
@@ -224,27 +224,46 @@
       <!-- Left Column: Manual Action, Armory, Camp Provisions -->
       <section class="lg:col-span-5 flex flex-col space-y-6">
 
-        <!-- Manual Harvest / Forage Card -->
-        <div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl relative overflow-hidden shimmer">
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <h2 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2">
-                <i class="fa-solid fa-campground text-amber-500"></i> Field Hunting
-              </h2>
-              <p class="text-xs text-slate-400">Track and butcher lesser game manually for fresh provisions.</p>
-            </div>
-            <span class="text-xs px-2.5 py-1 bg-primal-800 text-amber-300 rounded border border-primal-700 font-mono">
-              +<span id="label-click-yield">1</span> Meat/Strike
-            </span>
+        <!-- The Campfire: click the fire to hunt (Forage) -->
+        <div id="hearth-card" class="hearth-card">
+          <div class="hearth-head">
+            <h2 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2">
+              <i class="fa-solid fa-fire text-amber-500"></i> The Campfire
+            </h2>
+            <span class="hearth-yield">+<span id="label-click-yield">1</span> Meat per hunt</span>
           </div>
-
-          <div class="relative py-2 flex justify-center">
-            <button id="btn-forage" class="w-full relative group overflow-hidden bg-gradient-to-b from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 active:scale-[0.98] transition-all duration-150 py-5 rounded-xl font-cinzel font-bold text-base sm:text-lg text-white shadow-lg shadow-amber-950/60 border border-amber-400/40 cursor-pointer flex items-center justify-center gap-3">
-              <i class="fa-solid fa-mound text-xl group-hover:rotate-12 transition-transform"></i>
-              <span id="btn-forage-text">FORAGE &amp; HUNT (+1 Meat)</span>
-            </button>
-            <div id="forage-crit-info" class="hidden mt-2 text-center text-[11px] font-mono text-amber-300"></div>
-          </div>
+          <button id="btn-forage" type="button" class="hearth-btn" aria-label="Hunt from the campfire">
+            <span class="hearth-glow" aria-hidden="true"></span>
+            <svg class="hearth-fire" viewBox="0 0 220 190" aria-hidden="true">
+              <defs>
+                <radialGradient id="hfCoals" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffcf6b"/><stop offset=".5" stop-color="#f97316" stop-opacity=".8"/><stop offset="1" stop-color="#7c2d12" stop-opacity="0"/></radialGradient>
+                <linearGradient id="hfLog" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a4a2a"/><stop offset="1" stop-color="#3b2416"/></linearGradient>
+              </defs>
+              <ellipse cx="110" cy="168" rx="88" ry="14" fill="#000" opacity=".35"/>
+              <ellipse class="hf-coals" cx="110" cy="150" rx="60" ry="16" fill="url(#hfCoals)"/>
+              <g class="hf-flames">
+                <path class="hf-flame hf-f1" d="M110 18 C130 52 160 70 150 112 C144 138 126 152 110 152 C94 152 76 138 70 112 C60 70 92 58 110 18 Z" fill="#dc4a17"/>
+                <path class="hf-flame hf-f2" d="M110 50 C124 76 142 90 136 118 C132 136 122 146 110 146 C98 146 88 136 84 118 C78 92 98 80 110 50 Z" fill="#f59e0b"/>
+                <path class="hf-flame hf-f3" d="M110 84 C118 100 128 108 124 126 C122 136 116 142 110 142 C104 142 98 136 96 126 C92 110 104 100 110 84 Z" fill="#fde68a"/>
+                <path class="hf-flame hf-f4" d="M78 70 C86 88 92 98 88 116 C86 126 80 130 76 128 C70 124 66 112 70 98 C72 88 76 80 78 70 Z" fill="#f97316" opacity=".85"/>
+                <path class="hf-flame hf-f5" d="M144 78 C150 94 156 104 152 120 C150 128 144 132 140 129 C135 125 132 114 136 102 C138 94 142 86 144 78 Z" fill="#f97316" opacity=".85"/>
+              </g>
+              <g class="hf-logs">
+                <rect x="38" y="138" width="144" height="20" rx="10" fill="url(#hfLog)" stroke="#1c120b" stroke-width="2" transform="rotate(-14 110 148)"/>
+                <rect x="38" y="138" width="144" height="20" rx="10" fill="url(#hfLog)" stroke="#1c120b" stroke-width="2" transform="rotate(14 110 148)"/>
+                <path d="M52 148 h28 M138 150 h30 M60 156 h18" stroke="#24160d" stroke-width="2" stroke-linecap="round" opacity=".6" transform="rotate(-14 110 148)"/>
+                <circle cx="36" cy="166" r="9" fill="#5a3520" stroke="#1c120b" stroke-width="2"/><circle cx="36" cy="166" r="4" fill="#f59e0b" opacity=".75"/>
+                <circle cx="184" cy="166" r="9" fill="#5a3520" stroke="#1c120b" stroke-width="2"/><circle cx="184" cy="166" r="4" fill="#f59e0b" opacity=".75"/>
+              </g>
+              <g class="hf-stones" fill="#57534e" stroke="#1c1917" stroke-width="2">
+                <ellipse cx="34" cy="172" rx="16" ry="9"/><ellipse cx="66" cy="178" rx="17" ry="9"/><ellipse cx="102" cy="181" rx="18" ry="8"/>
+                <ellipse cx="140" cy="179" rx="17" ry="9"/><ellipse cx="176" cy="173" rx="16" ry="9"/><ellipse cx="200" cy="164" rx="12" ry="8"/><ellipse cx="18" cy="162" rx="11" ry="8"/>
+              </g>
+            </svg>
+            <span id="hearth-embers" class="hearth-embers" aria-hidden="true"></span>
+          </button>
+          <div class="hearth-label"><span id="btn-forage-text">Click the fire to hunt (+1 Meat)</span></div>
+          <div id="forage-crit-info" class="hidden mt-1 text-center text-[11px] font-mono text-amber-300"></div>
         </div>
 
         <!-- Hunter's Armory Card -->
@@ -264,7 +283,7 @@
           <!-- Active Equipped Weapon Banner -->
           <div class="bg-primal-800/80 border border-primal-700 rounded-xl p-3.5 mb-3 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-              <div id="armory-equipped-icon" class="w-10 h-10 rounded-lg bg-stone-900 border border-amber-700/50 flex items-center justify-center text-amber-400 text-lg shadow-inner">
+              <div id="armory-equipped-icon" class="armory-art">
                 <i class="fa-solid fa-hand-fist"></i>
               </div>
               <div>
@@ -277,7 +296,8 @@
 
           <!-- Next Weapon Upgrade Box -->
           <div id="armory-craft-box" class="bg-primal-900/80 border border-primal-700/90 rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
+            <div id="armory-next-art" class="armory-art next" aria-hidden="true"></div>
+            <div class="flex-1">
               <div class="flex items-center gap-2">
                 <span class="text-xs font-semibold text-slate-300">Next Weapon:</span>
                 <span id="armory-next-name" class="font-bold text-amber-400 text-xs">Crude Spear</span>
@@ -399,9 +419,9 @@
           <div class="flex items-center justify-between pb-3 border-b border-primal-700/60 mb-4">
             <div>
               <h2 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2">
-                <i class="fa-solid fa-cubes-stacked text-amber-500"></i> Camp Infrastructure Ladder
+                <i class="fa-solid fa-campground text-amber-500"></i> The Camp
               </h2>
-              <p class="text-xs text-slate-400">Hit <strong class="text-amber-300">10, 25, 50, and 100</strong> owned in any tier to unlock massive Milestone Overdrives (2x, 6x, 24x, 240x). Past 25 and 50 owned, that generator's price also climbs more slowly.</p>
+              <p class="text-xs text-slate-400">Each station brings in Meat every second. Its four stars light up at <strong class="text-amber-300">10, 25, 50 and 100</strong> owned, and each star multiplies its output (Overdrive). Past 25 and 50, its price also climbs more slowly.</p>
             </div>
             <div class="flex items-center gap-1 shrink-0" title="How many to buy per click">
               <span class="text-[10px] uppercase text-slate-500 mr-1">Buy</span>
@@ -413,7 +433,7 @@
           </div>
 
           <!-- Dynamic 6-tier generator container -->
-          <div id="generators-container" class="space-y-3">
+          <div id="generators-container" class="station-grid">
             <!-- Dynamically populated via JS -->
           </div>
         </div>
@@ -449,8 +469,12 @@
             </div>
           </div>
 
-          <!-- Target Beast Showcase Box -->
-          <div class="bg-primal-800/70 border border-primal-700 rounded-xl p-4 sm:p-5 relative">
+          <!-- Your trail: one track per beast you can target (built from the Target Tier list) -->
+          <div id="hunt-trail" class="hunt-trail" aria-label="Your trail"></div>
+
+          <!-- Target Beast Showcase: a wanted poster -->
+          <div id="hunt-poster" class="hunt-poster relative">
+            <div class="poster-head"><span id="poster-kicker" class="poster-kicker">Wanted</span></div>
             <div class="flex flex-col sm:flex-row items-center gap-5">
               
               <!-- Dedicated Beast Portrait Container -->
@@ -501,24 +525,30 @@
 
             </div>
 
-            <!-- Win Probability Meter -->
-            <div class="mt-5 pt-4 border-t border-primal-700/70">
-              <div class="flex justify-between items-center mb-1 text-xs">
-                <span class="font-semibold text-slate-300 flex items-center gap-1.5">
-                  <i class="fa-solid fa-chart-line text-amber-500"></i> Calculated Taming Odds
-                </span>
-                <span id="odds-percentage-text" class="font-mono font-bold text-sm text-amber-400">0.0%</span>
-              </div>
+          </div>
 
-              <div class="w-full bg-primal-900 h-3.5 rounded-full overflow-hidden p-0.5 border border-primal-700 relative">
-                <div id="odds-meter-fill" class="h-full odds-gradient rounded-full transition-all duration-300 ease-out" style="width: 0%;"></div>
+            <!-- Taming odds as a dial -->
+            <div class="odds-dial-wrap">
+              <svg class="odds-dial" viewBox="0 0 220 128" aria-hidden="true">
+                <defs>
+                  <linearGradient id="oddsArc" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b91c1c"/><stop offset=".5" stop-color="#f59e0b"/><stop offset="1" stop-color="#10b981"/></linearGradient>
+                </defs>
+                <path d="M20 112 A90 90 0 0 1 200 112" fill="none" stroke="rgb(0 0 0 / .35)" stroke-width="16" stroke-linecap="round"/>
+                <path id="odds-arc" d="M20 112 A90 90 0 0 1 200 112" fill="none" stroke="url(#oddsArc)" stroke-width="12" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100"/>
+                <g class="odds-ticks" stroke="rgb(255 255 255 / .35)" stroke-width="2">
+                  <line x1="110" y1="14" x2="110" y2="24"/><line x1="46.4" y1="40.4" x2="53.4" y2="47.4"/><line x1="173.6" y1="40.4" x2="166.6" y2="47.4"/>
+                </g>
+                <g id="odds-needle" class="odds-needle" style="transform: rotate(-90deg)">
+                  <path d="M110 112 L106 108 L110 34 L114 108 Z" fill="#f5e6c8" stroke="#2a1e14" stroke-width="1.5"/>
+                </g>
+                <circle cx="110" cy="112" r="9" fill="#2a1e14" stroke="#f5e6c8" stroke-width="2"/>
+              </svg>
+              <div class="odds-readout">
+                <span id="odds-percentage-text" class="odds-num">0.0%</span>
+                <span class="odds-caption">taming odds</span>
               </div>
-
-              <div class="flex justify-between text-[10px] text-slate-500 font-mono mt-1">
-                <span>Underpowered (&lt;Min: 0%)</span>
-                <span>Odds climb as you grow</span>
-                <span>Mastered (&ge;Max: 98%)</span>
-              </div>
+              <div class="odds-ends"><span>0% below its minimum</span><span>98% at its maximum</span></div>
+              <div class="hidden"><div id="odds-meter-fill" style="width: 0%;"></div></div>
             </div>
 
             <!-- Challenge Fight Button & Cooldown Bar -->
@@ -554,8 +584,6 @@
               </div>
 
             </div>
-
-          </div>
 
           <!-- Combat Event Log -->
           <div class="mt-4">
@@ -889,7 +917,7 @@
             <button id="btn-totem-strike" class="flex-1 py-3 px-4 rounded-xl font-cinzel font-bold text-sm text-white border border-amber-400/50 shadow-lg cursor-pointer transition-all active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-amber-700 via-orange-600 to-amber-700 hover:brightness-110">
               STRIKE THE TOTEM (<span id="totem-strike-cost">10</span> Stamina &middot; <span id="totem-strike-dmg">0</span> dmg)
             </button>
-            <div class="text-[11px] text-slate-400 sm:max-w-xs leading-snug">Forage clicks and every boss win (trophy fights too) also damage the Totem.</div>
+            <div class="text-[11px] text-slate-400 sm:max-w-xs leading-snug">Hunting from the campfire and every boss win (trophy fights too) also damage the Totem.</div>
           </div>
         </div>
 
@@ -1329,20 +1357,21 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
   <!-- Modular Scripts: Data -> Engine -> UI -->
-  <script src="data.js?v=20261019v"></script>
-  <script src="engine.js?v=20261019v"></script>
-  <script src="ui.js?v=20261019v"></script>
-  <script src="stealth.js?v=20261019v"></script>
-  <script src="dev.js?v=20261019v"></script>
-  <script src="comforts.js?v=20261019v"></script>
-  <script src="nav.js?v=20261019v"></script>
-  <script src="scenery.js?v=20261019v"></script>
-  <script src="seals.js?v=20261019v"></script>
-  <script src="leaderboard.js?v=20261019v"></script>
-  <script src="pack.js?v=20261019v"></script>
-  <script src="qr.js?v=20261019v"></script>
-  <script src="transfer.js?v=20261019v"></script>
-  <script src="whatsnew.js?v=20261019v"></script>
-  <script src="tips.js?v=20261019v"></script>
+  <script src="data.js?v=20261020a"></script>
+  <script src="engine.js?v=20261020a"></script>
+  <script src="ui.js?v=20261020a"></script>
+  <script src="stealth.js?v=20261020a"></script>
+  <script src="dev.js?v=20261020a"></script>
+  <script src="comforts.js?v=20261020a"></script>
+  <script src="nav.js?v=20261020a"></script>
+  <script src="scenery.js?v=20261020a"></script>
+  <script src="seals.js?v=20261020a"></script>
+  <script src="leaderboard.js?v=20261020a"></script>
+  <script src="pack.js?v=20261020a"></script>
+  <script src="qr.js?v=20261020a"></script>
+  <script src="transfer.js?v=20261020a"></script>
+  <script src="whatsnew.js?v=20261020a"></script>
+  <script src="tips.js?v=20261020a"></script>
+  <script src="makeover.js?v=20261020a"></script>
 </body>
 </html>

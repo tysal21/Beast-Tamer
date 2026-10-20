@@ -1253,7 +1253,10 @@ function applyWorld() {
     b.minPower = Math.floor(base.minPower * sc);
     b.maxPower = Math.floor(base.maxPower * sc);
     b.rewardPower = Math.floor(base.rewardPower * Math.sqrt(w.hardness));
-    b.imageFilter = w.filter || '';
+    // A region beast with its own art uses it as painted; otherwise the Region 1 art is recoloured for the climate
+    b.image = ov.image || base.image;
+    b.tamedImage = ov.tamedImage || base.tamedImage;
+    b.imageFilter = ov.image ? '' : (w.filter || '');
   });
   GENERATOR_LADDER.forEach((g, i) => {
     const base = BASE_GENS[i];
@@ -1561,9 +1564,10 @@ function getTitanBoss() {
     tier: 'Titan',
     baseId: base.id,
     name: w.titan.name,
-    image: base.image,
+    // A Titan uses its own art when it has some; otherwise the Region 1 picture of its base beast, recoloured
+    image: w.titan.image || BASE_BEASTS[w.titan.baseIndex].image,
     fallbackImage: base.fallbackImage,
-    imageFilter: w.titan.filter,
+    imageFilter: w.titan.image ? (w.titan.artFilter || '') : w.titan.filter,
     minPower: min,
     maxPower: min * APEX_CONFIG.maxMult,
     rewardPower: 0,

@@ -741,3 +741,124 @@ body.stealth #whatsnew-card { display: none !important; }
   font: 13px/1.4 'Alegreya Sans', system-ui, sans-serif; opacity: 0; transform: translateY(-3px); transition: opacity .12s, transform .12s; left: -999px; top: -999px; }
 #bt-tip.on { opacity: 1; transform: none; }
 body.stealth #bt-tip { display: none !important; }
+
+/* ================= CAMP MAKEOVER (Phase 2): the campfire and the stations ================= */
+.hearth-card { position: relative; overflow: hidden; border-radius: 16px; padding: 16px 18px 14px;
+  background: radial-gradient(ellipse 70% 60% at 50% 72%, rgb(224 120 47 / calc(0.22 * var(--heat, 1))), transparent 70%), linear-gradient(180deg, rgb(var(--p850)), rgb(var(--p900)));
+  border: 1px solid rgb(var(--p700)); box-shadow: 0 18px 40px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(var(--p600) / 0.6); }
+.hearth-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.hearth-yield { font: 600 12px/1 ui-monospace, monospace; color: rgb(252 211 77); background: rgb(var(--p800)); border: 1px solid rgb(var(--p700)); padding: 5px 9px; border-radius: 6px; white-space: nowrap; }
+.hearth-btn { position: relative; display: block; width: min(100%, 270px); margin: 4px auto 0; aspect-ratio: 220 / 190; border: 0; background: none; cursor: pointer; border-radius: 50%; -webkit-tap-highlight-color: transparent; }
+.hearth-btn:focus-visible { outline: 2px dashed rgb(var(--accent) / 0.6); outline-offset: 2px; }
+.hearth-glow { position: absolute; left: 10%; right: 10%; top: 18%; bottom: 0; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 50% 70%, rgb(255 170 60 / calc(0.55 * var(--heat, 1))), rgb(224 90 30 / calc(0.18 * var(--heat, 1))) 45%, transparent 70%);
+  filter: blur(6px); animation: hearthPulse 2.4s ease-in-out infinite; }
+.hearth-fire { position: relative; width: 100%; height: 100%; overflow: visible; }
+.hearth-fire .hf-flames { transform-origin: 110px 150px; transform: scale(var(--heat, 1)); transition: transform .6s ease; }
+.hf-flame { transform-box: fill-box; transform-origin: 50% 100%; }
+.hf-f1 { animation: flick1 1.3s ease-in-out infinite alternate; }
+.hf-f2 { animation: flick2 0.9s ease-in-out infinite alternate; }
+.hf-f3 { animation: flick1 0.7s ease-in-out infinite alternate-reverse; }
+.hf-f4 { animation: flick2 1.1s ease-in-out infinite alternate; }
+.hf-f5 { animation: flick1 1.2s ease-in-out infinite alternate-reverse; }
+.hf-coals { animation: hearthPulse 1.8s ease-in-out infinite; }
+@keyframes flick1 { 0% { transform: scale(1, 1) skewX(0deg); } 50% { transform: scale(0.94, 1.06) skewX(-3deg); } 100% { transform: scale(1.04, 0.95) skewX(2deg); } }
+@keyframes flick2 { 0% { transform: scale(1, 1) skewX(2deg); } 100% { transform: scale(0.92, 1.08) skewX(-4deg); } }
+@keyframes hearthPulse { 0%, 100% { opacity: .85; } 50% { opacity: 1; } }
+.hearth-btn:hover .hf-flames { transform: scale(calc(var(--heat, 1) * 1.04)); }
+.hearth-btn:active .hearth-fire { transform: scale(0.97); }
+.hearth-btn.stoke .hf-flames { transform: scale(calc(var(--heat, 1) * 1.16)); transition: transform .08s ease-out; }
+.hearth-embers { position: absolute; left: 50%; top: 42%; width: 0; height: 0; pointer-events: none; }
+.hearth-ember { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: #ffd27a; box-shadow: 0 0 6px 2px rgb(255 140 40 / 0.8);
+  animation: emberRise 1s ease-out forwards; }
+@keyframes emberRise { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), -110px) scale(0.3); opacity: 0; } }
+.hearth-label { text-align: center; margin-top: 2px; font-family: 'IM Fell English SC', serif; font-size: 17px; color: rgb(var(--s200)); letter-spacing: .01em; }
+/* In a blizzard the fire burns low; stoking it (Warmth) brings it back */
+.hearth-card.cold .hearth-label::after { content: ' · the blizzard is smothering it'; color: rgb(125 211 252); font-size: 13px; }
+body.stealth button.hearth-btn svg, body.stealth button.hearth-btn .hearth-glow, body.stealth button.hearth-btn .hearth-embers, body.stealth .hunt-trail { display: none !important; }
+body.stealth .hearth-btn { aspect-ratio: auto; width: auto; margin: 0; }
+body.stealth .hearth-card.cold .hearth-label::after { content: none; }
+
+.station-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.station-card { position: relative; display: flex; flex-direction: column; border-radius: 12px; overflow: hidden; background: rgb(var(--p800));
+  border: 1px solid rgb(var(--p700)); box-shadow: inset 0 1px 0 rgb(var(--p600) / 0.7), inset 0 -3px 0 rgb(0 0 0 / 0.35); transition: border-color .15s, transform .15s; }
+.station-card:hover { border-color: rgb(var(--accent) / 0.5); }
+.station-art { position: relative; height: 112px; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at 50% 60%, rgb(var(--accent) / 0.12), transparent 70%), rgb(var(--p850)); border-bottom: 1px solid rgb(var(--p700)); }
+.station-img { max-height: 100px; max-width: 90%; object-fit: contain; filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.5)); }
+.station-placeholder { width: 78px; height: 78px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px;
+  background: var(--paper); color: var(--ink-soft); box-shadow: inset 0 0 0 3px var(--paper-shade), inset 0 0 0 5px var(--ink-soft), 0 6px 14px rgb(0 0 0 / 0.45); }
+.station-count { position: absolute; left: 8px; top: 8px; min-width: 34px; padding: 3px 8px; border-radius: 999px; text-align: center;
+  font: 700 15px/1.1 ui-monospace, monospace; color: #1c1206; background: rgb(252 211 77); box-shadow: 0 2px 6px rgb(0 0 0 / 0.5); }
+.station-od { position: absolute; right: 8px; top: 8px; padding: 2px 7px; border-radius: 999px; font: 700 11px/1.3 ui-monospace, monospace; color: rgb(252 211 77); background: rgb(120 53 15 / 0.85); border: 1px solid rgb(245 158 11 / 0.6); }
+.station-body { display: flex; flex-direction: column; gap: 4px; padding: 9px 10px 10px; flex: 1; }
+.station-name { font-weight: 700; font-size: 14px; color: rgb(var(--s100)); line-height: 1.2; }
+.station-stars { display: flex; gap: 3px; font-size: 12px; color: rgb(var(--p600)); }
+.station-stars .lit { color: rgb(252 211 77); filter: drop-shadow(0 0 4px rgb(245 158 11 / 0.7)); }
+.station-yield { font: 600 12px/1.2 ui-monospace, monospace; color: rgb(52 211 153); }
+.station-next { display: flex; align-items: center; gap: 6px; font: 11px/1 ui-monospace, monospace; color: rgb(var(--s400)); }
+.station-next.max { color: rgb(252 211 77); font-weight: 700; }
+.station-bar { flex: 1; height: 5px; border-radius: 3px; background: rgb(var(--p900)); overflow: hidden; }
+.station-bar span { display: block; height: 100%; background: linear-gradient(90deg, rgb(245 158 11), rgb(252 211 77)); }
+.station-buy { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  font: 600 12px/1 ui-monospace, monospace; color: #fff4e2; background: rgb(var(--accent-hover)); border: 1px solid rgb(var(--accent) / 0.7);
+  box-shadow: inset 0 1px 0 rgb(255 220 170 / 0.25), inset 0 -3px 0 rgb(0 0 0 / 0.35); }
+.station-buy:hover:not(:disabled) { filter: brightness(1.15); }
+.station-buy:disabled { opacity: .45; cursor: not-allowed; }
+.station-cost { display: inline-flex; align-items: center; gap: 4px; color: rgb(253 230 138); font-weight: 700; }
+.station-card.locked { opacity: .55; }
+.station-card.locked .station-art > :first-child { filter: grayscale(1) brightness(.5); }
+.station-lock { position: absolute; font-size: 22px; color: rgb(var(--s300)); text-shadow: 0 2px 6px #000; }
+.station-req { font: 11px/1.3 ui-monospace, monospace; color: rgb(248 113 113); }
+@media (prefers-reduced-motion: reduce) { .hf-flame, .hearth-glow, .hf-coals { animation: none; } .hearth-ember { display: none; } }
+
+/* ================= HUNT MAKEOVER (Phase 2): trail, wanted poster, odds dial ================= */
+.hunt-trail { display: flex; align-items: center; flex-wrap: wrap; gap: 0; margin: -2px 0 12px; }
+.trail-step { position: relative; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer;
+  background: rgb(var(--p800)); border: 1px solid rgb(var(--p700)); color: rgb(var(--s500)); transition: transform .12s, border-color .12s; }
+.trail-step svg { width: 22px; height: 22px; fill: currentColor; }
+.trail-step b { position: absolute; right: -3px; bottom: -3px; min-width: 15px; height: 15px; border-radius: 8px; font: 700 10px/15px ui-monospace, monospace; background: rgb(var(--p900)); color: rgb(var(--s300)); border: 1px solid rgb(var(--p700)); }
+.trail-step.tamed { color: rgb(252 211 77); border-color: rgb(245 158 11 / 0.5); }
+.trail-step.wild { color: rgb(var(--s300)); border-style: dashed; }
+.trail-step.apex { color: rgb(232 121 249); border-color: rgb(192 38 211 / 0.5); }
+.trail-step.titan { color: rgb(251 146 60); border-color: rgb(234 88 12 / 0.6); }
+.trail-step.guardian { color: rgb(251 113 133); border-color: rgb(225 29 72 / 0.5); }
+.trail-step.current { transform: scale(1.12); box-shadow: 0 0 0 2px rgb(var(--accent)), 0 0 14px rgb(var(--accent) / 0.5); background: rgb(var(--p700)); }
+.trail-step:hover { transform: scale(1.08); }
+.trail-gap { width: 14px; height: 2px; margin: 0 2px; background-image: radial-gradient(circle, rgb(var(--s600)) 1px, transparent 1.4px); background-size: 5px 2px; }
+
+.hunt-poster { background: var(--paper); color: var(--ink); border-radius: 4px; padding: 14px 16px 16px; box-shadow: 0 14px 30px rgb(0 0 0 / 0.5), inset 0 0 40px rgb(120 90 50 / 0.18);
+  outline: 1px solid var(--paper-shade); outline-offset: -7px; }
+.poster-head { text-align: center; margin-bottom: 10px; border-bottom: 2px solid var(--ink-soft); padding-bottom: 6px; }
+.poster-kicker { font: 400 26px/1 'IM Fell English SC', serif; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.hunt-poster[data-kind="titan"] .poster-kicker, .hunt-poster[data-kind="guardian"] .poster-kicker { color: #8b1d0e; }
+.hunt-poster[data-kind="apex"] .poster-kicker { color: #6b1f7a; }
+.hunt-poster #beast-avatar-box { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--ink-soft), 0 10px 18px rgb(0 0 0 / 0.35); }
+.hunt-poster #beast-name { color: var(--ink) !important; }
+.hunt-poster #beast-desc { color: var(--ink-soft) !important; }
+.hunt-poster .bg-primal-900\/80 { background: rgb(255 255 255 / 0.28) !important; border-color: var(--paper-shade) !important; }
+.hunt-poster .text-slate-400, .hunt-poster .text-slate-200 { color: var(--ink-soft) !important; }
+.hunt-poster #beast-power-min { color: #92400e !important; }
+.hunt-poster #beast-power-max { color: #9f1239 !important; }
+.hunt-poster #beast-reward-power { color: #166534 !important; }
+.hunt-poster #beast-fight-stats { color: var(--ink-soft) !important; }
+
+.odds-dial-wrap { position: relative; display: grid; justify-items: center; margin: 14px auto 2px; max-width: 320px; }
+.odds-dial { width: 100%; max-width: 240px; overflow: visible; }
+.odds-needle { transform-origin: 110px 112px; transform-box: view-box; transition: transform .45s cubic-bezier(.3, 1.4, .5, 1); }
+#odds-arc { transition: stroke-dasharray .45s ease; }
+.odds-readout { margin-top: -2px; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+.odds-num { font: 700 26px/1 ui-monospace, monospace; color: rgb(252 211 77); text-shadow: 0 2px 8px rgb(0 0 0 / 0.6); }
+.odds-num.bad { color: rgb(248 113 113); }
+.odds-num.good { color: rgb(52 211 153); }
+.odds-caption { font: 11px/1.4 ui-monospace, monospace; color: rgb(var(--s400)); text-transform: uppercase; letter-spacing: .1em; }
+.odds-ends { display: flex; justify-content: space-between; width: 100%; font: 10px/1.2 ui-monospace, monospace; color: rgb(var(--s500)); margin-top: 4px; }
+@media (prefers-reduced-motion: reduce) { .odds-needle, #odds-arc { transition: none; } }
+
+/* Armory: weapon pictures */
+.armory-art { width: 84px; height: 84px; flex-shrink: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; color: rgb(252 211 77);
+  background: radial-gradient(circle at 50% 60%, rgb(var(--accent) / 0.18), transparent 70%), rgb(var(--p900)); border: 1px solid rgb(var(--p700)); box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.3); }
+.armory-art img { max-width: 92%; max-height: 92%; object-fit: contain; filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.6)); }
+.armory-art.next { width: 56px; height: 56px; font-size: 18px; }
+.armory-art.next img { opacity: .55; filter: grayscale(.6) drop-shadow(0 3px 4px rgb(0 0 0 / 0.6)); }
+#armory-craft-box:hover .armory-art.next img { opacity: .9; filter: none; }
