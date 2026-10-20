@@ -8,6 +8,14 @@
 (function () {
   const PATCH_NOTES = [
     {
+      id: '2026-10-22',
+      title: 'Always Forward',
+      items: [
+        { icon: 'fa-arrow-trend-up', head: 'Ascending only makes you stronger', text: 'Bosses no longer grow stronger every time you Ascend. Their strength depends only on their tier, so every prestige lets you climb a little deeper up the Apex Ladder.' },
+        { icon: 'fa-map', head: 'Coming next: the Legacy Map', text: 'The Hunter\'s Legacy is growing into a big permanent map shaped like a bear\'s paw, with branches that bring every tab back to life.' }
+      ]
+    },
+    {
       id: '2026-10-21',
       title: 'Fire and Frost',
       items: [

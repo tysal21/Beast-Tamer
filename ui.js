@@ -3496,7 +3496,7 @@ function renderWorldTab() {
     titanHtml = '<div class="text-amber-300 font-bold mb-2"><i class="fa-solid fa-triangle-exclamation mr-1"></i>' + titan.name + ' is awake! Power ' + formatNumber(b.min) + ' - ' + formatNumber(b.max) + '</div>' +
       '<button data-world-action="fight-titan" class="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-700 to-rose-700 text-white font-cinzel font-bold text-sm border border-amber-400/60 cursor-pointer hover:brightness-110">Hunt the Titan</button>';
   } else {
-    titanHtml = '<div class="text-slate-400">Sleeping. Reach Apex Tier ' + WORLD_CONFIG.titanAfterApexTier + ' to wake the <strong class="text-slate-200">' + w.titan.name + '</strong>. Once awake it stays awake, and it does not grow stronger when you Ascend.</div>' +
+    titanHtml = '<div class="text-slate-400">Sleeping. Reach Apex Tier ' + WORLD_CONFIG.titanAfterApexTier + ' to wake the <strong class="text-slate-200">' + w.titan.name + '</strong>. Once awake it stays awake.</div>' +
       '<div class="mt-2 h-2 rounded-full bg-primal-900 overflow-hidden border border-primal-700"><div class="h-full bg-gradient-to-r from-fuchsia-600 to-amber-500" style="width:' + pct + '%"></div></div>' +
       '<div class="text-[11px] font-mono text-slate-500 mt-1">Deepest Apex: ' + (Math.max(depth, gameState.bestApexDepth || 0) > 0 ? 'Tier ' + (4 + Math.max(depth, gameState.bestApexDepth || 0)) : 'none yet') + ' / Tier ' + WORLD_CONFIG.titanAfterApexTier + '</div>';
   }
