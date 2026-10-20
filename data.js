@@ -804,7 +804,7 @@ const TOTEM_UNLOCKS = [
   { seal: 2, name: 'Trophy Weapons', desc: 'Forge a permanent Trophy Weapon from Apex Fangs.', icon: 'fa-hammer', live: true },
   { seal: 3, name: 'Packmaster automation', desc: 'Auto-Buy generators and Auto-Tend the nest (toggles on the Hunter\'s Legacy tab).', icon: 'fa-robot', live: true },
   { seal: 4, name: 'Primordial Relics', desc: 'From now on, every Seal Guardian you beat awakens one of your relics into its Primordial form (double effect).', icon: 'fa-gem', live: true },
-  { seal: 5, name: 'Second Expedition Party', desc: 'Send two expeditions out at once.', icon: 'fa-people-group', live: true },
+  { seal: 5, name: 'Second Expedition Party', desc: 'Send two expeditions out at once. Once you also reach Region 2, it teaches the Loom\'s bond-weaving rite: the Pack.', icon: 'fa-people-group', live: true },
   { seal: 6, name: 'The Totem Awakens', desc: 'Once a day, deliver an Awakened Strike: a huge hit on the Totem and bonus Totem Shards.', icon: 'fa-bolt-lightning', live: true },
   { seal: 7, name: 'Seal Boons', desc: 'Every Seal from here on offers three permanent Boons. Pick one.', icon: 'fa-star', live: true }
 ];

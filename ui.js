@@ -431,6 +431,7 @@ function applyRegionCurrencyText() {
   lastCurrencyRegion = w.id;
   const c = getRegionCurrency();
   document.querySelectorAll('[data-cur="name"]').forEach(el => { el.textContent = c.name; });
+  document.querySelectorAll('[data-cur="one"]').forEach(el => { el.textContent = c.one; });
   document.querySelectorAll('[data-cur="shop"]').forEach(el => { el.textContent = (w.id === 'wilds' ? 'Primal Bloodstone' : c.one) + ' Perks'; });
   document.querySelectorAll('[data-cur="shopdesc"]').forEach(el => {
     el.textContent = w.id === 'wilds' ? 'Channel Bloodstones into ancient blessings that persist across all runs.'
@@ -1285,7 +1286,7 @@ function renderFrame(meatRate) {
     elements.beastStatusRibbon.textContent = 'APEX LADDER';
     elements.beastStatusRibbon.className = 'absolute bottom-0 inset-x-0 bg-fuchsia-950/90 text-[10px] text-center font-mono py-0.5 text-fuchsia-300 border-t border-fuchsia-700/60 font-bold';
   } else if (isTitanFight) {
-    elements.beastStatusRibbon.textContent = 'WORLD TITAN';
+    elements.beastStatusRibbon.textContent = 'REGION TITAN';
     elements.beastStatusRibbon.className = 'absolute bottom-0 inset-x-0 bg-amber-950/90 text-[10px] text-center font-mono py-0.5 text-amber-300 border-t border-amber-600/60 font-bold';
   } else if (isGuardianFight) {
     elements.beastStatusRibbon.textContent = 'TOTEM GUARDIAN';
@@ -3838,7 +3839,7 @@ let expRecallSlot = 0;
 function matChip(id, n, need) {
   const m = MATERIALS[id];
   const short = need !== undefined && n < need;
-  return '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primal-900/80 border ' + (short ? 'border-red-800/70' : 'border-primal-700') + ' text-xs font-mono">' +
+  return '<span data-tip-mat="' + id + '" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primal-900/80 border ' + (short ? 'border-red-800/70' : 'border-primal-700') + ' text-xs font-mono">' +
     '<i class="fa-solid ' + m.icon + ' ' + m.color + '"></i>' +
     '<span class="' + (short ? 'text-red-300' : 'text-slate-200') + '">' + formatNumber(n) + (need !== undefined ? ' / ' + formatNumber(need) : '') + '</span>' +
     '<span class="text-slate-500 hidden sm:inline">' + m.name + '</span></span>';

@@ -50,7 +50,7 @@
   </script>
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=20261019u">
+  <link rel="stylesheet" href="style.css?v=20261019v">
 </head>
 
 <body class="bg-primal-900 text-slate-200 font-sans min-h-screen selection:bg-primal-accent selection:text-white flex flex-col justify-between">
@@ -516,7 +516,7 @@
 
               <div class="flex justify-between text-[10px] text-slate-500 font-mono mt-1">
                 <span>Underpowered (&lt;Min: 0%)</span>
-                <span>Hermite Curve</span>
+                <span>Odds climb as you grow</span>
                 <span>Mastered (&ge;Max: 98%)</span>
               </div>
             </div>
@@ -709,7 +709,7 @@
               <h2 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2">
                 <i class="fa-solid fa-shield-cat text-amber-500"></i> Tamed Menagerie
               </h2>
-              <p class="text-xs text-slate-400">All apex hybrids bound to your pack, granting combat strength.</p>
+              <p class="text-xs text-slate-400">Every beast whose thread you have re-tuned. They fight at your side.</p>
             </div>
             <div class="text-xs font-mono bg-primal-800 text-amber-300 px-3 py-1 rounded border border-primal-700">
               Total Beast Power: <span id="menagerie-total-power" class="font-bold text-white">0</span>
@@ -750,7 +750,7 @@
         </div>
         <h2 class="font-cinzel text-2xl font-bold text-amber-300 tracking-wide mb-2">Excavate Ancient Forge Chamber</h2>
         <p class="text-sm text-slate-300 max-w-lg mx-auto mb-4">
-          With the <span data-beast-name="1">Boar-Hawk</span> subdued, your hunters have located the subterranean breeding vats. Clear the primeval debris and restore the forge fires.
+          With the <span data-beast-name="1">Boar-Hawk</span> subdued, you can reach what it was guarding: salvaged Loom machinery, half buried. Clear it out and you can breed hybrids of your own, born instead of spliced.
         </p>
         <button id="btn-unlock-forge" class="px-6 py-3 bg-gradient-to-r from-amber-600 via-purple-700 to-amber-600 hover:brightness-110 active:scale-95 text-white text-sm font-cinzel font-bold rounded-xl transition-all border border-amber-400/50 shadow-lg cursor-pointer flex items-center justify-center gap-2 mx-auto">
           <i class="fa-solid fa-fire-flame-curved text-amber-300"></i>
@@ -867,7 +867,7 @@
               <i class="fa-solid fa-monument"></i> <span id="totem-depth-name">Primordial Depths</span>
             </div>
             <h2 class="font-cinzel text-2xl sm:text-3xl font-bold text-white tracking-wide">Primal Totem &middot; Layer <span id="totem-layer">1</span></h2>
-            <p class="text-xs text-slate-400 max-w-xl">Carved by the first hunters and bound by Seals. Your Combat Power wears it down every second, even while you're away. Every layer you shatter grants a permanent bonus.</p>
+            <p class="text-xs text-slate-400 max-w-xl">The Loom's Core lies buried beneath it, locked by Seals. Your Combat Power wears it down every second, even while you're away. Every layer you shatter grants a permanent bonus.</p>
           </div>
           <div class="flex flex-wrap gap-2 text-xs font-mono">
             <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">Totem Shards: <span id="totem-shards" class="text-amber-300 font-bold">0</span></div>
@@ -1082,7 +1082,7 @@
               Sacrifice Your Camp for <span data-cur="name">Bloodstones</span>
             </h2>
             <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
-              Ascending resets your current run's <strong class="text-amber-300">Meat, Generators, Weapons, Training, and untames the 4 Milestone Bosses</strong> so you can hunt them anew. You permanently retain all <strong class="text-emerald-400">Trophy Relics, Beast Forge access, Hatched Hybrid Chimeras, Bloodstone Perks, and Realm Expansions</strong>. Hybrids sleep until both of their parents are re-tamed, and Relics sleep until their boss is re-tamed. Bosses grow stronger with every Ascension.
+              Ascending resets your current run's <strong class="text-amber-300">Meat, Generators, Weapons, Training, and untames the 4 Milestone Bosses</strong> so you can hunt them anew. You permanently retain all <strong class="text-emerald-400">Trophy Relics, Beast Forge access, Hybrids, <span data-cur="one">Bloodstone</span> Perks, and Realm Expansions</strong>. Hybrids sleep until both of their parents are re-tamed, and Relics sleep until their boss is re-tamed. Bosses grow stronger with every Ascension.
             </p>
             <div class="flex flex-wrap items-center gap-4 pt-2 text-xs font-mono">
               <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">
@@ -1155,7 +1155,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
       <div class="flex items-center space-x-2">
         <i class="fa-solid fa-code-commit text-amber-500"></i>
-        <span>Idle Engine: Wall-clock delta-time `requestAnimationFrame` + Offline Sync.</span>
+        <span>Your hunt keeps going while you're away. Progress saves automatically.</span>
       </div>
       <div class="flex items-center space-x-4">
         <button id="btn-toggle-sound" class="hover:text-amber-400 transition-colors flex items-center gap-1.5 cursor-pointer">
@@ -1329,19 +1329,20 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
   <!-- Modular Scripts: Data -> Engine -> UI -->
-  <script src="data.js?v=20261019u"></script>
-  <script src="engine.js?v=20261019u"></script>
-  <script src="ui.js?v=20261019u"></script>
-  <script src="stealth.js?v=20261019u"></script>
-  <script src="dev.js?v=20261019u"></script>
-  <script src="comforts.js?v=20261019u"></script>
-  <script src="nav.js?v=20261019u"></script>
-  <script src="scenery.js?v=20261019u"></script>
-  <script src="seals.js?v=20261019u"></script>
-  <script src="leaderboard.js?v=20261019u"></script>
-  <script src="pack.js?v=20261019u"></script>
-  <script src="qr.js?v=20261019u"></script>
-  <script src="transfer.js?v=20261019u"></script>
-  <script src="whatsnew.js?v=20261019u"></script>
+  <script src="data.js?v=20261019v"></script>
+  <script src="engine.js?v=20261019v"></script>
+  <script src="ui.js?v=20261019v"></script>
+  <script src="stealth.js?v=20261019v"></script>
+  <script src="dev.js?v=20261019v"></script>
+  <script src="comforts.js?v=20261019v"></script>
+  <script src="nav.js?v=20261019v"></script>
+  <script src="scenery.js?v=20261019v"></script>
+  <script src="seals.js?v=20261019v"></script>
+  <script src="leaderboard.js?v=20261019v"></script>
+  <script src="pack.js?v=20261019v"></script>
+  <script src="qr.js?v=20261019v"></script>
+  <script src="transfer.js?v=20261019v"></script>
+  <script src="whatsnew.js?v=20261019v"></script>
+  <script src="tips.js?v=20261019v"></script>
 </body>
 </html>
