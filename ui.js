@@ -2619,12 +2619,6 @@ const legacyEls = {
 let legacySignature = '';
 let legacyRespecArmedUntil = 0;
 
-const LEGACY_COLORS = {
-  amber: { text: 'text-amber-300', border: 'border-amber-600/60', bg: 'bg-amber-950/30', btn: 'from-amber-700 to-orange-700' },
-  emerald: { text: 'text-emerald-300', border: 'border-emerald-600/60', bg: 'bg-emerald-950/30', btn: 'from-emerald-700 to-teal-700' },
-  rose: { text: 'text-rose-300', border: 'border-rose-600/60', bg: 'bg-rose-950/30', btn: 'from-rose-700 to-red-700' },
-  slate: { text: 'text-slate-400', border: 'border-slate-700', bg: 'bg-primal-900/60', btn: 'from-slate-700 to-slate-800' }
-};
 
 /** What a node is giving right now, e.g. "Now: +30% Meat/s" */
 function getLegacyNodeNowText(node) {
