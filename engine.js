@@ -1785,7 +1785,7 @@ function performAscension() {
   checkTotemUnlock();
 
   logCombatMessage(
-    `🔥 <strong>PRIMAL ASCENSION #${gameState.ascensionCount} COMPLETE!</strong> Claimed <strong>+${formatNumber(claimed)} ${curName()}</strong>! Relics, Forge, and Hybrids retained (they sleep until you re-tame their bosses). Bosses grow stronger.`,
+    `🔥 <strong>PRIMAL ASCENSION #${gameState.ascensionCount} COMPLETE!</strong> Claimed <strong>+${formatNumber(claimed)} ${curName()}</strong>! Relics, Forge, and Hybrids retained (they sleep until you re-tame their bosses). Bosses keep their strength, so you come back stronger.`,
     'unlock'
   );
   if (recalled.length) logCombatMessage('🧊 <strong>RECALL:</strong> The Archive remembers. ' + recalled.join(' and ') + (recalled.length > 1 ? ' are' : ' is') + ' already tamed.', 'unlock');
@@ -2642,14 +2642,10 @@ function getClickYield() {
   return Math.max(1, totalYield);
 }
 
-/** Bosses grow stronger with every Ascension (Totem guardians use their own scaling) */
-const BOSS_ASCENSION_GROWTH = 0.75; // +this much boss power per Ascension (linear)...
-const BOSS_ASCENSION_SOFTCAP = 8;   // ...for the first 8 Ascensions in a world
-const BOSS_ASCENSION_GROWTH_LATE = 0.25; // then slower, so a world never turns into a wall
+/** Bosses no longer grow when you Ascend: Ascending only ever makes you stronger.
+ *  A boss's strength depends on its tier alone, so going deeper is what makes fights harder. */
 function getBossAscensionMult(beast) {
-  if (!beast || beast.isGuardian || beast.isTitan) return 1;
-  const a = gameState.ascensionCount || 0;
-  return 1 + BOSS_ASCENSION_GROWTH * Math.min(a, BOSS_ASCENSION_SOFTCAP) + BOSS_ASCENSION_GROWTH_LATE * Math.max(0, a - BOSS_ASCENSION_SOFTCAP);
+  return 1;
 }
 
 function getEffectiveBossBracket(beast) {
