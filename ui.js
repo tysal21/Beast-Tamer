@@ -1125,6 +1125,21 @@ function renderFrame(meatRate) {
     elements.btnCraftWeapon.classList.add('hidden');
   }
 
+  // Masterwork (Legacy Map): temper the equipped weapon with Meat
+  const mwBox = document.getElementById('masterwork-box');
+  if (mwBox) {
+    const mwOn = isMasterworkUnlocked();
+    mwBox.classList.toggle('hidden', !mwOn);
+    if (mwOn) {
+      const tl = getTemperLevel();
+      const per = Math.round((hasLegacy('master_temper') ? LEGACY_CONFIG.temperPowerMaster : LEGACY_CONFIG.temperPower) * 100);
+      document.getElementById('masterwork-name').textContent = equipped ? (tl > 0 ? equipped.name + ' +' + tl : equipped.name + ', untempered') : 'Craft a weapon first';
+      document.getElementById('masterwork-bonus').textContent = (tl > 0 ? 'Hunter Power x' + getTemperMult().toFixed(2) + '. ' : '') + 'Next temper: +' + per + '% Hunter Power. Resets when you Ascend.';
+      document.getElementById('masterwork-cost').textContent = formatNumber(getTemperCost());
+      document.getElementById('btn-temper').disabled = !canTemper();
+    }
+  }
+
   // Camp Enhancements
   const endCost = getCampEnduranceCost();
   const isEndMaxed = isCampEnduranceMaxed();
@@ -1487,7 +1502,10 @@ function renderGeneratorsLadder() {
   elements.generatorsContainer.innerHTML = '';
   GENERATOR_LADDER.forEach(gen => {
     const isUnlocked = isGeneratorUnlocked(gen);
-    const count = gameState.generators[gen.id] || 0;
+    const owned = gameState.generators[gen.id] || 0;
+    const count = getGeneratorLevel(gen); // built + free levels from the Legacy Map
+    const freeLv = count - owned;
+    const MS = getGeneratorMilestones();
     const bulk = getGeneratorBulk(gen);
     const cost = bulk.cost;
     const canAfford = gameState.meat >= cost;
@@ -1503,10 +1521,10 @@ function renderGeneratorsLadder() {
       const milestoneMult = getGeneratorMilestoneMultiplier(gen.id);
       const totalYieldVal = count * gen.yieldPerSec * milestoneMult;
       const totalYieldStr = totalYieldVal > 0 && totalYieldVal < 10 ? totalYieldVal.toFixed(1) : formatNumber(totalYieldVal);
-      const nextMilestone = GENERATOR_MILESTONES.find(m => count < m.count);
-      const prevCount = [...GENERATOR_MILESTONES].reverse().find(m => count >= m.count);
-      const stars = GENERATOR_MILESTONES.map(m => '<i class="fa-solid fa-star' + (count >= m.count ? ' lit' : '') + '" data-tip="' + m.count + ' owned: Overdrive x' + m.totalMult + '"></i>').join('');
-      const nextMult = nextMilestone ? Math.round(milestoneMult * nextMilestone.mult * (hasLegacyCapstone('feast_of_plenty') ? LEGACY_CONFIG.feastMult : 1) * 100) / 100 : 0;
+      const nextMilestone = MS.find(m => count < m.count);
+      const prevCount = [...MS].reverse().find(m => count >= m.count);
+      const stars = MS.map(m => '<i class="fa-solid fa-star' + (count >= m.count ? ' lit' : '') + (m.node ? ' legacy' : '') + '" data-tip="Level ' + m.count + ': Overdrive x' + m.totalMult + (m.node ? ' (Legacy Map)' : '') + '"></i>').join('');
+      const nextMult = nextMilestone ? Math.round(milestoneMult * nextMilestone.mult * getFeastMult() * 100) / 100 : 0;
       const pct = nextMilestone ? Math.min(100, (count - (prevCount ? prevCount.count : 0)) / (nextMilestone.count - (prevCount ? prevCount.count : 0)) * 100) : 100;
       const nextHtml = nextMilestone
         ? '<div class="station-next"><div class="station-bar"><span style="width:' + pct.toFixed(1) + '%"></span></div><span>' + count + '/' + nextMilestone.count + ' for x' + nextMult + '</span></div>'
@@ -1514,10 +1532,10 @@ function renderGeneratorsLadder() {
       const disabledAttr = canAfford ? '' : 'disabled';
 
       card.className = 'station-card';
-      card.setAttribute('data-tip', gen.desc + ' +' + eachYieldStr + ' Meat/s each.');
+      card.setAttribute('data-tip', gen.desc + ' +' + eachYieldStr + ' Meat/s each.' + (freeLv > 0 ? ' Level ' + count + ': ' + owned + ' built + ' + freeLv + ' free from the Legacy Map.' : ''));
       card.innerHTML =
         '<div class="station-art">' + art +
-          '<span class="station-count gen-count" aria-label="Owned">' + count + '</span>' +
+          '<span class="station-count gen-count' + (freeLv > 0 ? ' has-free' : '') + '" aria-label="Level">' + count + '</span>' +
           (milestoneMult > 1 ? '<span class="station-od">x' + (Math.round(milestoneMult * 100) / 100) + '</span>' : '') +
         '</div>' +
         '<div class="station-body">' +
@@ -1601,6 +1619,7 @@ function renderTrophyCabinet() {
             '<span class="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ' + badgeStyle + '">' + relic.rarity + '</span>' +
           '</div>' +
           '<p class="text-xs text-slate-300 leading-snug">' + relic.desc + '</p>' +
+          (getRelicEchoes(key) > 0 ? '<div class="text-[10px] text-violet-300 font-mono mt-1" data-tip="Relic Echoes (Legacy Map): each Echo makes this relic 10% stronger, up to 10."><i class="fa-solid fa-clone mr-1"></i>Echoes ' + getRelicEchoes(key) + '/' + RELIC_ECHO_MAX + ' (+' + (getRelicEchoes(key) * 10) + '%)</div>' : '') +
           (isAwake
             ? '<div class="text-[10px] text-slate-400 font-mono mt-1">Source: ' + beastName + ' Trophy</div>'
             : '<div class="text-[10px] text-sky-300 font-mono mt-1"><i class="fa-solid fa-moon mr-1"></i>Asleep: tame the ' + beastName + ' this run to wake it</div>') +
@@ -1746,6 +1765,14 @@ elements.btnForage.addEventListener('click', (e) => {
     '+' + formatNumber(earned) + (isCrit ? ' CRIT!' : ''),
     isCrit ? 'text-amber-300 font-extrabold text-base' : 'text-amber-400'
   );
+});
+
+const btnTemper = document.getElementById('btn-temper');
+if (btnTemper) btnTemper.addEventListener('click', () => {
+  if (!temperWeapon()) return;
+  sound.playBuy();
+  logCombatMessage('🔨 <strong>Masterwork:</strong> your weapon is tempered (+' + getTemperLevel() + '). Hunter Power x' + getTemperMult().toFixed(2) + ' this run.', 'unlock');
+  saveGameToStorage();
 });
 
 elements.btnCraftWeapon.addEventListener('click', () => {
@@ -2331,10 +2358,10 @@ function updateFishingLive() {
   }
 
   // Idle lines
-  const interval = FISHING_CONFIG.lines.catchIntervalSec;
+  const interval = getLineIntervalSec();
   const basketN = getFishBasketCount();
   const basketFull = areLineFishFull();
-  fishEls.linesCount.textContent = f.lines + '/' + FISHING_CONFIG.lines.maxLines + ' Lines';
+  fishEls.linesCount.textContent = f.lines + '/' + getMaxFishingLines() + ' Lines';
   fishEls.lineBar.style.width = Math.min(100, (f.lineTimer / interval) * 100) + '%';
   fishEls.lineBar.className = 'h-full ' + (basketFull ? 'bg-red-500' : 'bg-emerald-500');
   fishEls.lineNext.textContent = basketFull ? 'Line fish storage full!' : formatClock((interval - f.lineTimer) / Math.max(1, f.lines));
@@ -2380,7 +2407,7 @@ if (fishEls.lineBtn) {
   fishEls.lineBtn.addEventListener('click', () => {
     if (buyFishingLine()) {
       sound.playBuy();
-      showToast('New idle line set! (' + gameState.fishing.lines + '/' + FISHING_CONFIG.lines.maxLines + ')', 'success');
+      showToast('New idle line set! (' + gameState.fishing.lines + '/' + getMaxFishingLines() + ')', 'success');
       saveGameToStorage();
     }
   });
@@ -2461,7 +2488,7 @@ function renderTotemStatic() {
   if (isTotemSealLayer(t.layer)) {
     totemEls.nextReward.textContent = 'Defeat the Seal guardian to continue';
   } else {
-    totemEls.nextReward.textContent = getTotemLayerBonus(t.layer).label + ' and ' + formatNumber(TOTEM_CONFIG.shardsPerLayer * t.layer) + ' Totem Shards';
+    totemEls.nextReward.textContent = getTotemLayerBonus(t.layer).label + ' and ' + formatNumber(Math.floor(TOTEM_CONFIG.shardsPerLayer * t.layer * getShardMult())) + ' Totem Shards';
   }
 
   // Seal unlock list
@@ -2513,7 +2540,7 @@ function updateTotemLive() {
     totemEls.guardianName.textContent = guardian.name;
     totemEls.guardianRange.textContent = formatNumber(guardian.minPower) + ' - ' + formatNumber(guardian.maxPower);
     totemEls.sealReward.textContent = '+' + formatNumber(TOTEM_CONFIG.sealStones * guardian.sealNumber) + ' ' + curName() + ', +' +
-      formatNumber(TOTEM_CONFIG.sealShards * guardian.sealNumber) + ' Totem Shards, permanent +' + Math.round(TOTEM_CONFIG.sealPowerBonus * 100) + '% Combat Power';
+      formatNumber(Math.floor(TOTEM_CONFIG.sealShards * guardian.sealNumber * getShardMult())) + ' Totem Shards, permanent +' + Math.round(TOTEM_CONFIG.sealPowerBonus * 100) + '% Combat Power';
     return;
   }
 
@@ -2592,12 +2619,6 @@ const legacyEls = {
 let legacySignature = '';
 let legacyRespecArmedUntil = 0;
 
-const LEGACY_COLORS = {
-  amber: { text: 'text-amber-300', border: 'border-amber-600/60', bg: 'bg-amber-950/30', btn: 'from-amber-700 to-orange-700' },
-  emerald: { text: 'text-emerald-300', border: 'border-emerald-600/60', bg: 'bg-emerald-950/30', btn: 'from-emerald-700 to-teal-700' },
-  rose: { text: 'text-rose-300', border: 'border-rose-600/60', bg: 'bg-rose-950/30', btn: 'from-rose-700 to-red-700' },
-  slate: { text: 'text-slate-400', border: 'border-slate-700', bg: 'bg-primal-900/60', btn: 'from-slate-700 to-slate-800' }
-};
 
 /** What a node is giving right now, e.g. "Now: +30% Meat/s" */
 function getLegacyNodeNowText(node) {
@@ -2631,72 +2652,37 @@ function getLegacyNodeNowText(node) {
   return '';
 }
 
-function renderLegacyNode(node, c) {
-  const rank = getLegacyRank(node.id);
-  const open = isLegacyNodeOpen(node);
-  const cost = getLegacyNodeCost(node);
-  const maxed = cost === null;
-  const afford = canBuyLegacyRank(node);
-  const now = getLegacyNodeNowText(node);
-  const needs = node.requires.filter(id => getLegacyRank(id) < 1).map(id => getLegacyNode(id).name);
-  const box = node.capstone
-    ? (open ? c.border + ' ' + c.bg + ' border-2' : 'border-primal-700 bg-primal-900/50 border-2')
-    : (open ? 'border-primal-600 bg-primal-800/80' : 'border-primal-700 bg-primal-900/50');
-  let btn;
-  if (maxed) {
-    btn = '<div class="w-full text-center py-1.5 rounded-lg text-[11px] font-mono font-bold ' + c.text + ' border ' + c.border + '">MAXED</div>';
-  } else if (!open) {
-    btn = '<div class="w-full text-center py-1.5 rounded-lg text-[11px] text-slate-500 border border-primal-700"><i class="fa-solid fa-lock mr-1"></i>Needs ' + needs.join(', ') + ' rank 1</div>';
-  } else {
-    btn = '<button data-legacy-node="' + node.id + '" class="w-full py-1.5 rounded-lg text-xs font-bold text-white border border-white/10 bg-gradient-to-r ' + c.btn + ' hover:brightness-110 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"' + (afford ? '' : ' disabled') + '>' +
-      (rank === 0 ? 'Learn' : 'Rank up') + ' &middot; ' + formatNumber(cost) + ' Shards</button>';
-  }
-  return '<div class="p-3 rounded-xl border ' + box + ' space-y-2">' +
-    '<div class="flex items-start gap-2.5">' +
-      '<div class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center bg-primal-900 ' + (open ? c.text : 'text-slate-600') + '"><i class="fa-solid ' + node.icon + '"></i></div>' +
-      '<div class="min-w-0 flex-1">' +
-        '<div class="flex items-baseline justify-between gap-2"><span class="text-sm font-bold ' + (open ? 'text-white' : 'text-slate-400') + '">' + node.name + '</span>' +
-        '<span class="text-[10px] font-mono ' + (rank > 0 ? c.text : 'text-slate-500') + '">' + (node.capstone ? 'CAPSTONE' : rank + '/' + node.maxRank) + '</span></div>' +
-        '<div class="text-[11px] text-slate-400 leading-snug">' + node.desc + '</div>' +
-        (now ? '<div class="text-[11px] font-mono text-emerald-300 mt-0.5">' + now + '</div>' : '') +
-      '</div>' +
-    '</div>' + btn +
+/** Packmaster automation toggles (free at Seal 3), shown under the map */
+function renderPackmasterCard() {
+  const pmOpen = isPackmasterUnlocked();
+  const ordersNote = (pmOpen && getWorldIndex() >= 1) ? '<div class="text-[11px] text-sky-300 font-mono"><i class="fa-solid fa-scroll mr-1"></i>Pack Orders: ' + getPackOrders() + ' / ' + PACKMASTER_CONFIG.maxOrders + '. Auto-Trophy and Auto-Strike use one each. Any click in the game refills them.</div>' : '';
+  const rows = LEGACY_PACKMASTER_PREVIEW.map(p => {
+    const ready = pmOpen && (p.unlock === 'seal3' || (p.unlock === 'world2' && getWorldIndex() >= 1));
+    const on = ready && isAutomationOn(p.id);
+    const right = ready
+      ? '<button data-automation="' + p.id + '" class="shrink-0 px-3 py-1 rounded-full text-[11px] font-mono font-bold border cursor-pointer ' + (on ? 'bg-emerald-700 text-white border-emerald-400' : 'bg-primal-900 text-slate-300 border-primal-600') + '">' + (on ? 'ON' : 'OFF') + '</button>'
+      : '<span class="shrink-0 text-[10px] font-mono text-slate-500"><i class="fa-solid fa-lock mr-1"></i>' + (p.unlock === 'seal3' ? 'Seal 3' : 'Region 2') + '</span>';
+    return '<div class="p-3 rounded-xl border ' + (ready ? 'border-sky-700/60 bg-sky-950/20' : 'border-dashed border-slate-700 bg-primal-900/40') + ' flex items-start gap-2.5">' +
+      '<div class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center bg-primal-900 ' + (ready ? 'text-sky-300' : 'text-slate-600') + '"><i class="fa-solid ' + p.icon + '"></i></div>' +
+      '<div class="min-w-0 flex-1"><div class="text-sm font-bold ' + (ready ? 'text-slate-100' : 'text-slate-500') + '">' + p.name + '</div><div class="text-[11px] ' + (ready ? 'text-slate-400' : 'text-slate-500') + '">' + p.desc + '</div></div>' + right +
+    '</div>';
+  }).join('');
+  return '<div class="bg-primal-850 border ' + (pmOpen ? 'border-primal-700' : 'border-dashed border-slate-700') + ' rounded-2xl p-4 shadow-xl space-y-3">' +
+    '<div class="flex items-center gap-2"><i class="fa-solid fa-robot text-sky-300"></i>' +
+    '<div><div class="font-cinzel font-bold text-slate-100">Packmaster</div><div class="text-[10px] uppercase tracking-wider text-slate-500">' + (pmOpen ? 'Automation, free with Seal 3' : 'Opens at Seal 3') + '</div></div></div>' +
+    ordersNote + '<div class="grid grid-cols-1 md:grid-cols-2 gap-2">' + rows + '</div>' +
+    (pmOpen ? '' : '<div class="text-[11px] text-slate-500 text-center pt-1"><i class="fa-solid fa-lock mr-1"></i>Break Seal 3 on the Primal Totem to unlock</div>') +
   '</div>';
 }
 
 function renderLegacyTree() {
-  if (!legacyEls.tree || !gameState.legacy) return;
-  legacyEls.tree.innerHTML = LEGACY_BRANCHES.map(branch => {
-    const c = LEGACY_COLORS[branch.color] || LEGACY_COLORS.slate;
-    let body;
-    if (branch.locked) {
-      const pmOpen = isPackmasterUnlocked();
-      const ordersNote = (pmOpen && getWorldIndex() >= 1) ? '<div class="text-[11px] text-sky-300 font-mono"><i class="fa-solid fa-scroll mr-1"></i>Pack Orders: ' + getPackOrders() + ' / ' + PACKMASTER_CONFIG.maxOrders + '. Auto-Trophy and Auto-Strike use one each. Any click in the game refills them.</div>' : '';
-      body = ordersNote + LEGACY_PACKMASTER_PREVIEW.map(p => {
-        const ready = pmOpen && (p.unlock === 'seal3' || (p.unlock === 'world2' && getWorldIndex() >= 1));
-        const on = ready && isAutomationOn(p.id);
-        const right = ready
-          ? '<button data-automation="' + p.id + '" class="shrink-0 px-3 py-1 rounded-full text-[11px] font-mono font-bold border cursor-pointer ' + (on ? 'bg-emerald-700 text-white border-emerald-400' : 'bg-primal-900 text-slate-300 border-primal-600') + '">' + (on ? 'ON' : 'OFF') + '</button>'
-          : '<span class="shrink-0 text-[10px] font-mono text-slate-500"><i class="fa-solid fa-lock mr-1"></i>' + (p.unlock === 'seal3' ? 'Seal 3' : 'Region 2') + '</span>';
-        return '<div class="p-3 rounded-xl border ' + (ready ? 'border-sky-700/60 bg-sky-950/20' : 'border-dashed border-slate-700 bg-primal-900/40') + ' flex items-start gap-2.5">' +
-          '<div class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center bg-primal-900 ' + (ready ? 'text-sky-300' : 'text-slate-600') + '"><i class="fa-solid ' + p.icon + '"></i></div>' +
-          '<div class="min-w-0 flex-1"><div class="text-sm font-bold ' + (ready ? 'text-slate-100' : 'text-slate-500') + '">' + p.name + '</div><div class="text-[11px] ' + (ready ? 'text-slate-400' : 'text-slate-500') + '">' + p.desc + '</div></div>' + right +
-        '</div>';
-      }).join('') +
-        (pmOpen ? '' : '<div class="text-[11px] text-slate-500 text-center pt-1"><i class="fa-solid fa-lock mr-1"></i>Break Seal 3 on the Primal Totem to unlock</div>');
-    } else {
-      body = LEGACY_NODES.filter(n => n.branch === branch.id).map(n => renderLegacyNode(n, c)).join('<div class="flex justify-center -my-1"><i class="fa-solid fa-chevron-down text-[10px] text-slate-600"></i></div>');
-    }
-    return '<div class="bg-primal-850 border ' + (branch.locked ? 'border-dashed border-slate-700' : 'border-primal-700') + ' rounded-2xl p-4 shadow-xl space-y-3">' +
-      '<div class="flex items-center gap-2"><i class="fa-solid ' + branch.icon + ' ' + c.text + '"></i>' +
-      '<div><div class="font-cinzel font-bold ' + (branch.locked ? 'text-slate-400' : 'text-slate-100') + '">' + branch.name + '</div>' +
-      '<div class="text-[10px] uppercase tracking-wider text-slate-500">' + (branch.locked && isPackmasterUnlocked() ? 'Automation' : branch.tagline) + '</div></div></div>' +
-      body + '</div>';
-  }).join('');
+  if (!gameState.legacy) return;
+  if (legacyEls.tree) legacyEls.tree.innerHTML = renderPackmasterCard();
+  if (typeof renderLegacyMap === 'function') renderLegacyMap();
 }
 
 function getLegacySignature() {
-  return gameState.totem.shards + '|' + JSON.stringify(gameState.legacy.ranks) + '|' + gameState.legacy.freeRespec + '|' + JSON.stringify(gameState.legacy.insight) + '|' + (legacyRespecArmedUntil > Date.now());
+  return gameState.totem.shards + '|' + JSON.stringify(gameState.legacy.ranks) + '|' + gameState.legacy.freeRespec + '|' + JSON.stringify(gameState.legacy.insight) + '|' + JSON.stringify(gameState.legacy.echoes || {}) + '|' + ((gameState.totem && gameState.totem.sealsBroken) || 0) + '|' + getPackOrders() + '|' + getWorldIndex() + '|' + (legacyRespecArmedUntil > Date.now());
 }
 
 function updateLegacyHeader() {
@@ -2755,16 +2741,6 @@ if (legacyEls.tree) {
       updateAutoBuyBadge();
       saveGameToStorage();
       return;
-    }
-    const btn = e.target.closest('[data-legacy-node]');
-    if (!btn) return;
-    const node = getLegacyNode(btn.getAttribute('data-legacy-node'));
-    if (node && buyLegacyRank(node.id)) {
-      sound.playTone(520, 'triangle', 0.12, 0.1);
-      logCombatMessage('🌳 <strong>Hunter\'s Legacy:</strong> ' + node.name + (node.capstone ? ' learned!' : ' rank ' + getLegacyRank(node.id) + '.'), 'unlock');
-      renderLegacyPanel();
-      renderMenagerie();
-      saveGameToStorage();
     }
   });
 }
@@ -3982,7 +3958,7 @@ function renderExpeditionTab() {
   const cost = getHoningCost();
   const lvl = getHoningLevel();
   const honing =
-    '<div class="text-sm text-slate-300">Level <strong class="text-amber-300">' + lvl + '</strong> / ' + HONING_CONFIG.maxLevel + ' · Hunter Power <strong class="text-emerald-300">x' + getHoningPowerMult().toFixed(2) + '</strong></div>' +
+    '<div class="text-sm text-slate-300">Level <strong class="text-amber-300">' + lvl + '</strong> / ' + getHoningMaxLevel() + ' · Hunter Power <strong class="text-emerald-300">x' + getHoningPowerMult().toFixed(2) + '</strong></div>' +
     '<div class="text-xs text-slate-400 mt-1">Each level: +' + Math.round(HONING_CONFIG.powerPerLevel * 100) + '% Hunter Power (which also raises Leadership). Kept through Ascension and Rift crossings.</div>' +
     (cost ? '<div class="text-xs uppercase tracking-wider text-slate-500 mt-3 mb-1.5">Next level needs</div><div class="flex flex-wrap gap-2">' + Object.keys(cost).map(m => matChip(m, getMaterial(m), cost[m])).join('') + '</div>' +
       '<button data-exp-action="hone" ' + (canHone() ? '' : 'disabled') + ' class="mt-3 w-full py-2.5 rounded-lg bt-btn-seal text-base cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Hone to level ' + (lvl + 1) + ' (' + formatPowerGain(previewPowerGain(() => { gameState.expedition.honing++; }, () => { gameState.expedition.honing--; })) + ')</button>'

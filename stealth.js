@@ -73,6 +73,7 @@
     'magma': 'market', 'molten heart': 'reserve fund', 'heat shield': 'risk insurance', 'scorched': 'penalized', 'cash out': 'finalize', 'cashed out': 'finalized', 'cash-out': 'finalize', 'cores': 'points', 'core': 'point',
     'charges': 'allocations', 'charge': 'allocation', 'raise the steaks': 'set allocation', 'blew': 'closed', 'blown': 'closed', 'blast': 'correction', 'lava': 'market', 'ash': 'archive', 'ashen': 'archived',
     'boons': 'benefits', 'boon': 'benefit', 'primordial': 'premium', 'loom logs': 'system logs', 'loom': 'system', 'awakened strike': 'priority push', 'awakens': 'upgrades', 'awaken': 'upgrade', 'core': 'server',
+    'legacy map': 'tenure roadmap', 'paw': 'roadmap', 'toe pads': 'phase 2', 'toe pad': 'phase 2', 'toe tips': 'phase 3', 'toe': 'phase', 'palm': 'core plan', 'masterwork': 'certification', 'temper': 'certify', 'tempered': 'certified', 'echoes': 'renewals', 'echo': 'renewal',
     'roars': 'notes', 'bite': 'fee', 'sting': 'fee', 'pits': 'channels', 'dens': 'branches', 'den': 'branch'
   };
 
@@ -97,6 +98,8 @@
     FISH_RECIPES.forEach((r, i) => add(r.name, 'Bundle ' + (i + 1)));
     TROPHY_WEAPONS.forEach((t, i) => add(t.name, 'Premium License ' + (i + 1)));
     LEGACY_NODES.forEach((n, i) => add(n.name, 'Initiative ' + (i + 1)));
+    (typeof LEGACY_AREAS !== 'undefined' ? LEGACY_AREAS : []).forEach((a, i) => add(a.name, 'Workstream ' + String.fromCharCode(65 + i)));
+    (typeof LEGACY_RINGS !== 'undefined' ? LEGACY_RINGS : []).forEach((r, i) => add(r.name, 'Phase ' + (i + 1)));
     Object.values(MATERIALS).forEach((mm, i) => add(mm.name, 'Material Class ' + String.fromCharCode(65 + i)));
     EXPEDITION_REGIONS.forEach((r, i) => add(r.name, 'Site ' + (i + 1)));
     GEAR_SLOTS.forEach(s => add(s.name, { helm: 'Laptop', armor: 'Desk Chair', charm: 'Lanyard' }[s.id] || s.name));

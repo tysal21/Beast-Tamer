@@ -748,7 +748,7 @@ const TOTEM_CONFIG = {
   strikeSec: 60,            // a Strike deals this many seconds of passive damage
   bossWinSec: 300,          // any boss win slams the Totem for this many seconds of passive damage
 
-  shardsPerLayer: 10,       // normal layer reward: 10 x layer number Totem Shards
+  shardsPerLayer: 20,       // normal layer reward: 20 x layer number Totem Shards (doubled for the Legacy Map)
 
   // Seal guardians: Seal k needs min = sealBaseMin x sealGrowth^(k-1), max = min x sealMaxMult
   sealBaseMin: 300000,
@@ -757,7 +757,7 @@ const TOTEM_CONFIG = {
   sealStamina: 25,
   sealWoundSec: 300,
   sealStones: 40,           // Seal reward: 40 x Seal number Bloodstones
-  sealShards: 100,          // Seal reward: 100 x Seal number Totem Shards
+  sealShards: 200,          // Seal reward: 200 x Seal number Totem Shards
   sealPowerBonus: 0.10      // Seal reward: +10% Combat Power, permanent
 };
 
@@ -804,7 +804,7 @@ const TROPHY_WEAPONS = [
 /** Apex Ladder: bosses past the Wyrm, reset each Ascension */
 const APEX_CONFIG = {
   powerPerTier: 0.12,  // each Apex tamed this run: +12% Combat Power (added up, so the ladder can never run away)
-  firstMult: 3,        // Tier 5 minimum = Wyrm minimum x this
+  firstMult: 5,        // Tier 5 minimum = Wyrm minimum x this (was 3; the Legacy Map makes you stronger, so the climb starts higher)
   growth: 1.5,         // each Apex tier's minimum = previous x this
   maxMult: 5,          // bracket max = min x this
   rewardShare: 0.02,   // taming gives Beast Power = 2% of that tier's minimum
@@ -815,13 +815,13 @@ const APEX_CONFIG = {
 };
 
 const TOTEM_UNLOCKS = [
-  { seal: 1, name: "Hunter's Legacy skill tree", desc: 'Spend Totem Shards on a permanent skill tree.', icon: 'fa-sitemap', live: true },
+  { seal: 1, name: 'The Legacy Map', desc: 'Spend Totem Shards on a permanent map of skills shaped like a beast\'s paw. The palm opens now.', icon: 'fa-paw', live: true },
   { seal: 2, name: 'Trophy Weapons', desc: 'Forge a permanent Trophy Weapon from Apex Fangs.', icon: 'fa-hammer', live: true },
-  { seal: 3, name: 'Packmaster automation', desc: 'Auto-Buy generators and Auto-Tend the nest (toggles on the Hunter\'s Legacy tab).', icon: 'fa-robot', live: true },
+  { seal: 3, name: 'Packmaster automation and the toe pads', desc: 'Auto-Buy generators and Auto-Tend the nest (toggles on the Hunter\'s Legacy tab), and the Legacy Map\'s toe pads open: one for each part of the camp.', icon: 'fa-robot', live: true },
   { seal: 4, name: 'Primordial Relics', desc: 'From now on, every Seal Guardian you beat awakens one of your relics into its Primordial form (double effect).', icon: 'fa-gem', live: true },
-  { seal: 5, name: 'Second Expedition Party', desc: 'Send two expeditions out at once. Once you also reach Region 2, it teaches the Loom\'s bond-weaving rite: the Pack.', icon: 'fa-people-group', live: true },
+  { seal: 5, name: 'Second Expedition Party', desc: 'Send two expeditions out at once, and the Legacy Map\'s toe tips open. Once you also reach Region 2, it teaches the Loom\'s bond-weaving rite: the Pack.', icon: 'fa-people-group', live: true },
   { seal: 6, name: 'The Totem Awakens', desc: 'Once a day, deliver an Awakened Strike: a huge hit on the Totem and bonus Totem Shards.', icon: 'fa-bolt-lightning', live: true },
-  { seal: 7, name: 'Seal Boons', desc: 'Every Seal from here on offers three permanent Boons. Pick one.', icon: 'fa-star', live: true }
+  { seal: 7, name: 'Seal Boons and the claws', desc: 'Every Seal from here on offers three permanent Boons. Pick one. The Legacy Map\'s claws open too: its deepest skills.', icon: 'fa-star', live: true }
 ];
 
 /**
@@ -833,7 +833,7 @@ const SEAL_CONFIG = {
   awakenSeal: 6,
   awakenCooldownSec: 86400,   // once a day
   awakenDamageSec: 21600,     // an Awakened Strike deals 6 hours of passive Totem damage
-  awakenShardsPerLayer: 15
+  awakenShardsPerLayer: 30
 };
 
 /** One log per Seal, in the Loom's own voice. Seals past the last entry replay the closing line. */
@@ -881,8 +881,11 @@ const SEAL_BOONS = [
 ];
 
 /**
- * Hunter's Legacy skill tree (opens at Seal 1, bought with Totem Shards, never reset by Ascension)
- * Rank cost = baseCost x costGrowth^(current rank). Capstones are one 300-Shard rank.
+ * Hunter's Legacy: the Legacy Map (opens at Seal 1, bought with Totem Shards, never reset by Ascension or a Rift)
+ * The map is a beast's paw. The palm holds the first skills; each toe pad is one part of the game, and its claw
+ * holds the deepest nodes. Rings open with Seals: the palm at Seal 1, toe pads at Seal 3, toe tips at Seal 5, claws at Seal 7.
+ * Rank cost = baseCost x growth^(current rank) (growth defaults to costGrowth). maxRank null = no limit.
+ * x / y = where the node sits on the 825 x 1024 paw picture (assets/legacy/paw.webp).
  */
 const LEGACY_CONFIG = {
   costGrowth: 1.6,
@@ -891,32 +894,109 @@ const LEGACY_CONFIG = {
   insightPerLoss: 0.02,    // Battle Insight: +2% Combat Power vs that foe per loss
   insightMaxStacks: 10,    // up to +20%
   packAlphaShare: 0.25,    // Pack Alpha: dormant hybrids give 25% of their Beast Power
-  feastMult: 1.25          // Feast of Plenty: extra x1.25 per Overdrive milestone reached
+  feastMult: 1.25,         // Feast of Plenty: extra x1.25 per Overdrive milestone reached
+  feastMultMaster: 1.5,    // ...x1.5 with Master Butcher
+  mapWidth: 825, mapHeight: 1024,
+  // Free station levels: they count for output and stars, cost nothing and never reset
+  freeLevels: { old_foundations: 25, deep_foundations: 25, endless_hearth: 50 },
+  // Extra Overdrive stars, each opened by a node
+  extraMilestones: [
+    { count: 125, mult: 3, node: 'old_foundations' },
+    { count: 150, mult: 4, node: 'deep_foundations' },
+    { count: 200, mult: 5, node: 'endless_hearth' }
+  ],
+  quarryAt: 150,           // Quarry Stations: stations at this many levels dig up materials
+  quarryPerHour: 1,        // ...1 of each Expedition material per station per hour
+  deepWatersRare: 0.10,    // Deep Waters: 1 in 10 idle-line catches is a Rare fish
+  extraLineCosts: [5e16, 5e18], // the 7th and 8th idle lines (Meat)
+  temperBase: 1e10,        // Masterwork: first temper costs this much Meat...
+  temperGrowth: 4,         // ...and each one after costs 4x the last
+  temperPower: 0.05,       // +5% Hunter Power per temper
+  temperPowerMaster: 0.08, // ...+8% with Master Temper
+  honingMaxDeep: 40,       // Honed Edge: Weapon Honing max level
+  gearExtraLevels: 10      // Apex Mastery: Apex-grade gear goes 10 levels higher
 };
 
-const LEGACY_BRANCHES = [
-  { id: 'butcher', name: 'Butcher', tagline: 'Meat and clicks', icon: 'fa-drumstick-bite', color: 'amber' },
-  { id: 'warden', name: 'Warden', tagline: 'Beasts and hybrids', icon: 'fa-paw', color: 'emerald' },
-  { id: 'stalker', name: 'Stalker', tagline: 'Combat and the Totem', icon: 'fa-crosshairs', color: 'rose' },
-  { id: 'packmaster', name: 'Packmaster', tagline: 'Opens at Seal 3', icon: 'fa-robot', color: 'slate', locked: true }
+/** Seal rings of the map, inside out */
+const LEGACY_RINGS = [
+  { seal: 1, name: 'The Palm' },
+  { seal: 3, name: 'Toe pads' },
+  { seal: 5, name: 'Toe tips' },
+  { seal: 7, name: 'Claws' }
+];
+
+/** The parts of the paw. glow = the pad's center and size on the picture (it warms up as you fill it) */
+const LEGACY_AREAS = [
+  { id: 'palm', name: 'The Palm', tagline: 'Meat, beasts, combat and the Totem', icon: 'fa-hand', color: '#f59e0b', glow: [412, 690, 270, 190] },
+  { id: 'fishing', name: 'Fishing', tagline: 'Storage, idle lines, the Codex', icon: 'fa-fish', color: '#22d3ee', glow: [176, 537, 70, 95] },
+  { id: 'camp', name: 'Camp', tagline: 'Stations and Overdrive', icon: 'fa-campground', color: '#fb923c', glow: [281, 425, 70, 100] },
+  { id: 'hunt', name: 'Hunt & Apex', tagline: 'Apex beasts and Titans', icon: 'fa-crosshairs', color: '#f43f5e', glow: [415, 372, 72, 105] },
+  { id: 'armory', name: 'Armory & Gear', tagline: 'Expeditions, gear, Masterwork', icon: 'fa-shield-halved', color: '#a3a3a3', glow: [548, 425, 70, 100] },
+  { id: 'forge', name: 'Forge & Pack', tagline: 'Hybrids and the Pack', icon: 'fa-dna', color: '#34d399', glow: [655, 545, 70, 95] }
 ];
 
 const LEGACY_NODES = [
-  // Butcher
-  { id: 'cleavers_edge', branch: 'butcher', name: "Cleaver's Edge", icon: 'fa-utensils', maxRank: 5, baseCost: 25, perRank: 0.10, requires: [], desc: '+10% Meat/s per rank' },
-  { id: 'marrow_harvest', branch: 'butcher', name: 'Marrow Harvest', icon: 'fa-bone', maxRank: 3, baseCost: 50, perRank: 0.20, requires: ['cleavers_edge'], desc: '+20% base campfire hunt Meat per rank' },
-  { id: 'smokehouse', branch: 'butcher', name: 'Smokehouse', icon: 'fa-fire-burner', maxRank: 3, baseCost: 80, perRank: 0.20, requires: ['marrow_harvest'], desc: 'Cooked meals last 20% longer per rank' },
-  { id: 'feast_of_plenty', branch: 'butcher', name: 'Feast of Plenty', icon: 'fa-crown', maxRank: 1, baseCost: 300, capstone: true, requires: ['cleavers_edge', 'marrow_harvest', 'smokehouse'], desc: 'Every Overdrive milestone a generator has reached gives it an extra x1.25' },
-  // Warden
-  { id: 'beast_bond', branch: 'warden', name: 'Beast Bond', icon: 'fa-handshake', maxRank: 5, baseCost: 25, perRank: 0.05, requires: [], desc: '+5% Beast Power per rank' },
-  { id: 'nurturing_hands', branch: 'warden', name: 'Nurturing Hands', icon: 'fa-hand-holding-heart', maxRank: 3, baseCost: 50, perRank: 0.08, requires: ['beast_bond'], desc: 'Nursery costs -8% per rank' },
-  { id: 'hybrid_training', branch: 'warden', name: 'Hybrid Training', icon: 'fa-dna', maxRank: 3, baseCost: 80, perRank: 0.08, requires: ['nurturing_hands'], desc: 'Hybrid enhance costs -8% per rank' },
-  { id: 'pack_alpha', branch: 'warden', name: 'Pack Alpha', icon: 'fa-crown', maxRank: 1, baseCost: 300, capstone: true, requires: ['beast_bond', 'nurturing_hands', 'hybrid_training'], desc: 'Dormant hybrids still give 25% of their Beast Power (no passives)' },
-  // Stalker
-  { id: 'keen_instincts', branch: 'stalker', name: 'Keen Instincts', icon: 'fa-eye', maxRank: 5, baseCost: 25, perRank: 0.04, requires: [], desc: '+4% Combat Power per rank' },
-  { id: 'totem_breaker', branch: 'stalker', name: 'Totem Breaker', icon: 'fa-hammer', maxRank: 5, baseCost: 50, perRank: 0.10, requires: ['keen_instincts'], desc: '+10% damage to the Totem per rank' },
-  { id: 'thick_hide', branch: 'stalker', name: 'Thick Hide', icon: 'fa-shield-halved', maxRank: 3, baseCost: 80, perRank: 0.10, requires: ['totem_breaker'], desc: '-10% wound time after a lost fight per rank' },
-  { id: 'battle_insight', branch: 'stalker', name: 'Battle Insight', icon: 'fa-crown', maxRank: 1, baseCost: 300, capstone: true, requires: ['keen_instincts', 'totem_breaker', 'thick_hide'], desc: 'Each loss to a boss or guardian gives +2% Combat Power against that one, up to +20%. Resets when you beat it.' }
+  // ---- The Palm: Butcher (left), Stalker (center), Warden (right). The original Hunter's Legacy. ----
+  { id: 'cleavers_edge', area: 'palm', branch: 'butcher', seal: 1, x: 255, y: 790, name: "Cleaver's Edge", icon: 'fa-utensils', maxRank: 5, baseCost: 25, perRank: 0.10, requires: [], desc: '+10% Meat/s per rank' },
+  { id: 'marrow_harvest', area: 'palm', branch: 'butcher', seal: 1, x: 200, y: 720, name: 'Marrow Harvest', icon: 'fa-bone', maxRank: 3, baseCost: 50, perRank: 0.20, requires: ['cleavers_edge'], desc: '+20% base campfire hunt Meat per rank' },
+  { id: 'smokehouse', area: 'palm', branch: 'butcher', seal: 1, x: 298, y: 722, name: 'Smokehouse', icon: 'fa-fire-burner', maxRank: 3, baseCost: 80, perRank: 0.20, requires: ['marrow_harvest'], desc: 'Cooked meals last 20% longer per rank' },
+  { id: 'feast_of_plenty', area: 'palm', branch: 'butcher', seal: 1, x: 250, y: 652, name: 'Feast of Plenty', icon: 'fa-crown', maxRank: 1, baseCost: 300, capstone: true, requires: ['cleavers_edge', 'marrow_harvest', 'smokehouse'], desc: 'Every Overdrive star a station has lit gives it an extra x1.25. Opens the Camp and Fishing toes.' },
+  { id: 'keen_instincts', area: 'palm', branch: 'stalker', seal: 1, x: 412, y: 812, name: 'Keen Instincts', icon: 'fa-eye', maxRank: 5, baseCost: 25, perRank: 0.04, requires: [], desc: '+4% Combat Power per rank' },
+  { id: 'totem_breaker', area: 'palm', branch: 'stalker', seal: 1, x: 362, y: 748, name: 'Totem Breaker', icon: 'fa-hammer', maxRank: 5, baseCost: 50, perRank: 0.10, requires: ['keen_instincts'], desc: '+10% damage to the Totem per rank' },
+  { id: 'thick_hide', area: 'palm', branch: 'stalker', seal: 1, x: 462, y: 748, name: 'Thick Hide', icon: 'fa-shield-halved', maxRank: 3, baseCost: 80, perRank: 0.10, requires: ['totem_breaker'], desc: '-10% wound time after a lost fight per rank' },
+  { id: 'battle_insight', area: 'palm', branch: 'stalker', seal: 1, x: 412, y: 682, name: 'Battle Insight', icon: 'fa-crown', maxRank: 1, baseCost: 300, capstone: true, requires: ['keen_instincts', 'totem_breaker', 'thick_hide'], desc: 'Each loss to a boss or guardian gives +2% Combat Power against that one, up to +20%. Resets when you beat it. Opens the Armory toe.' },
+  { id: 'beast_bond', area: 'palm', branch: 'warden', seal: 1, x: 570, y: 790, name: 'Beast Bond', icon: 'fa-handshake', maxRank: 5, baseCost: 25, perRank: 0.05, requires: [], desc: '+5% Beast Power per rank' },
+  { id: 'nurturing_hands', area: 'palm', branch: 'warden', seal: 1, x: 625, y: 720, name: 'Nurturing Hands', icon: 'fa-hand-holding-heart', maxRank: 3, baseCost: 50, perRank: 0.08, requires: ['beast_bond'], desc: 'Nursery costs -8% per rank' },
+  { id: 'hybrid_training', area: 'palm', branch: 'warden', seal: 1, x: 527, y: 722, name: 'Hybrid Training', icon: 'fa-dna', maxRank: 3, baseCost: 80, perRank: 0.08, requires: ['nurturing_hands'], desc: 'Hybrid enhance costs -8% per rank' },
+  { id: 'pack_alpha', area: 'palm', branch: 'warden', seal: 1, x: 575, y: 652, name: 'Pack Alpha', icon: 'fa-crown', maxRank: 1, baseCost: 300, capstone: true, requires: ['beast_bond', 'nurturing_hands', 'hybrid_training'], desc: 'Dormant hybrids still give 25% of their Beast Power (no passives). Opens the Forge & Pack toe.' },
+  // ---- The Palm: new ----
+  { id: 'shard_sense', area: 'palm', seal: 1, x: 350, y: 600, name: 'Shard Sense', icon: 'fa-gem', maxRank: 5, baseCost: 100, growth: 1.5, perRank: 0.10, requires: ['totem_breaker'], desc: '+10% Totem Shards from everything that gives them, per rank' },
+  { id: 'primal_heart', area: 'palm', seal: 3, x: 412, y: 612, name: 'Heart of the Paw', icon: 'fa-heart', maxRank: null, baseCost: 250, growth: 1.2, perRank: 0.03, requires: ['battle_insight'], desc: '+3% Combat Power per rank, with no limit. Opens the Hunt & Apex toe.' },
+  { id: 'relic_polish', area: 'palm', seal: 3, x: 474, y: 600, name: 'Relic Polish', icon: 'fa-wand-sparkles', maxRank: 5, baseCost: 200, growth: 1.35, perRank: 0.10, requires: ['thick_hide'], desc: 'Every relic\'s effect +10% per rank' },
+  { id: 'auto_cook', area: 'palm', seal: 3, x: 330, y: 820, name: 'Camp Cook', icon: 'fa-bowl-food', maxRank: 1, baseCost: 400, requires: ['smokehouse'], desc: 'When your meal runs out, the camp cooks the same dish again if the basket has the fish.' },
+  { id: 'relic_echoes', area: 'palm', seal: 5, x: 460, y: 548, name: 'Relic Echoes', icon: 'fa-clone', maxRank: 1, baseCost: 1200, capstone: true, requires: ['relic_polish'], desc: 'Trophy fights can drop a relic you already own as an Echo. Each Echo makes that relic 10% stronger, up to 10 Echoes.' },
+  { id: 'auto_expedition', area: 'palm', seal: 5, x: 495, y: 820, name: 'Trail Scouts', icon: 'fa-compass', maxRank: 1, baseCost: 600, requires: ['beast_bond'], desc: 'A party that comes home is sent straight back out: same place, same length, same partner if it\'s free.' },
+  { id: 'awakened_fury', area: 'palm', seal: 6, x: 365, y: 548, name: 'Awakened Fury', icon: 'fa-bolt-lightning', maxRank: 3, baseCost: 1000, growth: 1.5, perRank: 0.5, requires: ['shard_sense'], desc: 'Your Awakened Strike hits 50% harder and gives 50% more Shards, per rank' },
+
+  // ---- Fishing (far left) ----
+  { id: 'deep_creels', area: 'fishing', seal: 3, x: 150, y: 575, name: 'Deep Creels', icon: 'fa-basket-shopping', maxRank: 3, baseCost: 250, growth: 1.35, perRank: 0.5, requires: ['feast_of_plenty'], desc: 'Every fish species stores 50% more per rank' },
+  { id: 'swift_lines', area: 'fishing', seal: 3, x: 200, y: 575, name: 'Swift Lines', icon: 'fa-water', maxRank: 3, baseCost: 250, growth: 1.35, perRank: 0.25, requires: ['feast_of_plenty'], desc: 'Idle Lines land fish 25% faster per rank' },
+  { id: 'deep_waters', area: 'fishing', seal: 5, x: 175, y: 500, name: 'Deep Waters', icon: 'fa-anchor', maxRank: 1, baseCost: 1000, capstone: true, requires: ['deep_creels', 'swift_lines'], desc: 'Idle Lines reach deeper: 1 catch in 10 is a Rare fish. You can also set a 7th line.' },
+  { id: 'codex_lore', area: 'fishing', seal: 7, x: 148, y: 415, name: 'Codex Lore', icon: 'fa-book-open', maxRank: 2, baseCost: 1500, growth: 1.5, perRank: 0.5, requires: ['deep_waters'], desc: 'Every Fish Codex bonus +50% per rank' },
+  { id: 'hearty_meals', area: 'fishing', seal: 7, x: 150, y: 345, name: 'Hearty Meals', icon: 'fa-drumstick-bite', maxRank: 5, baseCost: 1000, growth: 1.35, perRank: 0.2, requires: ['codex_lore'], desc: 'Meals are 20% stronger per rank (+30% Meat becomes +36%, +42%...)' },
+  { id: 'abyssal_line', area: 'fishing', seal: 7, x: 168, y: 268, name: 'Abyssal Line', icon: 'fa-fish-fins', maxRank: 1, baseCost: 3000, capstone: true, requires: ['hearty_meals'], desc: 'An 8th idle line, and Legendary and Mythic bites are twice as common.' },
+
+  // ---- Camp (left) ----
+  { id: 'brisk_builders', area: 'camp', seal: 3, x: 255, y: 465, name: 'Brisk Builders', icon: 'fa-screwdriver-wrench', maxRank: 3, baseCost: 200, growth: 1.35, perRank: 0.08, requires: ['feast_of_plenty'], desc: 'Stations cost 8% less per rank' },
+  { id: 'old_foundations', area: 'camp', seal: 3, x: 305, y: 465, name: 'Old Foundations', icon: 'fa-campground', maxRank: 1, baseCost: 800, capstone: true, requires: ['feast_of_plenty'], desc: 'Every unlocked station gets 25 free levels that never reset, and a 5th Overdrive star at 125 (x3).' },
+  { id: 'deep_foundations', area: 'camp', seal: 5, x: 280, y: 385, name: 'Deep Foundations', icon: 'fa-layer-group', maxRank: 1, baseCost: 1500, capstone: true, requires: ['old_foundations'], desc: '25 more free levels (50 in all), and a 6th Overdrive star at 150 (x4).' },
+  { id: 'quarry_stations', area: 'camp', seal: 7, x: 262, y: 300, name: 'Quarry Stations', icon: 'fa-mountain', maxRank: 1, baseCost: 1500, requires: ['deep_foundations'], desc: 'Every station at 150 or more digs up 1 of each Expedition material an hour, even while you\'re away.' },
+  { id: 'master_butcher', area: 'camp', seal: 7, x: 282, y: 220, name: 'Master Butcher', icon: 'fa-crown', maxRank: 1, baseCost: 2000, requires: ['quarry_stations'], desc: 'Feast of Plenty gives x1.5 per star instead of x1.25.' },
+  { id: 'endless_hearth', area: 'camp', seal: 7, x: 308, y: 138, name: 'Endless Hearth', icon: 'fa-fire', maxRank: 1, baseCost: 4000, capstone: true, requires: ['master_butcher'], desc: '50 more free levels (100 in all), and a 7th Overdrive star at 200 (x5).' },
+
+  // ---- Hunt & Apex (center) ----
+  { id: 'apex_instinct', area: 'hunt', seal: 3, x: 388, y: 415, name: 'Apex Instinct', icon: 'fa-crosshairs', maxRank: 5, baseCost: 200, growth: 1.35, perRank: 0.05, requires: ['primal_heart'], desc: '+5% Combat Power against Apex beasts and Titans, per rank' },
+  { id: 'steady_nerves', area: 'hunt', seal: 3, x: 440, y: 415, name: 'Steady Nerves', icon: 'fa-heart-pulse', maxRank: 3, baseCost: 200, growth: 1.35, perRank: 0.15, requires: ['primal_heart'], desc: 'Apex and Titan fights cost 15% less Stamina and wound 15% shorter, per rank' },
+  { id: 'apex_dominion', area: 'hunt', seal: 5, x: 414, y: 335, name: 'Apex Dominion', icon: 'fa-chess-king', maxRank: 3, baseCost: 800, growth: 1.35, perRank: 0.02, requires: ['apex_instinct', 'steady_nerves'], desc: 'Each Apex tamed this run gives +2% more Combat Power, per rank (+12% becomes +14%, +16%, +18%)' },
+  { id: 'titanbane', area: 'hunt', seal: 7, x: 408, y: 250, name: 'Titanbane', icon: 'fa-skull', maxRank: 3, baseCost: 1500, growth: 1.35, perRank: 0.25, requires: ['apex_dominion'], desc: '+25% Combat Power against Titans and Seal Guardians, per rank' },
+  { id: 'fang_hoard', area: 'hunt', seal: 7, x: 418, y: 170, name: 'Fang Hoard', icon: 'fa-tooth', maxRank: 2, baseCost: 1500, growth: 1.5, perRank: 0.5, requires: ['titanbane'], desc: 'Apex wins give 50% more Apex Fangs and Apex Shards, per rank' },
+  { id: 'long_hunt', area: 'hunt', seal: 7, x: 436, y: 92, name: 'The Long Hunt', icon: 'fa-infinity', maxRank: null, baseCost: 2000, growth: 1.25, perRank: 0.05, requires: ['fang_hoard'], desc: '+5% Combat Power per rank, with no limit' },
+
+  // ---- Armory & Gear (right) ----
+  { id: 'rich_veins', area: 'armory', seal: 3, x: 522, y: 465, name: 'Rich Veins', icon: 'fa-compass', maxRank: 5, baseCost: 200, growth: 1.35, perRank: 0.20, requires: ['battle_insight'], desc: 'Expeditions bring back 20% more materials, per rank' },
+  { id: 'thrifty_smith', area: 'armory', seal: 3, x: 574, y: 465, name: 'Thrifty Smith', icon: 'fa-scale-balanced', maxRank: 5, baseCost: 200, growth: 1.35, perRank: 0.08, requires: ['battle_insight'], desc: 'Gear and Weapon Honing cost 8% fewer materials, per rank' },
+  { id: 'masterwork', area: 'armory', seal: 5, x: 548, y: 385, name: 'Masterwork', icon: 'fa-hammer', maxRank: 1, baseCost: 1200, capstone: true, requires: ['rich_veins', 'thrifty_smith'], desc: 'Opens Masterwork tempering in the Armory: spend Meat to temper your weapon for +5% Hunter Power each time. Tempers reset when you Ascend.' },
+  { id: 'honed_edge', area: 'armory', seal: 7, x: 562, y: 300, name: 'Honed Edge', icon: 'fa-khanda', maxRank: 1, baseCost: 1500, requires: ['masterwork'], desc: 'Weapon Honing goes up to level 40 instead of 25.' },
+  { id: 'master_temper', area: 'armory', seal: 7, x: 540, y: 220, name: 'Master Temper', icon: 'fa-fire-flame-curved', maxRank: 1, baseCost: 2000, requires: ['honed_edge'], desc: 'Each Masterwork temper gives +8% Hunter Power instead of +5%.' },
+  { id: 'apex_grade', area: 'armory', seal: 7, x: 520, y: 138, name: 'Apex Mastery', icon: 'fa-helmet-safety', maxRank: 1, baseCost: 3000, capstone: true, requires: ['master_temper'], desc: 'Apex-grade gear can go 10 levels higher.' },
+
+  // ---- Forge & Pack (far right) ----
+  { id: 'warm_nests', area: 'forge', seal: 3, x: 630, y: 590, name: 'Warm Nests', icon: 'fa-egg', maxRank: 3, baseCost: 200, growth: 1.35, perRank: 0.15, requires: ['pack_alpha'], desc: 'Hybrid eggs hatch 15% faster, per rank' },
+  { id: 'strong_blood', area: 'forge', seal: 3, x: 680, y: 590, name: 'Strong Blood', icon: 'fa-droplet', maxRank: 5, baseCost: 200, growth: 1.35, perRank: 0.10, requires: ['pack_alpha'], desc: '+10% hybrid Beast Power, per rank' },
+  { id: 'fourth_slot', area: 'forge', seal: 5, x: 655, y: 512, name: 'Fourth Bond', icon: 'fa-paw', maxRank: 1, baseCost: 1200, capstone: true, requires: ['warm_nests', 'strong_blood'], desc: 'A 4th slot in the Pack.' },
+  { id: 'fifth_slot', area: 'forge', seal: 7, x: 678, y: 425, name: 'Fifth Bond', icon: 'fa-paw', maxRank: 1, baseCost: 2000, requires: ['fourth_slot'], desc: 'A 5th slot in the Pack.' },
+  { id: 'lasting_bonds', area: 'forge', seal: 7, x: 678, y: 350, name: 'Lasting Bonds', icon: 'fa-link', maxRank: 2, baseCost: 1500, growth: 1.5, perRank: 0.25, requires: ['fifth_slot'], desc: 'When you cross a Rift, each hybrid remembers 25% of its level per rank, and hatches at that level in the next region.' },
+  { id: 'alpha_howl', area: 'forge', seal: 7, x: 662, y: 268, name: 'Alpha Howl', icon: 'fa-volume-high', maxRank: 1, baseCost: 3000, capstone: true, requires: ['lasting_bonds'], desc: 'Every Pack ability is 50% stronger.' }
 ];
 
 // Packmaster preview (Seal 3, not buyable yet)
@@ -980,7 +1060,7 @@ const WORLDS = [
   {
     id: 'tundra', name: 'Frozen Tundra', icon: 'fa-snowflake', color: 'sky',
     blurb: 'The Archive fell here: the Loom\'s frozen gene library. Blizzards roll in and freeze your camp.',
-    hardness: 6, filter: 'hue-rotate(185deg) saturate(0.7) brightness(1.15)', twist: 'blizzard',
+    hardness: 7, filter: 'hue-rotate(185deg) saturate(0.7) brightness(1.15)', twist: 'blizzard',
     beasts: [
       { name: 'Hoarwolf', desc: 'Arctic wolf and snowy owl: a silent pack hunter with a feathered ruff and eyes that see through blizzards.',
         image: 'assets/beasts/wild/hoarwolf.webp', tamedImage: 'assets/beasts/tamed/hoarwolf.webp' },
@@ -1005,7 +1085,7 @@ const WORLDS = [
   {
     id: 'volcano', name: 'Ashen Volcano', icon: 'fa-volcano', color: 'orange',
     blurb: 'The Furnace, the Loom\'s power source, buried itself in this volcano. It builds pressure while you are away: ride its eruptions for huge hauls.',
-    hardness: 12, filter: 'hue-rotate(-25deg) saturate(1.8) contrast(1.15)', twist: 'eruption',
+    hardness: 16.5, filter: 'hue-rotate(-25deg) saturate(1.8) contrast(1.15)', twist: 'eruption',
     beasts: [
       { name: 'Cinderjackal', desc: 'Jackal and bombardier beetle: a scavenger that sprays scalding bursts from its flanks.' },
       { name: 'Ashback', desc: 'Vulture and giant tortoise: a slow fortress with a huge wingspan, nesting on lava rock.' },

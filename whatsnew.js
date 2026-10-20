@@ -8,6 +8,17 @@
 (function () {
   const PATCH_NOTES = [
     {
+      id: '2026-10-23',
+      title: 'The Legacy Map',
+      items: [
+        { icon: 'fa-paw', head: 'The Hunter\'s Legacy is now a map', text: 'Your skills sit on a great beast\'s paw. Everything you already bought is in the palm, and you get a free respec to place your Shards again if you like. Drag the map around and click a node to learn it.' },
+        { icon: 'fa-lock-open', head: 'New rings open with Seals', text: 'Seal 3 opens the toe pads, one for each part of the camp: Fishing, Camp, Hunt & Apex, Armory & Gear, and Forge & Pack. Seal 5 opens the toe tips, and Seal 7 the claws.' },
+        { icon: 'fa-campground', head: 'Every tab wakes up again', text: 'Free station levels that never reset with a 5th and 6th Overdrive star, Masterwork tempering in the Armory, Rare fish on idle lines, Relic Echoes, a 4th and 5th Pack slot, and more.' },
+        { icon: 'fa-infinity', head: 'Always something to save for', text: 'Totem layers, Seals and the Awakened Strike now give twice the Shards. Shard Sense adds more, and Heart of the Paw has no limit: every rank is +3% Combat Power, forever.' },
+        { icon: 'fa-mountain', head: 'A longer climb', text: 'The map makes you much stronger, so the Apex Ladder (and the Titans built on it) starts higher, and the Frozen Tundra and Ashen Volcano are a little tougher. Each region lasts about as long as before, without long walls.' }
+      ]
+    },
+    {
       id: '2026-10-22',
       title: 'Always Forward',
       items: [
