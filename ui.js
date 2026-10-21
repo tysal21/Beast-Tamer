@@ -1332,6 +1332,17 @@ function renderFrame(meatRate) {
 
   elements.oddsPercentageText.textContent = winChancePct + '%';
   elements.oddsMeterFill.style.width = (winChance * 100) + '%';
+  // Battle Insight (Legacy): show its power bonus and what it is adding to these odds
+  const insightEl = document.getElementById('odds-insight');
+  if (insightEl) {
+    const stacks = hasLegacyCapstone('battle_insight') ? getBattleInsightStacks(activeBeast) : 0;
+    insightEl.classList.toggle('hidden', stacks <= 0);
+    if (stacks > 0) {
+      const gain = getBattleInsightOddsGain(activeBeast) * 100;
+      insightEl.textContent = 'Insight +' + Math.round(stacks * LEGACY_CONFIG.insightPerLoss * 100) + '% power · +' + gain.toFixed(1) + ' odds';
+      insightEl.setAttribute('data-tip', 'Battle Insight: ' + stacks + ' loss' + (stacks === 1 ? '' : 'es') + ' banked against this foe, +' + Math.round(stacks * LEGACY_CONFIG.insightPerLoss * 100) + '% Combat Power. That adds ' + gain.toFixed(1) + ' points to your odds here. Next loss: ' + (getWinChanceWithInsight(activeBeast, Math.min(LEGACY_CONFIG.insightMaxStacks, stacks + 1)) * 100).toFixed(1) + '%.');
+    }
+  }
 
   const fightStaminaCost = getBossStaminaCost(activeBeast);
   const hasEnoughStamina = gameState.stamina >= fightStaminaCost;
