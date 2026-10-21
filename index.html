@@ -50,7 +50,7 @@
   </script>
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=20261020c">
+  <link rel="stylesheet" href="style.css?v=20261020e">
 </head>
 
 <body class="bg-primal-900 text-slate-200 font-sans min-h-screen selection:bg-primal-accent selection:text-white flex flex-col justify-between">
@@ -879,7 +879,7 @@
             <p class="text-xs text-slate-400">Permanent boss artifacts unlocked via repeated Trophy Expeditions. Relics are kept through Ascension but sleep until you tame their boss again in the new run.</p>
           </div>
           <span class="text-xs font-mono bg-primal-800 text-amber-300 px-3 py-1 rounded border border-primal-700 font-bold">
-            <span id="relic-owned-count">0</span>/8 Relics
+            <span id="relic-owned-count">0</span>/<span id="relic-total-count">12</span> Relics
           </span>
         </div>
 
@@ -933,6 +933,10 @@
               STRIKE THE TOTEM (<span id="totem-strike-cost">10</span> Stamina &middot; <span id="totem-strike-dmg">0</span> dmg)
             </button>
             <div class="text-[11px] text-slate-400 sm:max-w-xs leading-snug">Hunting from the campfire and every boss win (trophy fights too) also damage the Totem.</div>
+          </div>
+          <div id="totem-quill" class="hidden" data-tip="Skyfather's Quill: a second Stamina bar, only for Totem Strikes. Strikes use it first. It refills at your normal rate, even while you're wounded.">
+            <div class="flex items-center justify-between text-[11px] font-mono mb-1"><span class="text-violet-300"><i class="fa-solid fa-feather-pointed mr-1"></i>Totem Stamina (Skyfather's Quill)</span><span id="totem-quill-val" class="text-violet-200">0/0</span></div>
+            <div class="h-2 rounded bg-primal-900 border border-violet-800/60 overflow-hidden"><div id="totem-quill-bar" class="h-full bg-gradient-to-r from-violet-600 to-fuchsia-400" style="width:0%"></div></div>
           </div>
         </div>
 
@@ -1383,22 +1387,22 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
   <!-- Modular Scripts: Data -> Engine -> UI -->
-  <script src="data.js?v=20261020c"></script>
-  <script src="engine.js?v=20261020c"></script>
-  <script src="ui.js?v=20261020c"></script>
-  <script src="legacymap.js?v=20261020c"></script>
-  <script src="stealth.js?v=20261020c"></script>
-  <script src="dev.js?v=20261020c"></script>
-  <script src="comforts.js?v=20261020c"></script>
-  <script src="nav.js?v=20261020c"></script>
-  <script src="scenery.js?v=20261020c"></script>
-  <script src="seals.js?v=20261020c"></script>
-  <script src="leaderboard.js?v=20261020c"></script>
-  <script src="pack.js?v=20261020c"></script>
-  <script src="qr.js?v=20261020c"></script>
-  <script src="transfer.js?v=20261020c"></script>
-  <script src="whatsnew.js?v=20261020c"></script>
-  <script src="tips.js?v=20261020c"></script>
-  <script src="makeover.js?v=20261020c"></script>
+  <script src="data.js?v=20261020e"></script>
+  <script src="engine.js?v=20261020e"></script>
+  <script src="ui.js?v=20261020e"></script>
+  <script src="legacymap.js?v=20261020e"></script>
+  <script src="stealth.js?v=20261020e"></script>
+  <script src="dev.js?v=20261020e"></script>
+  <script src="comforts.js?v=20261020e"></script>
+  <script src="nav.js?v=20261020e"></script>
+  <script src="scenery.js?v=20261020e"></script>
+  <script src="seals.js?v=20261020e"></script>
+  <script src="leaderboard.js?v=20261020e"></script>
+  <script src="pack.js?v=20261020e"></script>
+  <script src="qr.js?v=20261020e"></script>
+  <script src="transfer.js?v=20261020e"></script>
+  <script src="whatsnew.js?v=20261020e"></script>
+  <script src="tips.js?v=20261020e"></script>
+  <script src="makeover.js?v=20261020e"></script>
 </body>
 </html>

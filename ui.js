@@ -1595,16 +1595,36 @@ function renderTrophyCabinet() {
     const sourceBeast = BEAST_CATALOG.find(b => b.id === relic.beastId);
     const beastName = sourceBeast ? sourceBeast.name : 'Unknown';
     const isLegendary = relic.rarity === 'Legendary';
+    const isMythic = !!relic.mythic;
 
     const card = document.createElement('div');
+    if (isMythic && !isOwned) {
+      // Mythics stay a mystery until found: just the name and a riddle about where to look
+      card.className = 'relic-mythic-locked p-4 rounded-xl border flex items-start space-x-3.5';
+      card.setAttribute('data-tip', 'A Mythic relic. What it does is unknown until you find it.');
+      card.innerHTML =
+        '<div class="w-11 h-11 rounded-xl relic-mythic-icon flex items-center justify-center text-xl flex-shrink-0"><i class="fa-solid fa-question"></i></div>' +
+        '<div class="flex-1 min-w-0">' +
+          '<div class="flex items-center justify-between gap-1 mb-1">' +
+            '<h4 class="font-bold text-sm text-violet-200 truncate">' + relic.name + '</h4>' +
+            '<span class="relic-mythic-badge">Mythic</span>' +
+          '</div>' +
+          '<p class="text-xs text-violet-200/70 italic leading-snug">' + relic.riddle + '</p>' +
+        '</div>';
+      elements.relicGrid.appendChild(card);
+      return;
+    }
     if (isOwned) {
-      const cardBorder = isLegendary
+      const cardBorder = isMythic ? 'relic-mythic-owned'
+        : isLegendary
         ? 'bg-gradient-to-br from-amber-950/50 via-primal-800 to-amber-950/30 border-amber-500/70 glow-amber'
         : 'bg-primal-800/90 border-emerald-600/60';
-      const iconBoxStyle = isLegendary
+      const iconBoxStyle = isMythic ? 'relic-mythic-icon'
+        : isLegendary
         ? 'bg-amber-950/90 border border-amber-400 text-amber-300'
         : 'bg-emerald-950/90 border border-emerald-500 text-emerald-400';
-      const badgeStyle = isLegendary
+      const badgeStyle = isMythic ? 'relic-mythic-badge'
+        : isLegendary
         ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
         : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
 
@@ -1621,7 +1641,7 @@ function renderTrophyCabinet() {
           '<p class="text-xs text-slate-300 leading-snug">' + relic.desc + '</p>' +
           (getRelicEchoes(key) > 0 ? '<div class="text-[10px] text-violet-300 font-mono mt-1" data-tip="Relic Echoes (Legacy Map): each Echo makes this relic 10% stronger, up to 10."><i class="fa-solid fa-clone mr-1"></i>Echoes ' + getRelicEchoes(key) + '/' + RELIC_ECHO_MAX + ' (+' + (getRelicEchoes(key) * 10) + '%)</div>' : '') +
           (isAwake
-            ? '<div class="text-[10px] text-slate-400 font-mono mt-1">Source: ' + beastName + ' Trophy</div>'
+            ? '<div class="text-[10px] text-slate-400 font-mono mt-1">Source: ' + (isMythic ? 'Savage ' + beastName + ' (Apex)' : beastName + ' Trophy') + '</div>'
             : '<div class="text-[10px] text-sky-300 font-mono mt-1"><i class="fa-solid fa-moon mr-1"></i>Asleep: tame the ' + beastName + ' this run to wake it</div>') +
         '</div>';
     } else {
@@ -1645,6 +1665,8 @@ function renderTrophyCabinet() {
 
   if (elements.relicOwnedCount) {
     elements.relicOwnedCount.textContent = ownedCount;
+    const tot = document.getElementById('relic-total-count');
+    if (tot) tot.textContent = relicKeys.length;
   }
   if (typeof renderBestiary === 'function') renderBestiary();
 }
@@ -2555,7 +2577,18 @@ function updateTotemLive() {
   totemEls.eta.textContent = formatTotemEta(dps > 0 ? hp / dps : Infinity);
   totemEls.strikeCost.textContent = TOTEM_CONFIG.strikeStamina;
   totemEls.strikeDmg.textContent = formatNumber(dps * TOTEM_CONFIG.strikeSec);
-  totemEls.strikeBtn.disabled = gameState.stamina < TOTEM_CONFIG.strikeStamina;
+  const tsMax = getTotemStaminaMax();
+  totemEls.strikeBtn.disabled = gameState.stamina < TOTEM_CONFIG.strikeStamina && (tsMax <= 0 || (gameState.totemStamina || 0) < TOTEM_CONFIG.strikeStamina);
+  // Skyfather's Quill (Mythic): the Totem Stamina bar
+  const tsBox = document.getElementById('totem-quill');
+  if (tsBox) {
+    tsBox.classList.toggle('hidden', tsMax <= 0);
+    if (tsMax > 0) {
+      const cur = Math.min(tsMax, gameState.totemStamina || 0);
+      document.getElementById('totem-quill-val').textContent = Math.floor(cur) + '/' + tsMax;
+      document.getElementById('totem-quill-bar').style.width = (cur / tsMax * 100) + '%';
+    }
+  }
 }
 
 if (elements.tabBtnTotem) elements.tabBtnTotem.addEventListener('click', () => switchTab('totem'));
