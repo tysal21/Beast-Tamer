@@ -8,6 +8,14 @@
 (function () {
   const PATCH_NOTES = [
     {
+      id: '2026-10-24',
+      title: 'Mythic Relics',
+      items: [
+        { icon: 'fa-question', head: 'Four relics no one has seen', text: 'Each beast now hides a Mythic relic. Nobody knows what they do until one is found. Look in the Trophy Cabinet for a riddle about where each one is kept.' },
+        { icon: 'fa-feather-pointed', head: 'Where to look', text: 'Mythics only turn up once Seal 3 is broken, and only from beasts far stronger than the ones you first tamed.' }
+      ]
+    },
+    {
       id: '2026-10-23',
       title: 'The Legacy Map',
       items: [

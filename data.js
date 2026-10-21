@@ -176,12 +176,48 @@ const RELIC_REGISTRY = {
     dropRate: 0.02,
     desc: 'Doubles Max Stamina. Cuts stamina regen interval in half. Boosts all other relics by +25%.',
     icon: 'fa-crown'
+  },
+  // ---- Mythic relics: one per beast, the rarest drops in the game (1% per win), only from its Savage (or deeper) Apex form after Seal 3. Hidden until found. ----
+  shed_skin: {
+    id: 'shed_skin', beastId: 'viper_hound', name: 'Shed Skin', rarity: 'Mythic', mythic: true, dropRate: 0.01,
+    riddle: 'It sheds its skin, and with it, time. Only the savage one leaves it behind.',
+    desc: 'When you Ascend, every station keeps 10% of the levels you built.',
+    icon: 'fa-scroll'
+  },
+  skyfathers_quill: {
+    id: 'skyfathers_quill', beastId: 'boar_hawk', name: "Skyfather's Quill", rarity: 'Mythic', mythic: true, dropRate: 0.01,
+    riddle: 'It never lands. Nobody has seen it tire. The savage one sheds a single feather.',
+    desc: 'A second Stamina bar, half the size of your max Stamina, used only for Totem Strikes. It refills at your normal rate.',
+    icon: 'fa-feather-pointed'
+  },
+  burrow_hoard: {
+    id: 'burrow_hoard', beastId: 'grizzly_scorpion', name: 'Burrow Hoard', rarity: 'Mythic', mythic: true, dropRate: 0.01,
+    riddle: 'Something savage guards its hoard of teeth.',
+    desc: 'Apex wins give double Apex Fangs, and losing to an Apex, Guardian or Titan still pries loose 1 Fang.',
+    icon: 'fa-tooth'
+  },
+  first_thread: {
+    id: 'first_thread', beastId: 'chimera_wyrm', name: 'First Thread', rarity: 'Mythic', mythic: true, dropRate: 0.01,
+    riddle: 'The Loom\'s first weave. Everything else was copied from it. A savage wyrm keeps it close.',
+    desc: 'Every Apex you tame counts twice toward your Ascension payout.',
+    icon: 'fa-infinity'
   }
 };
 
 /**
  * Milestone Boss Beast Catalog
  */
+/** Mythic relics: who drops them and what they do */
+const MYTHIC_CONFIG = {
+  unlockSeal: 3,          // they start dropping once Seal 3 is broken
+  fromApexLap: 1,         // 0 = Dread (Apex 1-4), 1 = Savage (Apex 5-8): the beast's Savage form or deeper
+  shedSkinKeep: 0.10,     // Shed Skin: share of built station levels kept on Ascension
+  quillShare: 0.5,        // Skyfather's Quill: Totem Stamina bar = this x max Stamina
+  hoardFangMult: 2,       // Burrow Hoard: Apex Fangs x2
+  hoardLossFangs: 1,      // ...and 1 Fang from a lost Apex / Guardian / Titan fight
+  threadApexMult: 2       // First Thread: each Apex counts this many times for the Ascension payout
+};
+
 const BEAST_CATALOG = [
   {
     id: 'viper_hound',

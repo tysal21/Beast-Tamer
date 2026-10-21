@@ -705,6 +705,12 @@ function dealTotemDamage(amount, quiet = false) {
 /** Strike button: spend stamina for a burst of damage */
 function strikeTotem() {
   if (!isTotemUnlocked() || isTotemSealLayer(gameState.totem.layer)) return false;
+  // Skyfather's Quill (Mythic): Strikes use the Totem Stamina bar first
+  if ((gameState.totemStamina || 0) >= TOTEM_CONFIG.strikeStamina && getTotemStaminaMax() > 0) {
+    gameState.totemStamina -= TOTEM_CONFIG.strikeStamina;
+    dealTotemDamage(getTotemDps() * TOTEM_CONFIG.strikeSec);
+    return true;
+  }
   if (gameState.stamina < TOTEM_CONFIG.strikeStamina) return false;
   gameState.stamina -= TOTEM_CONFIG.strikeStamina;
   dealTotemDamage(getTotemDps() * TOTEM_CONFIG.strikeSec);
@@ -1790,18 +1796,51 @@ function getApexBeastPower() {
 
 /** Bloodstone multiplier from how deep you got this run */
 function getApexStoneMult() {
-  return 1 + APEX_CONFIG.stonesPerTier * getApexDepth();
+  // First Thread (Mythic): every Apex counts twice for the payout (three times when Primordial)
+  const thread = getMythicLevel('first_thread') > 0 ? MYTHIC_CONFIG.threadApexMult + getMythicLevel('first_thread') - 1 : 1;
+  return 1 + APEX_CONFIG.stonesPerTier * getApexDepth() * thread;
+}
+
+/** ---------- Mythic relics ---------- */
+/** 0 = not working (not found, or its beast isn't tamed this run), 1 = active, 2 = Primordial */
+function getMythicLevel(id) {
+  if (!hasRelic(id)) return 0;
+  return isPrimordial(id) ? 2 : 1;
+}
+
+/** An Apex win against a beast's Savage (or deeper) form can drop that beast's Mythic, once Seal 3 is broken */
+function rollMythicDrop(boss) {
+  if (!boss || !boss.isApex || ((gameState.totem && gameState.totem.sealsBroken) || 0) < MYTHIC_CONFIG.unlockSeal) return null;
+  const lap = Math.floor((boss.apexTier - 1) / BEAST_CATALOG.length);
+  if (lap < MYTHIC_CONFIG.fromApexLap) return null;
+  const relic = Object.values(RELIC_REGISTRY).find(r => r.mythic && r.beastId === boss.baseId);
+  if (!relic || gameState.ownedRelics[relic.id]) return null;
+  const chance = Math.min(1, relic.dropRate * (1 + getCharmBonus('drops')));
+  if (Math.random() >= chance) return null;
+  gameState.ownedRelics[relic.id] = true;
+  sound.playWin();
+  logCombatMessage('🌌 <strong>MYTHIC RELIC!</strong> From the ' + boss.name + ': [<strong>' + relic.name + '</strong>]. ' + relic.desc, 'relic');
+  showToast('MYTHIC RELIC: ' + relic.name + '!', 'success', true);
+  renderTrophyCabinet();
+  return relic;
+}
+
+/** Skyfather's Quill (Mythic): a second Stamina bar just for Totem Strikes */
+function getTotemStaminaMax() {
+  const lv = getMythicLevel('skyfathers_quill');
+  return lv > 0 ? Math.floor(getMaxStamina() * MYTHIC_CONFIG.quillShare * lv) : 0;
 }
 
 function tameApexBoss(boss) {
   gameState.apexDepth = getApexDepth() + 1;
   // Apex Shards (materials for the Apex grade of gear)
-  // Fang Hoard (Legacy Map): more Fangs and Apex Shards
+  // Fang Hoard (Legacy Map): more Fangs and Apex Shards. Burrow Hoard (Mythic) doubles the Fangs.
   const hoard = getLegacyMult('fang_hoard');
+  const burrow = getMythicLevel('burrow_hoard') > 0 ? MYTHIC_CONFIG.hoardFangMult + getMythicLevel('burrow_hoard') - 1 : 1;
   if (typeof addMaterial === 'function') addMaterial('apex_shard', EXPEDITION_CONFIG.apexShardsPerTier * boss.apexTier * hoard);
   // Apex Fangs for the Trophy Weapon
   if (!gameState.trophy) gameState.trophy = { fangs: 0, level: 0 };
-  const fangs = Math.floor(TROPHY_CONFIG.fangsPerTier * boss.apexTier * hoard);
+  const fangs = Math.floor(TROPHY_CONFIG.fangsPerTier * boss.apexTier * hoard * burrow);
   gameState.trophy.fangs += fangs;
   logCombatMessage('🦷 +' + fangs + ' Apex Fang' + (fangs === 1 ? '' : 's') + ' (' + formatNumber(gameState.trophy.fangs) + ' total).', 'default');
   if (gameState.apexDepth > (gameState.bestApexDepth || 0)) {
@@ -1890,6 +1929,10 @@ function performAscension() {
 
   const claimed = calculatePendingBloodstones();
   sound.playWin();
+  // Shed Skin (Mythic): stations keep part of the levels you built
+  const shed = getMythicLevel('shed_skin');
+  const keptLevels = {};
+  if (shed > 0) GENERATOR_LADDER.forEach(g => { keptLevels[g.id] = Math.floor((gameState.generators[g.id] || 0) * MYTHIC_CONFIG.shedSkinKeep * shed); });
 
   gameState.bloodstones += claimed;
   gameState.ascensionCount += 1;
@@ -1897,6 +1940,10 @@ function performAscension() {
   if (gameState.legacy) gameState.legacy.freeRespec = true;
 
   resetRunState();
+  if (shed > 0) {
+    GENERATOR_LADDER.forEach(g => { gameState.generators[g.id] = keptLevels[g.id] || 0; });
+    logCombatMessage('🐍 <strong>Shed Skin:</strong> your stations keep ' + Math.round(MYTHIC_CONFIG.shedSkinKeep * shed * 100) + '% of the levels you built.', 'relic');
+  }
   const recalled = applyArchiveRecall();
   checkTotemUnlock();
 
@@ -2971,6 +3018,11 @@ function advanceSimulationCore(dt, isBulkCatchup) {
 
     gameState.stamina = Math.min(maxStamina, gameState.stamina + staminaGain);
   }
+  // Skyfather's Quill (Mythic): the Totem Stamina bar refills at the normal rate, wounded or not
+  const tMax = getTotemStaminaMax();
+  if (tMax > 0 && (gameState.totemStamina || 0) < tMax) {
+    gameState.totemStamina = Math.min(tMax, (gameState.totemStamina || 0) + dt * getStaminaRegenRate(false));
+  }
 
   if (gameState.adrenalineFocusRemaining > 0) {
     gameState.adrenalineFocusRemaining = Math.max(0, gameState.adrenalineFocusRemaining - dt);
@@ -3228,6 +3280,7 @@ function challengeCurrentBeast() {
         updateBeastSelectorOptions();
       } else if (beast.isApex) {
         tameApexBoss(beast);
+        rollMythicDrop(beast);
         updateBeastSelectorOptions();
         renderMenagerie();
         renderAscensionAltar();
@@ -3284,6 +3337,13 @@ function challengeCurrentBeast() {
       // Hide Armor: a lost fight refunds part of its Stamina
       const refund = Math.floor(staminaCost * getArmorStaminaRefund());
       if (refund > 0) gameState.stamina = Math.min(getMaxStamina(), gameState.stamina + refund);
+      // Burrow Hoard (Mythic): even a lost Apex, Guardian or Titan fight leaves a Fang behind
+      if (getMythicLevel('burrow_hoard') > 0 && (beast.isApex || beast.isGuardian || beast.isTitan)) {
+        if (!gameState.trophy) gameState.trophy = { fangs: 0, level: 0 };
+        const lostFangs = MYTHIC_CONFIG.hoardLossFangs * getMythicLevel('burrow_hoard');
+        gameState.trophy.fangs += lostFangs;
+        logCombatMessage('🦷 <strong>Burrow Hoard:</strong> you pry loose ' + lostFangs + ' Apex Fang' + (lostFangs === 1 ? '' : 's') + ' even in defeat.', 'default');
+      }
       gameState.inCooldown = true;
       gameState.cooldownRemaining = getWoundedDuration(beast);
       gameState.cooldownTotal = gameState.cooldownRemaining;
@@ -3347,6 +3407,7 @@ function saveGameToStorage() {
       quarryTimer: gameState.quarryTimer || 0,
       weaponLadderVersion: 2,
       stamina: gameState.stamina,
+      totemStamina: gameState.totemStamina || 0,
       generators: gameState.generators,
       campEnduranceLevel: gameState.campEnduranceLevel,
       campRecoveryLevel: gameState.campRecoveryLevel,
@@ -3431,6 +3492,7 @@ function loadGameFromStorage() {
       if (data.weaponLadderVersion !== 2 && gameState.weaponTier >= 4) gameState.weaponTier = 7;
       gameState.weaponTier = Math.max(0, Math.min(WEAPONS_CATALOG.length, gameState.weaponTier));
       if (typeof data.stamina === 'number') gameState.stamina = Math.min(data.stamina, 200);
+      gameState.totemStamina = (typeof data.totemStamina === 'number' && data.totemStamina >= 0) ? data.totemStamina : 0;
 
       if (data.generators && typeof data.generators === 'object') {
         GENERATOR_LADDER.forEach(gen => {

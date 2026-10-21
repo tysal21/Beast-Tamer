@@ -953,3 +953,10 @@ body.stealth .lm-node, body.stealth .lm-node.cap { position: static !important; 
 body.stealth .lm-node .lm-name { position: static !important; transform: none !important; opacity: 1 !important; }
 body.stealth .lm-node .lm-rank { position: static !important; transform: none !important; order: 2; }
 body.stealth .lm-node.lm-sealed::after { display: none !important; }
+
+/* Mythic relics */
+.relic-mythic-locked { background: linear-gradient(135deg, rgb(46 16 101 / .35), rgb(var(--p900) / .8)); border-color: rgb(139 92 246 / .45); border-style: dashed; }
+.relic-mythic-owned { background: linear-gradient(135deg, rgb(76 29 149 / .55), rgb(var(--p800)) 55%, rgb(120 53 15 / .4)); border-color: rgb(196 181 253 / .8); box-shadow: 0 0 18px rgb(139 92 246 / .35); }
+.relic-mythic-icon { background: rgb(46 16 101 / .9); border: 1px solid rgb(196 181 253); color: rgb(233 213 255); }
+.relic-mythic-badge { font: 700 10px ui-monospace, monospace; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; color: rgb(253 230 138);
+  background: linear-gradient(90deg, rgb(109 40 217 / .45), rgb(180 83 9 / .45)); border: 1px solid rgb(196 181 253 / .6); }
