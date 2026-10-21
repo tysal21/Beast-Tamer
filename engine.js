@@ -1055,7 +1055,9 @@ function migrateLegacyMap() {
 }
 
 /** Battle Insight: stacks earned by losing to this boss or guardian */
+let INSIGHT_STACKS_OVERRIDE = null; // used to work out what the odds would be without Battle Insight
 function getBattleInsightStacks(beast) {
+  if (INSIGHT_STACKS_OVERRIDE !== null) return INSIGHT_STACKS_OVERRIDE;
   if (!beast || !gameState.legacy || !gameState.legacy.insight) return 0;
   return Math.min(LEGACY_CONFIG.insightMaxStacks, gameState.legacy.insight[beast.id] || 0);
 }
@@ -1071,6 +1073,18 @@ function addBattleInsight(beast) {
   if (cur >= LEGACY_CONFIG.insightMaxStacks) return false;
   gameState.legacy.insight[beast.id] = cur + 1;
   return true;
+}
+
+/** Win odds against this foe if it had this many Battle Insight stacks (0 = without it) */
+function getWinChanceWithInsight(beast, stacks) {
+  INSIGHT_STACKS_OVERRIDE = stacks;
+  try { return calculateWinChance(beast); } finally { INSIGHT_STACKS_OVERRIDE = null; }
+}
+
+/** Points of win odds Battle Insight is adding against this foe right now */
+function getBattleInsightOddsGain(beast) {
+  if (!beast || getBattleInsightStacks(beast) <= 0 || !hasLegacyCapstone('battle_insight')) return 0;
+  return calculateWinChance(beast) - getWinChanceWithInsight(beast, 0);
 }
 
 function clearBattleInsight(beast) {
@@ -3315,8 +3329,10 @@ function challengeCurrentBeast() {
       }
     } else {
       sound.playDefeat();
+      const oddsBefore = calculateWinChance(beast);
       if (addBattleInsight(beast)) {
-        logCombatMessage('🧠 <strong>Battle Insight:</strong> +' + Math.round(getBattleInsightStacks(beast) * LEGACY_CONFIG.insightPerLoss * 100) + '% Combat Power against ' + beast.name + ' until you beat it.', 'relic');
+        const oddsAfter = calculateWinChance(beast);
+        logCombatMessage('🧠 <strong>Battle Insight:</strong> +' + Math.round(getBattleInsightStacks(beast) * LEGACY_CONFIG.insightPerLoss * 100) + '% Combat Power against ' + beast.name + ' until you beat it. Your odds: ' + (oddsBefore * 100).toFixed(1) + '% → ' + (oddsAfter * 100).toFixed(1) + '%.', 'relic');
       }
       // Hide Armor: a lost fight refunds part of its Stamina
       const refund = Math.floor(staminaCost * getArmorStaminaRefund());
