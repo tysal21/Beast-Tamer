@@ -38,17 +38,17 @@
         (inPack ? '<span class="text-xs font-mono text-emerald-300">In the Pack</span>'
           : '<button type="button" data-pack-add="' + h.id + '" ' + (full ? 'disabled title="All 3 slots are full"' : '') + ' class="pack-btn">Bring along</button>') +
         '</div>';
-    }).join('') : '<div class="text-sm text-slate-400">You have no true-borns yet. Breed hybrids in the Beast Forge and they will show up here.</div>';
+    }).join('') : '<div class="text-sm text-slate-400">You have no true-borns yet. Breed true-borns in the Beast Forge and they will show up here.</div>';
     const missing = HYBRID_CATALOG.filter(h => !(gameState.hybrids && gameState.hybrids[h.id]));
     root.innerHTML =
       '<div class="bt-stone p-5"><h2 class="font-cinzel text-2xl sm:text-3xl text-slate-100"><i class="fa-solid fa-paw mr-2 text-amber-400"></i>The Pack</h2>' +
-        '<p class="text-xs text-slate-400 max-w-2xl">Your hybrids are true-borns: bred, never spliced, so they carry no thread. The makers\' rite lets them run with you by choice. Each one keeps its normal bonuses; while it is in the Pack it also lends its own ability.</p></div>' +
+        '<p class="text-xs text-slate-400 max-w-2xl">Your true-borns are bred, never spliced, so they carry no thread. The makers\' rite lets them run with you by choice. Each one keeps its normal bonuses; while it is in the Pack it also lends its own ability.</p></div>' +
       '<div class="grid lg:grid-cols-2 gap-6">' +
         '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl space-y-2"><div class="font-cinzel text-lg text-slate-100 mb-1">Running with you (' + p.slots.length + '/' + getPackSlots() + ')</div>' + slots.join('') + '</div>' +
         '<div class="bg-primal-850 border border-primal-700 rounded-2xl p-5 shadow-xl space-y-2"><div class="font-cinzel text-lg text-slate-100 mb-1">Your true-borns</div>' + list +
           (missing.length && owned.length ? '<div class="text-[11px] text-slate-500 pt-1">Still to breed: ' + missing.map(h => h.name).join(', ') + '.</div>' : '') + '</div>' +
       '</div>' +
-      '<div class="text-[11px] text-slate-500">Crossing a Rift resets your hybrids, so the Pack empties until you breed them again in the new region.</div>';
+      '<div class="text-[11px] text-slate-500">Crossing a Rift resets your true-borns, so the Pack empties until you breed them again in the new region.</div>';
   }
 
   function signature() {

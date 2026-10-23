@@ -28,7 +28,7 @@
     'fangs': 'parts', 'fang': 'part',
     'tamed menagerie': 'approved accounts', 'menagerie': 'account list',
     'taming': 'approving', 'tamed': 'approved', 'tames': 'approvals', 'tame': 'approve',
-    'beasts': 'accounts', 'beast': 'account', 'hybrids': 'mergers', 'hybrid': 'merger',
+    'beasts': 'accounts', 'beast': 'account', 'hybrids': 'mergers', 'hybrid': 'merger', 'true-borns': 'mergers', 'true-born': 'merger',
     'hunting': 'reviewing', 'hunter': 'lead', 'hunts': 'reviews', 'hunt': 'review',
     'bosses': 'reviews', 'boss': 'review', 'fights': 'reviews', 'fight': 'review',
     'challenge': 'submit', 'forage': 'process', 'strike': 'entry',
@@ -86,11 +86,15 @@
       (w.beasts || []).forEach((b, i) => add(b.name, COMPANIES[i % 4]));
       (w.gens || []).forEach((g, i) => add(g.name, 'Supply Line ' + (i + 1)));
       if (w.titan) add(w.titan.name, 'Annual Audit ' + (wi + 1));
+      (w.trueborns || []).forEach((h, i) => { add(h.name, 'Joint Venture ' + (i + 1)); add(h.treat, 'Bundle ' + (i + 1)); });
+      Object.keys(w.relics || {}).forEach(id => add(w.relics[id], 'Asset #' + (101 + Object.keys(RELIC_REGISTRY).indexOf(id))));
       add(w.name, 'Region ' + (wi + 1));
     });
     GENERATOR_LADDER.forEach((g, i) => add(g.name, 'Supply Line ' + (i + 1)));
     WEAPONS_CATALOG.forEach((w, i) => add(w.name, 'Toolkit v' + (i + 1)));
     HYBRID_CATALOG.forEach((h, i) => add(h.name, 'Joint Venture ' + (i + 1)));
+    (typeof BASE_TRUEBORNS !== 'undefined' ? BASE_TRUEBORNS : []).forEach((h, i) => { add(h.name, 'Joint Venture ' + (i + 1)); add(h.treatName, 'Bundle ' + (i + 1)); });
+    if (typeof BASE_RELIC_NAMES !== 'undefined') Object.keys(BASE_RELIC_NAMES).forEach((id, i) => add(BASE_RELIC_NAMES[id], 'Asset #' + (101 + i)));
     Object.values(RELIC_REGISTRY).forEach((r, i) => add(r.name, 'Asset #' + (101 + i)));
     ASCENSION_PERKS.forEach((p, i) => add(p.name, 'Policy ' + (i + 1)));
     ASCENSION_EXPANSIONS.filter(p => !p.hidden).forEach((p, i) => add(p.name, 'Add-on ' + (i + 1)));

@@ -182,7 +182,7 @@
       { el: '#relic-grid', text: 'Beat a tamed beast again for a chance at its <strong>relics</strong>: permanent bonuses that are never reset.' }
     ],
     forge: [
-      { el: '#nursery-container', text: 'The <strong>Beast Forge</strong> breeds hybrids from your tamed beasts. Hybrids add big bonuses as they level.' }
+      { el: '#nursery-container', text: 'The <strong>Beast Forge</strong> breeds true-borns from your tamed beasts. True-borns add big bonuses as they level.' }
     ],
     expedition: [
       { el: '#expedition-content', text: 'Send a beast on an <strong>expedition</strong> to bring back materials. Use them to hone your weapon and craft gear.' }

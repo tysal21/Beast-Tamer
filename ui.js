@@ -322,7 +322,7 @@ function getPerkEffectText(perk, r) {
     case 'feral_bloodline': return '+' + (r * 25) + '% Meat/s';
     case 'instinctive_butchery': return '+' + (r * 2) + '% of Meat/s per click';
     case 'primal_vigor': return '+' + Math.round(r * HUNTER_CONFIG.vigorMultPerRank * 100) + '% Hunter Power';
-    case 'catalytic_warmth': return '+' + Math.round(r * HUNTER_CONFIG.warmthHybridPerRank * 100) + '% Hybrid Power';
+    case 'catalytic_warmth': return '+' + Math.round(r * HUNTER_CONFIG.warmthHybridPerRank * 100) + '% True-born Power';
     case 'trophy_resonance': return '+' + (r * 20) + '% relic strength';
     case 'primordial_soul': return '+' + (r * 20) + '% ' + curName();
     case 'whiteout_stalker': return 'Blizzard Meat x' + Math.min(1, WORLD_CONFIG.blizzard.meatMult + r * REGION_PERK_FX.whiteoutPerRank).toFixed(1);
@@ -1640,6 +1640,8 @@ function renderTrophyCabinet() {
         : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
 
       card.className = 'p-4 rounded-xl border flex items-start space-x-3.5 transition-all ' + cardBorder + (isAwake ? '' : ' opacity-60');
+      // Relics are re-tuned in each region: hover shows its other forms (Mythics never change)
+      if (!isMythic && getWorldIndex() > 0) card.setAttribute('data-tip', 'Re-tuned by the Loom. Its forms: ' + getRelicForms(key).map(f => f[1] + ' (' + f[0] + ')').join(', ') + '. Same effect everywhere.');
       card.innerHTML =
         '<div class="w-11 h-11 rounded-xl ' + iconBoxStyle + ' flex items-center justify-center text-xl flex-shrink-0 shadow-md">' +
           '<i class="fa-solid ' + relic.icon + '"></i>' +
@@ -1747,7 +1749,7 @@ function renderMenagerie() {
         '<div class="flex-1 min-w-0">' +
           '<div class="flex items-center justify-between gap-1 mb-0.5">' +
             '<h4 class="font-bold text-xs text-purple-200 truncate">' + hybrid.name + '</h4>' +
-            '<span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40">Hybrid Lvl ' + hLvl + '</span>' +
+            '<span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40">True-born Lvl ' + hLvl + '</span>' +
           '</div>' +
           '<div class="flex items-center justify-between text-[11px] font-mono">' +
             powerHtml +
@@ -3531,7 +3533,7 @@ function renderWorldTab() {
     const nextPow = 1 + WORLD_CONFIG.bonusPowerPerWorld * (getWorldIndex() + 1);
     migrateHtml =
       '<div class="grid sm:grid-cols-2 gap-3 text-xs">' +
-        '<div class="p-3 rounded-lg border border-rose-800/60 bg-rose-950/20"><div class="font-bold text-rose-300 mb-1">Resets</div><div class="text-slate-300 leading-relaxed">Everything an Ascension resets, plus ' + curName() + ' and this region\'s perks, Ascension count, Hybrids, the Nest egg, and your deepest Apex.</div></div>' +
+        '<div class="p-3 rounded-lg border border-rose-800/60 bg-rose-950/20"><div class="font-bold text-rose-300 mb-1">Resets</div><div class="text-slate-300 leading-relaxed">Everything an Ascension resets, plus ' + curName() + ' and this region\'s perks, Ascension count, True-borns, the Nest egg, and your deepest Apex.</div></div>' +
         '<div class="p-3 rounded-lg border border-emerald-800/60 bg-emerald-950/20"><div class="font-bold text-emerald-300 mb-1">Keeps</div><div class="text-slate-300 leading-relaxed">Relics, Beast Forge, Primal Totem, Hunter\'s Legacy (with a free respec), Trophy Weapon, Fishing and the Bestiary.</div></div>' +
       '</div>' +
       '<div class="text-xs text-slate-300 mt-3">New Region Bonus: <strong class="text-amber-300">Meat/s x' + formatNumber(nextMeat) + '</strong> and <strong class="text-amber-300">Combat Power x' + nextPow.toFixed(1) + '</strong>, forever. Unlocks <strong class="text-sky-300">Auto-Trophy</strong> and <strong class="text-sky-300">Auto-Strike</strong>.</div>' +

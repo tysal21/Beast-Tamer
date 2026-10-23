@@ -153,7 +153,7 @@ const RELIC_REGISTRY = {
   magma_stinger: {
     id: 'magma_stinger',
     beastId: 'grizzly_scorpion',
-    name: 'Magma Stinger',
+    name: 'Grizzly Stinger',
     rarity: 'Legendary',
     dropRate: 0.03,
     desc: "Underdog's Fury: Wins under 25% odds refund the fight's stamina and award a 10m Meat windfall. Lets you challenge bosses below minimum power (1% odds). +15% Critical Hunt chance.",
@@ -554,7 +554,7 @@ const ASCENSION_PERKS = [
     baseCost: 12,
     costScale: 2.1,
     maxLevel: 10,
-    desc: '+10% Hybrid Power per rank, -10% egg gestation time & -12% Nursery costs per rank (time and cost cuts cap at 50% / 60%).'
+    desc: '+10% True-born Power per rank, -10% egg gestation time & -12% Nursery costs per rank (time and cost cuts cap at 50% / 60%).'
   },
   {
     id: 'trophy_resonance',
@@ -649,7 +649,7 @@ const ASCENSION_EXPANSIONS = [
     badge: 'Expansion II',
     comingSoon: true, // never built: Expeditions replaced it. Kept only so early buyers are refunded on load.
     hidden: true,
-    desc: 'Dispatch idle tamed hybrids on timed autonomous scavenging missions into primeval ruins.'
+    desc: 'Dispatch idle tamed true-borns on timed autonomous scavenging missions into primeval ruins.'
   }
 ];
 
@@ -970,7 +970,7 @@ const LEGACY_AREAS = [
   { id: 'camp', name: 'Camp', tagline: 'Stations and Overdrive', icon: 'fa-campground', color: '#fb923c', glow: [281, 425, 70, 100] },
   { id: 'hunt', name: 'Hunt & Apex', tagline: 'Apex beasts and Titans', icon: 'fa-crosshairs', color: '#f43f5e', glow: [415, 372, 72, 105] },
   { id: 'armory', name: 'Armory & Gear', tagline: 'Expeditions, gear, Masterwork', icon: 'fa-shield-halved', color: '#a3a3a3', glow: [548, 425, 70, 100] },
-  { id: 'forge', name: 'Forge & Pack', tagline: 'Hybrids and the Pack', icon: 'fa-dna', color: '#34d399', glow: [655, 545, 70, 95] }
+  { id: 'forge', name: 'Forge & Pack', tagline: 'True-borns and the Pack', icon: 'fa-dna', color: '#34d399', glow: [655, 545, 70, 95] }
 ];
 
 const LEGACY_NODES = [
@@ -985,8 +985,8 @@ const LEGACY_NODES = [
   { id: 'battle_insight', area: 'palm', branch: 'stalker', seal: 1, x: 412, y: 682, name: 'Battle Insight', icon: 'fa-crown', maxRank: 1, baseCost: 300, capstone: true, requires: ['keen_instincts', 'totem_breaker', 'thick_hide'], desc: 'Each loss to a boss or guardian gives +2% Combat Power against that one, up to +20%. Resets when you beat it. What that does to your odds depends on how close the fight is: about +2 points in an even fight, under +1 near the boss\'s minimum. The odds dial shows it. Opens the Armory toe.' },
   { id: 'beast_bond', area: 'palm', branch: 'warden', seal: 1, x: 570, y: 790, name: 'Beast Bond', icon: 'fa-handshake', maxRank: 5, baseCost: 25, perRank: 0.05, requires: [], desc: '+5% Beast Power per rank' },
   { id: 'nurturing_hands', area: 'palm', branch: 'warden', seal: 1, x: 625, y: 720, name: 'Nurturing Hands', icon: 'fa-hand-holding-heart', maxRank: 3, baseCost: 50, perRank: 0.08, requires: ['beast_bond'], desc: 'Nursery costs -8% per rank' },
-  { id: 'hybrid_training', area: 'palm', branch: 'warden', seal: 1, x: 527, y: 722, name: 'Hybrid Training', icon: 'fa-dna', maxRank: 3, baseCost: 80, perRank: 0.08, requires: ['nurturing_hands'], desc: 'Hybrid enhance costs -8% per rank' },
-  { id: 'pack_alpha', area: 'palm', branch: 'warden', seal: 1, x: 575, y: 652, name: 'Pack Alpha', icon: 'fa-crown', maxRank: 1, baseCost: 300, capstone: true, requires: ['beast_bond', 'nurturing_hands', 'hybrid_training'], desc: 'Dormant hybrids still give 25% of their Beast Power (no passives). Opens the Forge & Pack toe.' },
+  { id: 'hybrid_training', area: 'palm', branch: 'warden', seal: 1, x: 527, y: 722, name: 'True-born Training', icon: 'fa-dna', maxRank: 3, baseCost: 80, perRank: 0.08, requires: ['nurturing_hands'], desc: 'True-born enhance costs -8% per rank' },
+  { id: 'pack_alpha', area: 'palm', branch: 'warden', seal: 1, x: 575, y: 652, name: 'Pack Alpha', icon: 'fa-crown', maxRank: 1, baseCost: 300, capstone: true, requires: ['beast_bond', 'nurturing_hands', 'hybrid_training'], desc: 'Dormant true-borns still give 25% of their Beast Power (no passives). Opens the Forge & Pack toe.' },
   // ---- The Palm: new ----
   { id: 'shard_sense', area: 'palm', seal: 1, x: 350, y: 600, name: 'Shard Sense', icon: 'fa-gem', maxRank: 5, baseCost: 100, growth: 1.5, perRank: 0.10, requires: ['totem_breaker'], desc: '+10% Totem Shards from everything that gives them, per rank' },
   { id: 'primal_heart', area: 'palm', seal: 3, x: 412, y: 612, name: 'Heart of the Paw', icon: 'fa-heart', maxRank: null, baseCost: 250, growth: 1.2, perRank: 0.03, requires: ['battle_insight'], desc: '+3% Combat Power per rank, with no limit. Opens the Hunt & Apex toe.' },
@@ -1029,11 +1029,11 @@ const LEGACY_NODES = [
   { id: 'apex_grade', area: 'armory', seal: 7, x: 520, y: 138, name: 'Apex Mastery', icon: 'fa-helmet-safety', maxRank: 1, baseCost: 3000, capstone: true, requires: ['master_temper'], desc: 'Apex-grade gear can go 10 levels higher.' },
 
   // ---- Forge & Pack (far right) ----
-  { id: 'warm_nests', area: 'forge', seal: 3, x: 630, y: 590, name: 'Warm Nests', icon: 'fa-egg', maxRank: 3, baseCost: 200, growth: 1.35, perRank: 0.15, requires: ['pack_alpha'], desc: 'Hybrid eggs hatch 15% faster, per rank' },
-  { id: 'strong_blood', area: 'forge', seal: 3, x: 680, y: 590, name: 'Strong Blood', icon: 'fa-droplet', maxRank: 5, baseCost: 200, growth: 1.35, perRank: 0.10, requires: ['pack_alpha'], desc: '+10% hybrid Beast Power, per rank' },
+  { id: 'warm_nests', area: 'forge', seal: 3, x: 630, y: 590, name: 'Warm Nests', icon: 'fa-egg', maxRank: 3, baseCost: 200, growth: 1.35, perRank: 0.15, requires: ['pack_alpha'], desc: 'True-born eggs hatch 15% faster, per rank' },
+  { id: 'strong_blood', area: 'forge', seal: 3, x: 680, y: 590, name: 'Strong Blood', icon: 'fa-droplet', maxRank: 5, baseCost: 200, growth: 1.35, perRank: 0.10, requires: ['pack_alpha'], desc: '+10% true-born Beast Power, per rank' },
   { id: 'fourth_slot', area: 'forge', seal: 5, x: 655, y: 512, name: 'Fourth Bond', icon: 'fa-paw', maxRank: 1, baseCost: 1200, capstone: true, requires: ['warm_nests', 'strong_blood'], desc: 'A 4th slot in the Pack.' },
   { id: 'fifth_slot', area: 'forge', seal: 7, x: 678, y: 425, name: 'Fifth Bond', icon: 'fa-paw', maxRank: 1, baseCost: 2000, requires: ['fourth_slot'], desc: 'A 5th slot in the Pack.' },
-  { id: 'lasting_bonds', area: 'forge', seal: 7, x: 678, y: 350, name: 'Lasting Bonds', icon: 'fa-link', maxRank: 2, baseCost: 1500, growth: 1.5, perRank: 0.25, requires: ['fifth_slot'], desc: 'When you cross a Rift, each hybrid remembers 25% of its level per rank, and hatches at that level in the next region.' },
+  { id: 'lasting_bonds', area: 'forge', seal: 7, x: 678, y: 350, name: 'Lasting Bonds', icon: 'fa-link', maxRank: 2, baseCost: 1500, growth: 1.5, perRank: 0.25, requires: ['fifth_slot'], desc: 'When you cross a Rift, each true-born remembers 25% of its level per rank, and hatches at that level in the next region.' },
   { id: 'alpha_howl', area: 'forge', seal: 7, x: 662, y: 268, name: 'Alpha Howl', icon: 'fa-volume-high', maxRank: 1, baseCost: 3000, capstone: true, requires: ['lasting_bonds'], desc: 'Every Pack ability is 50% stronger.' }
 ];
 
@@ -1117,6 +1117,20 @@ const WORLDS = [
       { name: 'Frozen Dens', desc: 'Captured ice caves full of sleeping beasts.' },
       { name: 'Glacier Harpoons', desc: 'Harpoon rigs that pin mammoths to the ice.' }
     ],
+    // Region names for true-borns (same order as HYBRID_CATALOG), their Pack abilities and treats; effects never change
+    trueborns: [
+      { name: 'Tuskwolf', treat: 'Seal-Fat Mash', ability: 'Snowstride' },
+      { name: 'Hoarclaw', treat: 'Crab-Marrow Broth', ability: 'Numbing Frost' },
+      { name: 'Rimeram', treat: 'Kelp-Ice Cake', ability: 'Ice Charge' },
+      { name: 'Lumenwolf', treat: 'Glowmoss Stew', ability: 'Lumen Ward' },
+      { name: 'Mammotusk', treat: 'Frozen Tusk Meal', ability: 'Tusk Trail' },
+      { name: 'Lumenclaw', treat: 'Lumen Roe Paste', ability: 'Glow Sense' }
+    ],
+    // The Loom re-tunes your relics to the local threads: new names, same effects
+    relics: {
+      venom_vial: 'Hoarfrost Pelt', serpents_fang: 'Whiteout Fang', raptor_feather: 'Curled Horn', razor_talons: 'Ivory Tusk',
+      chitin_carapace: 'Rime Carapace', magma_stinger: 'Frozen Pincer', dragon_scale: 'Lumen Hide', eldritch_crown: 'Lumen Crown'
+    },
     titan: { name: 'Glacial Colossus', baseIndex: 2, mult: 7.5, filter: 'hue-rotate(185deg) saturate(0.6) brightness(1.3) drop-shadow(0 0 12px #7dd3fc)',
              desc: 'It guards the Archive. Inside the ice, the Loom\'s memories wait to thaw.' }
   },
@@ -1138,6 +1152,18 @@ const WORLDS = [
       { name: 'Scorched Dens', desc: 'Captured lava tubes full of dozing fire beasts.' },
       { name: 'Basalt Harpoon Rigs', desc: 'Stone harpoons that pin drakes to the cooling rock.' }
     ],
+    trueborns: [
+      { name: 'Ashjackal', treat: 'Charred Grub Mash', ability: 'Cinder Dash' },
+      { name: 'Cindermaw', treat: 'Sulfur Beetle Paste', ability: 'Scalding Spray' },
+      { name: 'Ashmaw', treat: 'Cinder Root Cake', ability: 'Ash Stampede' },
+      { name: 'Pyrejackal', treat: 'Ember Marrow Stew', ability: 'Pyre Ward' },
+      { name: 'Ashdrake', treat: 'Smoked Vulture Meal', ability: 'Thermal Updraft' },
+      { name: 'Burrowdrake', treat: 'Magma Roe Paste', ability: 'Heat Sense' }
+    ],
+    relics: {
+      venom_vial: 'Scald Gland', serpents_fang: 'Cinder Fang', raptor_feather: 'Ash Feather', razor_talons: 'Vulture Talons',
+      chitin_carapace: 'Lava-Tube Hide', magma_stinger: 'Molten Maw', dragon_scale: 'Pyre Scale', eldritch_crown: 'Ashen Crown'
+    },
     titan: { name: 'Magma Sovereign', baseIndex: 1, mult: 7.5, filter: 'hue-rotate(-30deg) saturate(2.2) contrast(1.3) brightness(0.95) drop-shadow(0 0 14px #f97316)',
              desc: 'Born in the Furnace\'s overload. Every eruption is its heartbeat. Sever its thread to open the way to the deep.' }
   },
