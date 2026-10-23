@@ -518,7 +518,7 @@ const FEATURE_UNLOCKS = [
   { id: 'sparring', tab: 'hunt', check: () => hasEverTamed('viper_hound'),
     intro: 'The Sparring Ring is open (Hunt tab): spar for Hunter Power, with a chance of Adrenaline.' },
   { id: 'forge', tab: 'forge', check: () => hasEverTamed('boar_hawk') || !!gameState.forgeUnlocked,
-    intro: 'The Beast Forge is open: level up your tamed beasts and breed hybrids.' },
+    intro: 'The Beast Forge is open: level up your tamed beasts and breed true-borns.' },
   { id: 'anatomy', tab: 'hunt', check: () => hasEverTamed('boar_hawk'),
     intro: 'Weakpoint Anatomy is open (Hunt tab): study bosses to lower the power they need.' },
   { id: 'expedition', tab: 'expedition', check: () => hasEverTamed('boar_hawk'),
@@ -530,7 +530,7 @@ const FEATURE_UNLOCKS = [
   { id: 'world', tab: 'world', check: () => (gameState.bestApexDepth || 0) >= 4 || getWorldIndex() > 0 || gameState.riftOpen,
     intro: 'The Regions tab is open: a Titan sleeps beyond Apex Tier 12.' },
   { id: 'pack', tab: 'pack', check: () => checkPackRite(),
-    intro: 'The Pack is open: bring up to 3 true-born hybrids along, each with its own ability.' },
+    intro: 'The Pack is open: bring up to 3 true-borns along, each with its own ability.' },
 ];
 
 function isFeatureUnlocked(id) {
@@ -870,8 +870,8 @@ function checkPackRite() {
   const seals = (gameState.totem && gameState.totem.sealsBroken) || 0;
   if (getWorldIndex() >= PACK_CONFIG.riteRegion && seals >= PACK_CONFIG.riteSeal) {
     gameState.packRite = true;
-    gameState.pendingLoomCard = { head: 'THE BOND-WEAVING RITE', text: 'ARCHIVE ACCESS: GRANTED. KEEPER RITE DECODED. BOND WITHOUT THREAD.', sub: 'Your true-born hybrids can now join the Pack. Each one lends its own ability while it runs with you.' };
-    logCombatMessage('🧬 <strong>THE BOND-WEAVING RITE.</strong> The Core reads the makers\' records in the Archive: how to bond without a thread. Your true-born hybrids can now join <strong>the Pack</strong>.', 'relic');
+    gameState.pendingLoomCard = { head: 'THE BOND-WEAVING RITE', text: 'ARCHIVE ACCESS: GRANTED. KEEPER RITE DECODED. BOND WITHOUT THREAD.', sub: 'Your true-borns can now join the Pack. Each one lends its own ability while it runs with you.' };
+    logCombatMessage('🧬 <strong>THE BOND-WEAVING RITE.</strong> The Core reads the makers\' records in the Archive: how to bond without a thread. Your true-borns can now join <strong>the Pack</strong>.', 'relic');
     return true;
   }
   return false;
@@ -1343,6 +1343,15 @@ let BOSS_SEAL_SCALE = 1.8;
 let BOSS_APEX_SCALE = 1.6; // the Apex Ladder (and Titans built on it) on top of the Wyrm's scale
 const BASE_BEASTS = BEAST_CATALOG.map(b => Object.assign({}, b));
 const BASE_GENS = GENERATOR_LADDER.map(g => Object.assign({}, g));
+// Region 1 names of true-borns, Pack abilities and relics (each region renames them; effects never change)
+const BASE_TRUEBORNS = HYBRID_CATALOG.map(h => ({ name: h.name, treatName: h.treatName }));
+const BASE_PACK_NAMES = {}; for (const k in PACK_ABILITIES) BASE_PACK_NAMES[k] = PACK_ABILITIES[k].name;
+const BASE_RELIC_NAMES = {}; for (const k in RELIC_REGISTRY) BASE_RELIC_NAMES[k] = RELIC_REGISTRY[k].name;
+
+/** A relic's name in each region, e.g. [['Primal Wilds', 'Venom Vial'], ['Frozen Tundra', 'Hoarfrost Pelt'], ...] */
+function getRelicForms(id) {
+  return WORLDS.filter(w => !w.comingSoon).map(w => [w.name, (w.relics && w.relics[id]) || BASE_RELIC_NAMES[id]]);
+}
 const TITAN_SLOT = 97; // selectedBeastIndex value meaning "this world's Titan"
 
 function getWorldIndex() {
@@ -1377,6 +1386,15 @@ function applyWorld() {
     g.desc = ov.desc || base.desc;
     g.imageFilter = w.filter || '';
   });
+  // True-borns are bred from this region's beasts, so they get this region's names (and their treats and Pack abilities)
+  HYBRID_CATALOG.forEach((h, i) => {
+    const ov = (w.trueborns && w.trueborns[i]) || {};
+    h.name = ov.name || BASE_TRUEBORNS[i].name;
+    h.treatName = ov.treat || BASE_TRUEBORNS[i].treatName;
+    if (PACK_ABILITIES[h.id]) PACK_ABILITIES[h.id].name = ov.ability || BASE_PACK_NAMES[h.id];
+  });
+  // The Loom re-tunes relics to the local threads: new names, same effects (Mythics never change)
+  for (const id in RELIC_REGISTRY) RELIC_REGISTRY[id].name = (w.relics && w.relics[id]) || BASE_RELIC_NAMES[id];
   if (typeof PARENT_DEFINITIONS !== 'undefined') {
     PARENT_DEFINITIONS.forEach(p => {
       const b = BEAST_CATALOG.find(x => x.id === p.id);
@@ -1750,6 +1768,10 @@ function performMigration() {
   if (from.id !== to.id && (REGION_CURRENCY[to.id] || {}).name !== (REGION_CURRENCY[from.id] || {}).name) {
     logCombatMessage('💠 Ascending here pays in <strong>' + curName() + '</strong>. ' + getRegionCurrency().lore + ' The Altar sells perks found only in the ' + to.name + '.', 'relic');
   }
+  if (Object.keys(gameState.ownedRelics || {}).some(id => gameState.ownedRelics[id] && RELIC_REGISTRY[id] && !RELIC_REGISTRY[id].mythic)) {
+    logCombatMessage('🔁 <strong>RELICS RE-TUNED.</strong> Your relics hum and change shape as the Loom re-tunes them to the threads of the ' + to.name + '. They work exactly as before, and wake when you tame this region\'s beasts.', 'relic');
+  }
+  logCombatMessage('🧬 The true-borns you raised stayed behind with their own kind. Breed new ones from the beasts of the ' + to.name + '.', 'default');
   showToast('Welcome to the ' + to.name + '!', 'success', true);
   renderAfterReset();
   return true;
@@ -1948,7 +1970,7 @@ function performAscension() {
   checkTotemUnlock();
 
   logCombatMessage(
-    `🔥 <strong>PRIMAL ASCENSION #${gameState.ascensionCount} COMPLETE!</strong> Claimed <strong>+${formatNumber(claimed)} ${curName()}</strong>! Relics, Forge, and Hybrids retained (they sleep until you re-tame their bosses). Bosses keep their strength, so you come back stronger.`,
+    `🔥 <strong>PRIMAL ASCENSION #${gameState.ascensionCount} COMPLETE!</strong> Claimed <strong>+${formatNumber(claimed)} ${curName()}</strong>! Relics, Forge, and True-borns retained (they sleep until you re-tame their bosses). Bosses keep their strength, so you come back stronger.`,
     'unlock'
   );
   if (recalled.length) logCombatMessage('🧊 <strong>RECALL:</strong> The Archive remembers. ' + recalled.join(' and ') + (recalled.length > 1 ? ' are' : ' is') + ' already tamed.', 'unlock');
@@ -2966,8 +2988,8 @@ function checkIncubatorHatch() {
     gameState.hybrids[hybridId] = { level: Math.max(1, mem[hybridId] || 1) };
     delete mem[hybridId];
     sound.playWin();
-    logCombatMessage(`🧬 <strong>HYBRID CHIMERA HATCHED!</strong> [<strong>${hybrid ? hybrid.name : hybridId}</strong>] has emerged from the incubator! Gained +${formatNumber(hybrid ? hybrid.basePower : 0)} Beast Power!`, 'unlock');
-    showToast(`HYBRID HATCHED: ${hybrid ? hybrid.name : hybridId}!`, 'success', true);
+    logCombatMessage(`🧬 <strong>TRUE-BORN HATCHED!</strong> [<strong>${hybrid ? hybrid.name : hybridId}</strong>] has emerged from the incubator! Gained +${formatNumber(hybrid ? hybrid.basePower : 0)} Beast Power!`, 'unlock');
+    showToast(`TRUE-BORN HATCHED: ${hybrid ? hybrid.name : hybridId}!`, 'success', true);
     renderForge();
     renderMenagerie();
     saveGameToStorage();

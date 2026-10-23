@@ -8,6 +8,15 @@
 (function () {
   const PATCH_NOTES = [
     {
+      id: '2026-10-26',
+      title: 'Every Region, Its Own',
+      items: [
+        { icon: 'fa-dna', head: 'Hybrids are true-borns', text: 'Bred, never spliced, they carry no thread. Each region\'s true-borns now take their names from their parents there: a Hoarwolf and a Tuskram give you a Tuskwolf.' },
+        { icon: 'fa-gem', head: 'Relics re-tune', text: 'Cross the Rift and the Loom re-tunes your relics to the local threads. The Venom Vial becomes a Hoarfrost Pelt in the Tundra and a Scald Gland in the Volcano. Same effect, new shape. Hover a relic to see all its forms.' },
+        { icon: 'fa-pen', head: 'Grizzly Stinger', text: 'The Magma Stinger is now the Grizzly Stinger, so the name belongs to the Wilds. Nothing else about it changed.' }
+      ]
+    },
+    {
       id: '2026-10-24',
       title: 'Mythic Relics',
       items: [

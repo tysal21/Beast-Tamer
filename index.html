@@ -50,7 +50,7 @@
   </script>
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=20261020e">
+  <link rel="stylesheet" href="style.css?v=20261020g">
 </head>
 
 <body class="bg-primal-900 text-slate-200 font-sans min-h-screen selection:bg-primal-accent selection:text-white flex flex-col justify-between">
@@ -406,7 +406,7 @@
                     </span>
                   </div>
                   <div class="text-xs text-slate-400 mt-0.5">
-                    Reduces recovery interval by <span class="text-blue-300 font-mono font-semibold">-0.75s</span> per rank, 12 ranks (15s down to 6s). <span data-beast-name="1">Boar-Hawk</span>, relics, hybrids, fish and the Totem then make it faster still.
+                    Reduces recovery interval by <span class="text-blue-300 font-mono font-semibold">-0.75s</span> per rank, 12 ranks (15s down to 6s). <span data-beast-name="1">Boar-Hawk</span>, relics, true-borns, fish and the Totem then make it faster still.
                   </div>
                   <div class="text-[11px] text-slate-500 font-mono mt-0.5">
                     Current Interval: <span id="camp-recovery-interval" class="text-blue-400 font-mono">15.0s</span>
@@ -794,7 +794,7 @@
         </div>
         <h2 class="font-cinzel text-2xl font-bold text-amber-300 tracking-wide mb-2">Excavate Ancient Forge Chamber</h2>
         <p class="text-sm text-slate-300 max-w-lg mx-auto mb-4">
-          With the <span data-beast-name="1">Boar-Hawk</span> subdued, you can reach what it was guarding: salvaged Loom machinery, half buried. Clear it out and you can breed hybrids of your own, born instead of spliced.
+          With the <span data-beast-name="1">Boar-Hawk</span> subdued, you can reach what it was guarding: salvaged Loom machinery, half buried. Clear it out and you can breed true-borns of your own, born instead of spliced.
         </p>
         <button id="btn-unlock-forge" class="px-6 py-3 bg-gradient-to-r from-amber-600 via-purple-700 to-amber-600 hover:brightness-110 active:scale-95 text-white text-sm font-cinzel font-bold rounded-xl transition-all border border-amber-400/50 shadow-lg cursor-pointer flex items-center justify-center gap-2 mx-auto">
           <i class="fa-solid fa-fire-flame-curved text-amber-300"></i>
@@ -819,7 +819,7 @@
                   <h3 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2">
                     <i class="fa-solid fa-baby-carriage text-purple-400"></i> Parent Beast Nursery
                   </h3>
-                  <p class="text-xs text-slate-400">Level tamed milestone beasts to scale power and camp passives. Reach <strong>Level 5</strong> on both parents to breed hybrids. Parents max out at <strong>Level 25</strong> each run.</p>
+                  <p class="text-xs text-slate-400">Level tamed milestone beasts to scale power and camp passives. Reach <strong>Level 5</strong> on both parents to breed true-borns. Parents max out at <strong>Level 25</strong> each run.</p>
                 </div>
               </div>
               <div id="nursery-container" class="space-y-3">
@@ -852,9 +852,9 @@
           <div class="flex items-center justify-between pb-3 border-b border-primal-700/60 mb-4">
             <div>
               <h3 class="font-cinzel text-lg font-bold text-slate-100 flex items-center gap-2">
-                <i class="fa-solid fa-dna text-purple-400"></i> Chimera Synthesizer (6 Apex Hybrids)
+                <i class="fa-solid fa-dna text-purple-400"></i> Chimera Synthesizer (6 True-borns)
               </h3>
-              <p class="text-xs text-slate-400">Brew specialized breeding treats once both parent beasts reach Level 5. Hatched hybrids persist through Ascension, but stay dormant (no Beast Power and no bonuses) until both parents are tamed again.</p>
+              <p class="text-xs text-slate-400">Brew specialized breeding treats once both parent beasts reach Level 5. Hatched true-borns persist through Ascension, but stay dormant (no Beast Power and no bonuses) until both parents are tamed again.</p>
             </div>
             <span class="text-xs font-mono bg-primal-800 text-purple-300 px-3 py-1 rounded border border-primal-700 font-bold" id="forge-hatched-count">
               0 / 6 Hatched
@@ -1141,7 +1141,7 @@
               Sacrifice Your Camp for <span data-cur="name">Bloodstones</span>
             </h2>
             <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
-              Ascending resets your current run's <strong class="text-amber-300">Meat, Generators, Weapons, Training, and untames the 4 Milestone Bosses</strong> so you can hunt them anew. You permanently retain all <strong class="text-emerald-400">Trophy Relics, Beast Forge access, Hybrids, <span data-cur="one">Bloodstone</span> Perks, and Realm Expansions</strong>. Hybrids sleep until both of their parents are re-tamed, and Relics sleep until their boss is re-tamed. Bosses stay as strong as they were, so every Ascension leaves you stronger than before.
+              Ascending resets your current run's <strong class="text-amber-300">Meat, Generators, Weapons, Training, and untames the 4 Milestone Bosses</strong> so you can hunt them anew. You permanently retain all <strong class="text-emerald-400">Trophy Relics, Beast Forge access, True-borns, <span data-cur="one">Bloodstone</span> Perks, and Realm Expansions</strong>. True-borns sleep until both of their parents are re-tamed, and Relics sleep until their boss is re-tamed. Bosses stay as strong as they were, so every Ascension leaves you stronger than before.
             </p>
             <div class="flex flex-wrap items-center gap-4 pt-2 text-xs font-mono">
               <div class="bg-primal-900/90 border border-primal-700 px-3 py-1.5 rounded-lg">
@@ -1249,7 +1249,7 @@
           You will claim <strong class="text-rose-400 font-mono">+<span id="modal-ascend-stones">0</span> <span data-cur="name">Bloodstones</span></strong>.
         </p>
         <p class="text-[11px] text-slate-400 mt-2">
-          Your Meat, Generators, Weapons, Training, and 4 Milestone Bosses will reset for a fresh run. Your Relics, Beast Forge, Hatched Hybrids, and Perks remain permanent! Relics and Hybrids sleep until their bosses are re-tamed.
+          Your Meat, Generators, Weapons, Training, and 4 Milestone Bosses will reset for a fresh run. Your Relics, Beast Forge, Hatched True-borns, and Perks remain permanent! Relics and True-borns sleep until their bosses are re-tamed.
         </p>
       </div>
       <div class="flex items-center justify-center gap-3 pt-2">
@@ -1375,7 +1375,7 @@
       </div>
       <div>
         <h3 class="font-cinzel text-lg font-bold text-white">Hard Reset All Progress?</h3>
-        <p class="text-xs text-slate-400 mt-1">This will permanently erase everything including Bloodstones, Relics, Hybrids, and Meat stocks.</p>
+        <p class="text-xs text-slate-400 mt-1">This will permanently erase everything including Bloodstones, Relics, True-borns, and Meat stocks.</p>
       </div>
       <div class="flex items-center justify-center gap-3 pt-2">
         <button id="btn-cancel-reset" class="px-4 py-2 bg-primal-700 hover:bg-primal-600 text-slate-200 text-xs font-semibold rounded-lg cursor-pointer">Cancel</button>
@@ -1388,22 +1388,22 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
   <!-- Modular Scripts: Data -> Engine -> UI -->
-  <script src="data.js?v=20261020e"></script>
-  <script src="engine.js?v=20261020e"></script>
-  <script src="ui.js?v=20261020e"></script>
-  <script src="legacymap.js?v=20261020e"></script>
-  <script src="stealth.js?v=20261020e"></script>
-  <script src="dev.js?v=20261020e"></script>
-  <script src="comforts.js?v=20261020e"></script>
-  <script src="nav.js?v=20261020e"></script>
-  <script src="scenery.js?v=20261020e"></script>
-  <script src="seals.js?v=20261020e"></script>
-  <script src="leaderboard.js?v=20261020e"></script>
-  <script src="pack.js?v=20261020e"></script>
-  <script src="qr.js?v=20261020e"></script>
-  <script src="transfer.js?v=20261020e"></script>
-  <script src="whatsnew.js?v=20261020e"></script>
-  <script src="tips.js?v=20261020e"></script>
-  <script src="makeover.js?v=20261020e"></script>
+  <script src="data.js?v=20261020g"></script>
+  <script src="engine.js?v=20261020g"></script>
+  <script src="ui.js?v=20261020g"></script>
+  <script src="legacymap.js?v=20261020g"></script>
+  <script src="stealth.js?v=20261020g"></script>
+  <script src="dev.js?v=20261020g"></script>
+  <script src="comforts.js?v=20261020g"></script>
+  <script src="nav.js?v=20261020g"></script>
+  <script src="scenery.js?v=20261020g"></script>
+  <script src="seals.js?v=20261020g"></script>
+  <script src="leaderboard.js?v=20261020g"></script>
+  <script src="pack.js?v=20261020g"></script>
+  <script src="qr.js?v=20261020g"></script>
+  <script src="transfer.js?v=20261020g"></script>
+  <script src="whatsnew.js?v=20261020g"></script>
+  <script src="tips.js?v=20261020g"></script>
+  <script src="makeover.js?v=20261020g"></script>
 </body>
 </html>

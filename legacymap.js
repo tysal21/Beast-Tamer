@@ -69,9 +69,9 @@
       case 'master_temper': return 'Now: +' + pct(LEGACY_CONFIG.temperPowerMaster) + '% per temper';
       case 'apex_grade': return 'Now: Apex gear to level ' + (GEAR_CONFIG.levelsPerGrade + LEGACY_CONFIG.gearExtraLevels);
       case 'warm_nests': return 'Now: eggs hatch ' + p + '% faster';
-      case 'strong_blood': return 'Now: +' + p + '% hybrid Beast Power';
+      case 'strong_blood': return 'Now: +' + p + '% true-born Beast Power';
       case 'fourth_slot': case 'fifth_slot': return 'Now: ' + getPackSlots() + ' Pack slots';
-      case 'lasting_bonds': return 'Now: hybrids remember ' + p + '% of their level';
+      case 'lasting_bonds': return 'Now: true-borns remember ' + p + '% of their level';
       case 'alpha_howl': return 'Now: Pack abilities x1.5';
     }
     return '';
