@@ -326,7 +326,7 @@ function getPerkEffectText(perk, r) {
     case 'trophy_resonance': return '+' + (r * 20) + '% relic strength';
     case 'primordial_soul': return '+' + (r * 20) + '% ' + curName();
     case 'whiteout_stalker': return 'Blizzard Meat x' + Math.min(1, WORLD_CONFIG.blizzard.meatMult + r * REGION_PERK_FX.whiteoutPerRank).toFixed(1);
-    case 'hearthkeeper': return '+' + Math.round(r * REGION_PERK_FX.warmthPerRank * 100) + '% Warmth';
+    case 'hearthkeeper': return 'Blaze: +' + Math.round(r * REGION_PERK_FX.blazePowerPerRank * 100) + '% Power, +' + Math.round(r * REGION_PERK_FX.blazeMeatPerRank * 100) + '% Meat/s';
     case 'deep_caches': return (WORLD_CONFIG.blizzard.maxCaches + r * REGION_PERK_FX.cachesPerRank) + ' cache slots, ' + Math.round((WORLD_CONFIG.blizzard.jackpotChance + r * REGION_PERK_FX.jackpotPerRank) * 100) + '% Mammoth';
     case 'archive_recall': return r + (r === 1 ? ' beast' : ' beasts') + ' recalled';
     default: return 'Rank ' + r;
@@ -3617,9 +3617,17 @@ function renderTundraStrip() {
   let btn = '';
   if (first && first.left <= 0) btn = '<button data-tundra="open" class="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold border border-amber-300 cursor-pointer"><i class="fa-solid fa-box-open mr-1"></i>Open Cache</button>';
   else if (first) btn = '<button data-tundra="chip" ' + (gameState.stamina >= c.chipStamina ? '' : 'disabled') + ' class="px-2.5 py-1 rounded bg-sky-800 hover:bg-sky-700 text-white text-[11px] font-bold border border-sky-400/60 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" title="Thaws the oldest cache ' + Math.round(c.chipSec / 60) + ' min faster"><i class="fa-solid fa-hammer mr-1"></i>Chip ice (' + c.chipStamina + ' Stamina) · ' + formatDuration(first.left) + '</button>';
+  const blaze = getHearthBlazeLeft();
+  let blazeRow = '';
+  if (blaze > 0) {
+    const hk = getRegionPerkRank('hearthkeeper');
+    blazeRow = '<div class="w-full text-[11px] font-bold text-orange-300"><i class="fa-solid fa-fire-flame-curved mr-1"></i>Hearth Blaze: +' + Math.round(hk * REGION_PERK_FX.blazePowerPerRank * 100) + '% Combat Power, +' + Math.round(hk * REGION_PERK_FX.blazeMeatPerRank * 100) + '% Meat/s for ' + formatDuration(blaze) + '</div>';
+  } else if (raging && getRegionPerkRank('hearthkeeper') > 0) {
+    blazeRow = '<div class="w-full text-[11px] text-orange-200/80"><i class="fa-solid fa-fire-flame-curved mr-1"></i>Thaw the camp before the blizzard ends to light a Hearth Blaze.</div>';
+  }
   const right = '<div class="flex items-center gap-2"><div class="text-[11px] text-sky-200/80 mr-1">Frozen Caches</div>' + icons.join('') + btn + '</div>';
   const cls = 'mb-4 px-4 py-2.5 rounded-xl border text-sm shadow-lg flex flex-wrap items-center gap-3 ' + (raging ? 'border-sky-300/70 bg-sky-900/70' : 'border-sky-800/60 bg-sky-950/50');
-  const html = left + right;
+  const html = left + right + blazeRow;
   // Only touch the DOM when something changed, so a click never lands on a button that was just replaced
   if (el.className !== cls) el.className = cls;
   if (el._html !== html) { el._html = html; el.innerHTML = html; }
