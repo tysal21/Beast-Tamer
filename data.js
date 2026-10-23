@@ -611,7 +611,7 @@ const REGION_PERKS = {
     { id: 'whiteout_stalker', name: 'Whiteout Stalker', icon: 'fa-wind', baseCost: 12, costScale: 2.0, maxLevel: 5, unique: true,
       desc: 'Blizzards cut your Meat 10% less per rank. At rank 5 a blizzard costs you nothing.' },
     { id: 'hearthkeeper', name: 'Hearthkeeper', icon: 'fa-fire-flame-curved', baseCost: 8, costScale: 1.9, maxLevel: 5, unique: true,
-      desc: '+30% Warmth from clicks and stoking per rank, so you break blizzards sooner.' },
+      desc: 'Thaw your camp before a blizzard ends and the hearth flares into a Hearth Blaze for 5 minutes: +10% Combat Power and +20% Meat/s per rank.' },
     { id: 'deep_caches', name: 'Deep Caches', icon: 'fa-cubes-stacked', baseCost: 20, costScale: 2.5, maxLevel: 3, unique: true,
       desc: '+1 Frozen Cache slot and +3% Mammoth Cache chance per rank.' },
     { id: 'archive_recall', name: 'Recall', icon: 'fa-brain', baseCost: 40, costScale: 3.0, maxLevel: 2, unique: true,
@@ -620,7 +620,9 @@ const REGION_PERKS = {
 };
 const REGION_PERK_FX = {
   whiteoutPerRank: 0.10,   // blizzard Meat x0.5 -> x1.0 at rank 5
-  warmthPerRank: 0.30,
+  blazeSec: 300,           // Hearthkeeper: a Hearth Blaze lasts 5 minutes...
+  blazePowerPerRank: 0.10, // ...+10% Combat Power per rank
+  blazeMeatPerRank: 0.20,  // ...and +20% Meat/s per rank
   cachesPerRank: 1,
   jackpotPerRank: 0.03
 };

@@ -8,6 +8,13 @@
 (function () {
   const PATCH_NOTES = [
     {
+      id: '2026-10-25',
+      title: 'Hearth Blaze',
+      items: [
+        { icon: 'fa-fire-flame-curved', head: 'Hearthkeeper reworked', text: 'It overlapped with Whiteout Stalker, so it does something new: thaw your camp before a blizzard ends and the hearth flares into a Hearth Blaze for 5 minutes, +10% Combat Power and +20% Meat/s per rank. Whiteout Stalker is still the hands-off choice.' }
+      ]
+    },
+    {
       id: '2026-10-24',
       title: 'Mythic Relics',
       items: [
