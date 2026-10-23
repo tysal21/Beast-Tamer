@@ -1260,6 +1260,7 @@ function getCombatPowerBreakdown() {
   add('Molten Heart', getMoltenHeartMult());
   add('Seal Boon: Primal Might', getBoonMult('might'));
   add('Adrenaline', getAdrenalinePowerMult());
+  add('Hearth Blaze', getHearthBlazeMult('power'));
 
   return {
     hunter, hunterMults, hunterTotal: getHunterPower(),
@@ -1460,15 +1461,33 @@ function addWarmth(n) {
   if (!isBlizzardRaging()) return false;
   const t = getTundra(), c = getBlizzardCycle();
   if (t.warmthCycle !== c) { t.warmthCycle = c; t.warmth = 0; }
-  t.warmth += n * (1 + getRegionPerkRank('hearthkeeper') * REGION_PERK_FX.warmthPerRank);
+  t.warmth += n;
   if (t.warmth >= WORLD_CONFIG.blizzard.warmthNeeded) {
     t.thawedCycle = c;
     t.warmth = 0;
     t.caches.forEach(x => { x.left = Math.max(0, x.left - WORLD_CONFIG.blizzard.thawBonusSec); });
     logCombatMessage('🔥 <strong>CAMP THAWED!</strong> The hearth roars and the blizzard breaks early. Your Frozen Caches thaw ' + Math.round(WORLD_CONFIG.blizzard.thawBonusSec / 60) + ' min faster.', 'unlock');
+    // Hearthkeeper (Tundra perk): the hearth flares into a Hearth Blaze
+    const hk = getRegionPerkRank('hearthkeeper');
+    if (hk > 0) {
+      t.blazeUntil = Date.now() + REGION_PERK_FX.blazeSec * 1000;
+      logCombatMessage('🔥 <strong>HEARTH BLAZE!</strong> +' + Math.round(hk * REGION_PERK_FX.blazePowerPerRank * 100) + '% Combat Power and +' + Math.round(hk * REGION_PERK_FX.blazeMeatPerRank * 100) + '% Meat/s for ' + Math.round(REGION_PERK_FX.blazeSec / 60) + ' minutes.', 'unlock');
+    }
     showToast('Camp thawed! The blizzard breaks.', 'success', true);
   }
   return true;
+}
+
+/** Hearth Blaze (Hearthkeeper perk): seconds left, and its multipliers (1 when not burning) */
+function getHearthBlazeLeft() {
+  if (getWorld().twist !== 'blizzard' || getRegionPerkRank('hearthkeeper') <= 0) return 0;
+  const t = gameState.tundra;
+  return t && t.blazeUntil ? Math.max(0, (t.blazeUntil - Date.now()) / 1000) : 0;
+}
+function getHearthBlazeMult(kind) {
+  if (getHearthBlazeLeft() <= 0) return 1;
+  const per = kind === 'meat' ? REGION_PERK_FX.blazeMeatPerRank : REGION_PERK_FX.blazePowerPerRank;
+  return 1 + getRegionPerkRank('hearthkeeper') * per;
 }
 
 function stokeHearth() {
@@ -2806,7 +2825,7 @@ function getTotalCombatPower() {
   const hunter = getHunterPower();
   const base = hunter + getTotalBeastPower() * getLeadershipMult(hunter);
   // Fishing: Codex power bonus and Abyssal Fervor meal
-  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts') * getTrophyPowerMult() * getWorldPowerMult() * getApexPowerMult() * getAdrenalinePowerMult() * getMoltenHeartMult() * getBoonMult('might') * getLegacyMult('primal_heart') * getLegacyMult('long_hunt') * (gameState.devPowerMult || 1));
+  return Math.floor(base * (1 + getFishCodexBonus('power')) * getFishBuffMult('power') * (1 + getTotemBonus('power')) * getLegacyMult('keen_instincts') * getTrophyPowerMult() * getWorldPowerMult() * getApexPowerMult() * getAdrenalinePowerMult() * getMoltenHeartMult() * getBoonMult('might') * getLegacyMult('primal_heart') * getLegacyMult('long_hunt') * getHearthBlazeMult('power') * (gameState.devPowerMult || 1));
 }
 
 function getBaseMeatRate() {
@@ -2867,6 +2886,7 @@ function getMeatRate(withAdrenalineOverride = null) {
   // Worlds: permanent World Bonus, and this world's twist (Blizzards)
   rate *= getWorldMeatMult();
   rate *= getTwistMeatMult();
+  rate *= getHearthBlazeMult('meat');
 
   return rate;
 }
